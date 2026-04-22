@@ -1,37 +1,46 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-:root {
-  --font-sans: 'Noto Sans SC', sans-serif;
-  --font-serif: 'Noto Serif SC', serif;
+body {
+  font-family: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  background-color: #f3f4f7;
+  color: #475671;
 }
 
-body {
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
+h1, h2, h3, h4, h5, h6 {
+  color: #293241;
+  font-weight: 700;
+}
+
+a {
+  transition: color 0.15s ease-in-out;
+}
+a:hover {
+  color: #98c1d9;
 }
 
 /* 自定义滚动条 */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
-  border-radius: 2px;
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
 /* 文章正文图片 */
 .prose img {
   width: 100%;
   height: auto;
-  border-radius: 12px;
+  border-radius: 5px;
 }
 
 /* 选中文字颜色 */
 ::selection {
-  background: #f3f4f6;
-  color: #111827;
+  background: #98c1d9;
+  color: #ffffff;
 }

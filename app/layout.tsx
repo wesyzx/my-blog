@@ -28,8 +28,8 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body className="bg-white text-[#475671] antialiased">
         <Header />
-        <main className="min-h-screen bg-[#f3f4f7] py-[40px]">
-          <div className="max-w-[800px] mx-auto px-4 md:px-5">
+        <main className="min-h-screen bg-[#f3f4f7] py-[20px] md:py-[30px]">
+          <div className="max-w-[1100px] mx-auto px-4 md:px-8">
             {children}
           </div>
         </main>

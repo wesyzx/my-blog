@@ -2,6 +2,7 @@ import { getPostBySlug, getAllPosts } from '@/lib/posts'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -38,6 +39,7 @@ export default function PostPage({
 }) {
   const post = getPostBySlug(params.slug)
   if (!post) notFound()
+  const tags = post.tags.length > 0 ? post.tags : [post.category]
 
   return (
     <article className="bg-white rounded-[5px] p-[30px] md:p-[40px] shadow-[0px_12px_18px_-6px_rgba(34,56,101,0.04)]">
@@ -73,7 +75,7 @@ export default function PostPage({
         {/* 日期 */}
         <div className="flex items-center justify-center flex-wrap gap-[15px] text-[12px] font-semibold text-[#475671] uppercase">
           <time>{formatDate(post.date)}</time>
-          <span className="text-[#98c1d9] cursor-pointer hover:text-[#7db9de] transition-colors">日常</span>
+          <span className="text-[#98c1d9]">{tags.slice(0, 3).join(', ')}</span>
           <span>0 评论</span>
         </div>
       </div>
@@ -111,12 +113,12 @@ export default function PostPage({
 
       {/* 返回 */}
       <div className="mt-[50px] pt-[30px] border-t border-[#e7e9ef] text-center">
-        <a
+        <Link
           href="/"
           className="text-[14px] font-medium text-[#475671] hover:text-[#98c1d9] transition-colors"
         >
           ← 返回首页
-        </a>
+        </Link>
       </div>
     </article>
   )

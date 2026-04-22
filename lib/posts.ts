@@ -9,6 +9,7 @@ export interface PostMeta {
   title: string
   date: string
   category: string
+  tags: string[]
   excerpt: string
   cover: string
   published: boolean
@@ -34,6 +35,14 @@ export function getAllPosts(): PostMeta[] {
         title: data.title || '',
         date: data.date ? new Date(data.date).toISOString() : '',
         category: data.category || '未分类',
+        tags: Array.isArray(data.tags)
+          ? data.tags.map((tag: unknown) => String(tag))
+          : typeof data.tags === 'string'
+            ? data.tags
+                .split(',')
+                .map((tag: string) => tag.trim())
+                .filter(Boolean)
+            : [],
         excerpt: data.excerpt || '',
         cover: data.cover || '',
         published: data.published !== false,
@@ -56,6 +65,14 @@ export function getPostBySlug(slug: string): Post | null {
       title: data.title || '',
       date: data.date ? new Date(data.date).toISOString() : '',
       category: data.category || '未分类',
+      tags: Array.isArray(data.tags)
+        ? data.tags.map((tag: unknown) => String(tag))
+        : typeof data.tags === 'string'
+          ? data.tags
+              .split(',')
+              .map((tag: string) => tag.trim())
+              .filter(Boolean)
+          : [],
       excerpt: data.excerpt || '',
       cover: data.cover || '',
       published: data.published !== false,

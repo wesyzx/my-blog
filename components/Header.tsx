@@ -23,22 +23,36 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="bg-white border-b border-[#eef1f5] relative z-50">
-      <div className="max-w-[1100px] mx-auto px-4 md:px-8 h-[86px] flex items-center justify-between">
+    <header className="bg-white border-b border-[#e7e9ef] relative z-50 shadow-[0_2px_8px_rgba(34,56,101,0.04)]">
+      {/* Top bar with social links */}
+      <div className="bg-[#293241] text-[#98c1d9] py-2 hidden md:block">
+        <div className="max-w-[1100px] mx-auto px-4 md:px-8 flex items-center justify-between text-[12px]">
+          <div className="flex items-center gap-4">
+            <span>Everything happens for the best</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <a href="#" className="hover:text-[#7db9de] transition-colors" aria-label="Twitter">𝕏</a>
+            <a href="#" className="hover:text-[#7db9de] transition-colors" aria-label="Instagram">📷</a>
+            <a href="#" className="hover:text-[#7db9de] transition-colors" aria-label="RSS">RSS</a>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-[1100px] mx-auto px-4 md:px-8 h-[80px] flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex flex-col leading-tight group">
-          <span className="text-[25px] font-bold text-[#293241] tracking-normal">
+          <span className="text-[28px] font-bold text-[#293241] tracking-tight group-hover:text-[#98c1d9] transition-colors">
             The Unhurried
           </span>
-          <span className="text-[12px] text-[#475671] mt-1 font-medium">
+          <span className="text-[11px] text-[#475671] mt-0.5 font-medium italic">
             不慌不忙，记录生活
           </span>
         </Link>
 
         {/* 桌面导航 */}
-        <nav className="hidden md:flex items-center gap-5">
+        <nav className="hidden md:flex items-center gap-6">
           <div className="relative group">
-            <Link href="/" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+            <Link href="/" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
               博文
             </Link>
             <div className="absolute left-0 top-full pt-3 hidden group-hover:block">
@@ -47,7 +61,7 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="block px-3 py-2 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] rounded"
+                    className="block px-3 py-2 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] rounded transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -57,7 +71,7 @@ export default function Header() {
           </div>
 
           <div className="relative group">
-            <Link href="/more" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+            <Link href="/more" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
               抽屉
             </Link>
             <div className="absolute left-0 top-full pt-3 hidden group-hover:block">
@@ -66,7 +80,7 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="block px-3 py-2 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] rounded"
+                    className="block px-3 py-2 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] rounded transition-colors"
                   >
                     {item.label}
                   </Link>
@@ -75,27 +89,34 @@ export default function Header() {
             </div>
           </div>
 
-          <Link href="/say" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+          <Link href="/say" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
             说说
           </Link>
-          <Link href="/gallery" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+          <Link href="/gallery" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
             相册
           </Link>
-          <Link href="/message" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+          <Link href="/message" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
             留言板
           </Link>
-          <Link href="/about" className="text-[14px] font-semibold text-[#475671] hover:text-[#98c1d9] transition-colors">
+          <Link href="/about" className="text-[14px] font-semibold uppercase tracking-wide text-[#475671] hover:text-[#98c1d9] transition-colors">
             关于
           </Link>
-          <span className="text-[#475671] text-[14px]">•</span>
-          <button aria-label="theme" className="text-[#475671] hover:text-[#98c1d9] text-[16px] leading-none">☼</button>
-          <button aria-label="search" className="text-[#475671] hover:text-[#98c1d9] text-[14px] leading-none">⌕</button>
+          
+          <span className="text-[#e7e9ef]">|</span>
+          
+          <button aria-label="search" className="text-[#475671] hover:text-[#98c1d9] text-[16px] leading-none transition-colors" title="搜索">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          </button>
         </nav>
 
         {/* 移动端菜单按钮 */}
         <button
-          className="md:hidden text-[#293241] p-2 rounded hover:bg-gray-50"
+          className="md:hidden text-[#293241] p-2 rounded hover:bg-[#f3f4f7] transition-colors"
           onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="菜单"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2">
@@ -109,24 +130,24 @@ export default function Header() {
 
       {/* 移动端菜单 */}
       {menuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white absolute w-full shadow-lg">
-          <Link href="/" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-gray-50" onClick={() => setMenuOpen(false)}>博文</Link>
+        <div className="md:hidden border-t border-[#e7e9ef] bg-white shadow-lg">
+          <Link href="/" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-[#f3f4f7]" onClick={() => setMenuOpen(false)}>博文</Link>
           {postMenuItems.map((item) => (
-            <Link key={item.href} href={item.href} className="block pl-10 pr-6 py-3 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-gray-50 border-b border-gray-50" onClick={() => setMenuOpen(false)}>
+            <Link key={item.href} href={item.href} className="block pl-10 pr-6 py-3 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] border-b border-[#f3f4f7] transition-colors" onClick={() => setMenuOpen(false)}>
               {item.label}
             </Link>
           ))}
 
-          <Link href="/more" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-gray-50" onClick={() => setMenuOpen(false)}>抽屉</Link>
+          <Link href="/more" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-[#f3f4f7]" onClick={() => setMenuOpen(false)}>抽屉</Link>
           {drawerMenuItems.map((item) => (
-            <Link key={item.href} href={item.href} className="block pl-10 pr-6 py-3 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-gray-50 border-b border-gray-50" onClick={() => setMenuOpen(false)}>
+            <Link key={item.href} href={item.href} className="block pl-10 pr-6 py-3 text-[14px] text-[#475671] hover:text-[#98c1d9] hover:bg-[#f3f4f7] border-b border-[#f3f4f7] transition-colors" onClick={() => setMenuOpen(false)}>
               {item.label}
             </Link>
           ))}
 
-          <Link href="/say" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-gray-50" onClick={() => setMenuOpen(false)}>说说</Link>
-          <Link href="/gallery" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-gray-50" onClick={() => setMenuOpen(false)}>相册</Link>
-          <Link href="/message" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-gray-50" onClick={() => setMenuOpen(false)}>留言板</Link>
+          <Link href="/say" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-[#f3f4f7]" onClick={() => setMenuOpen(false)}>说说</Link>
+          <Link href="/gallery" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-[#f3f4f7]" onClick={() => setMenuOpen(false)}>相册</Link>
+          <Link href="/message" className="block px-6 py-4 text-[15px] font-medium text-[#475671] border-b border-[#f3f4f7]" onClick={() => setMenuOpen(false)}>留言板</Link>
           <Link href="/about" className="block px-6 py-4 text-[15px] font-medium text-[#475671]" onClick={() => setMenuOpen(false)}>关于</Link>
         </div>
       )}

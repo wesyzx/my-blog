@@ -1,47 +1,80 @@
+import Link from 'next/link'
+
 export default function Footer() {
   return (
-    <footer className="mt-[50px] bg-[#f3f4f7] border-t border-[#e7e9ef]">
-      <div className="max-w-[1100px] mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-          {/* About */}
-          <div className="text-center md:text-left">
-            <h3 className="text-[15px] font-bold text-[#293241] mb-3 uppercase tracking-wide">关于本站</h3>
-            <p className="text-[13px] text-[#475671] leading-relaxed">
-              不慌不忙，记录生活。分享技术、摄影、生活中的点滴感悟。
-            </p>
-          </div>
-          
-          {/* Quick Links */}
-          <div className="text-center">
-            <h3 className="text-[15px] font-bold text-[#293241] mb-3 uppercase tracking-wide">快速链接</h3>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] text-[#475671]">
-              <a href="/" className="hover:text-[#98c1d9] transition-colors">首页</a>
-              <a href="/about" className="hover:text-[#98c1d9] transition-colors">关于</a>
-              <a href="/gallery" className="hover:text-[#98c1d9] transition-colors">相册</a>
-              <a href="/message" className="hover:text-[#98c1d9] transition-colors">留言</a>
-            </div>
-          </div>
-          
-          {/* Social */}
-          <div className="text-center md:text-right">
-            <h3 className="text-[15px] font-bold text-[#293241] mb-3 uppercase tracking-wide">关注我</h3>
-            <div className="flex items-center justify-center md:justify-end gap-3 text-[16px] text-[#475671]">
-              <a href="#" className="w-9 h-9 flex items-center justify-center rounded-[3px] bg-white hover:bg-[#98c1d9] hover:text-white transition-all shadow-sm" aria-label="Twitter">𝕏</a>
-              <a href="#" className="w-9 h-9 flex items-center justify-center rounded-[3px] bg-white hover:bg-[#98c1d9] hover:text-white transition-all shadow-sm" aria-label="Instagram">📷</a>
-              <a href="#" className="w-9 h-9 flex items-center justify-center rounded-[3px] bg-white hover:bg-[#98c1d9] hover:text-white transition-all shadow-sm" aria-label="GitHub">⌘</a>
-              <a href="#" className="w-9 h-9 flex items-center justify-center rounded-[3px] bg-white hover:bg-[#98c1d9] hover:text-white transition-all shadow-sm" aria-label="RSS">RSS</a>
-            </div>
-          </div>
+    <footer
+      className="mt-[50px] pt-[40px] pb-[50px] text-center border-t"
+      style={{
+        backgroundColor: 'var(--color-bg)',
+        borderColor: 'var(--color-border)',
+      }}
+    >
+      <div className="max-w-[1100px] mx-auto px-4">
+        {/* 社交图标 */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <a
+            href="https://twitter.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-link"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </a>
+          <a
+            href="https://github.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="social-link"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+            </svg>
+          </a>
+          <a
+            href="mailto:hi@example.com"
+            className="social-link"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+            </svg>
+          </a>
+          <span style={{ color: 'var(--color-border-strong)' }}>|</span>
+          <a href="/feed.xml" className="social-link font-medium text-[14px]">RSS</a>
         </div>
-        
-        <div className="border-t border-[#e7e9ef] pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-[#616d80]">
+
+        {/* 标语 */}
+        <Link
+          href="/"
+          className="block text-[13px] italic mb-3 transition-colors"
+          style={{ color: 'var(--color-muted)' }}
+        >
+          不慌不忙，记录生活
+        </Link>
+
+        {/* 版权 */}
+        <div
+          className="flex flex-col items-center justify-center text-[12px] gap-1"
+          style={{ color: 'var(--color-light)' }}
+        >
           <p>
-            Copyright © {new Date().getFullYear()} The Unhurried. All rights reserved.
+            &copy; {new Date().getFullYear()}{' '}
+            <Link href="/" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-light)' }}>
+              The Unhurried
+            </Link>
+            {' '}&middot;{' '}
+            <a
+              href="https://creativecommons.org/licenses/by-nc-nd/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-70 transition-opacity"
+              style={{ color: 'var(--color-light)' }}
+            >
+              CC BY-NC-ND 4.0
+            </a>
           </p>
-          <p className="flex items-center gap-2">
-            <span>Powered by</span>
-            <a href="https://nextjs.org" className="font-semibold text-[#98c1d9] hover:text-[#7db9de] transition-colors">Next.js</a>
-          </p>
+          <p>Powered by Next.js</p>
         </div>
       </div>
     </footer>

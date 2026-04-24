@@ -25,10 +25,26 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN">
-      <body className="bg-white text-[#475671] antialiased">
+    <html lang="zh-CN" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="antialiased">
         <Header />
-        <main className="min-h-screen bg-[#f3f4f7] py-[20px] md:py-[30px]">
+        <main className="min-h-screen py-5 md:py-[30px]" style={{ backgroundColor: 'var(--color-bg)' }}>
           <div className="max-w-[1100px] mx-auto px-4 md:px-8">
             {children}
           </div>

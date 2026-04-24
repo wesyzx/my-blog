@@ -3,6 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import Comments from '@/components/Comments'
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -17,9 +18,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const post = getPostBySlug(params.slug)
+  const { slug } = await params
+  const post = getPostBySlug(slug)
   if (!post) return {}
   return {
     title: post.title,
@@ -32,90 +34,159 @@ export async function generateMetadata({
   }
 }
 
-export default function PostPage({
+export default async function PostPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
-  const post = getPostBySlug(params.slug)
+  const { slug } = await params
+  const post = getPostBySlug(slug)
   if (!post) notFound()
+
   const tags = post.tags.length > 0 ? post.tags : [post.category]
 
+  // 相关文章（同分类，排除当前文章）
+  const allPosts = getAllPosts()
+  const relatedPosts = allPosts
+    .filter((p) => p.category === post.category && p.slug !== slug)
+    .slice(0, 3)
+
   return (
-    <article className="bg-white rounded-[5px] p-[30px] md:p-[40px] shadow-[0px_12px_18px_-6px_rgba(34,56,101,0.04)]">
-      {/* 封面图 */}
-      {post.cover && (
-        <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[30px]">
-          <Image
-            src={post.cover}
-            alt={post.title}
-            fill
-            className="object-cover"
-          />
+    <article className="max-w-[800px] mx-auto">
+      <div className="card p-[30px] md:p-[40px]">
+        {/* 封面图 */}
+        {post.cover && (
+          <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[30px]">
+            <Image
+              src={post.cover}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
+
+        {/* 文章头部 */}
+        <div className="mb-[30px] text-center">
+          {/* 分类 */}
+          <span className="tag inline-flex mb-[15px]">{post.category}</span>
+
+          {/* 标题 */}
+          <h1
+            className="text-[28px] md:text-[34px] font-bold mb-[12px] leading-[1.35]"
+            style={{ color: 'var(--color-heading)' }}
+          >
+            {post.title}
+          </h1>
+
+          {/* 元信息 */}
+          <div
+            className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[12px] font-semibold"
+            style={{ color: 'var(--color-muted)' }}
+          >
+            <time>{formatDate(post.date)}</time>
+            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
+            <span>{tags.slice(0, 3).join(', ')}</span>
+            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
+            <Link href="#comments" style={{ color: 'inherit' }} className="hover:text-[var(--color-primary)] transition-colors">
+              添加评论
+            </Link>
+          </div>
+        </div>
+
+        <hr className="divider" />
+
+        {/* 文章正文 */}
+        <div
+          className="prose max-w-none
+            prose-headings:font-bold
+            prose-p:leading-[1.75]
+            prose-a:no-underline
+            prose-a:transition-colors
+            prose-img:rounded-[5px]
+            prose-code:px-[5px] prose-code:py-[1px] prose-code:rounded-[3px] prose-code:text-[14px] prose-code:before:content-none prose-code:after:content-none
+            prose-pre:rounded-[5px]
+            prose-blockquote:border-l-[3px] prose-blockquote:px-5 prose-blockquote:py-3 prose-blockquote:not-italic
+          "
+        >
+          <MDXRemote source={post.content} />
+        </div>
+
+        {/* 标签 */}
+        <div className="mt-8 flex items-center flex-wrap gap-2">
+          {tags.map((tag) => (
+            <span key={tag} className="tag">{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* 支持按钮 */}
+      <div className="text-center mt-8">
+        <a href="/support_me" className="btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </svg>
+          支持作者
+        </a>
+      </div>
+
+      {/* 相关文章 */}
+      {relatedPosts.length > 0 && (
+        <div className="card p-[30px] md:p-[40px] mt-8">
+          <h3
+            className="text-[18px] font-bold mb-5"
+            style={{ color: 'var(--color-heading)' }}
+          >
+            相关文章
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {relatedPosts.map((rp) => (
+              <Link
+                key={rp.slug}
+                href={'/posts/' + rp.slug}
+                className="block group"
+              >
+                {rp.cover && (
+                  <div
+                    className="w-full aspect-[16/9] rounded-[4px] overflow-hidden mb-2"
+                    style={{ backgroundColor: 'var(--color-tag-bg)' }}
+                  >
+                    <Image
+                      src={rp.cover}
+                      alt={rp.title}
+                      width={400}
+                      height={225}
+                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-out"
+                    />
+                  </div>
+                )}
+                <h4
+                  className="text-[14px] font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-[var(--color-primary)]"
+                  style={{ color: 'var(--color-heading)' }}
+                >
+                  {rp.title}
+                </h4>
+                <span className="text-[12px] mt-1 block" style={{ color: 'var(--color-light)' }}>
+                  {formatDate(rp.date)}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* 文章头部 */}
-      <div className="mb-[30px] text-center">
-        {/* 分类 */}
-        <div className="flex items-center justify-center gap-2 mb-[15px]">
-          <svg width="13" height="13" viewBox="0 0 15 15" className="fill-[#475671]">
-            <path d="M14.4,1.2H0.6C0.3,1.2,0,1.5,0,1.9V5c0,0.3,0.3,0.6,0.6,0.6h0.6v7.5c0,0.3,0.3,0.6,0.6,0.6h11.2c0.3,0,0.6-0.3,0.6-0.6V5.6h0.6C14.7,5.6,15,5.3,15,5V1.9C15,1.5,14.7,1.2,14.4,1.2z M12.5,12.5h-10V5.6h10V12.5z M13.8,4.4H1.2V2.5h12.5V4.4z M5.6,7.5c0-0.3,0.3-0.6,0.6-0.6h2.5c0.3,0,0.6,0.3,0.6,0.6S9.1,8.1,8.8,8.1H6.2C5.9,8.1,5.6,7.8,5.6,7.5z"/>
-          </svg>
-          <span className="text-[12px] font-semibold text-[#475671] uppercase tracking-wide">
-            {post.category}
-          </span>
-        </div>
-
-        {/* 标题 */}
-        <h1 className="text-[30px] md:text-[35px] font-bold text-[#293241] mb-[15px] leading-[1.4]">
-          {post.title}
-        </h1>
-
-        {/* 日期 */}
-        <div className="flex items-center justify-center flex-wrap gap-[15px] text-[12px] font-semibold text-[#475671] uppercase">
-          <time>{formatDate(post.date)}</time>
-          <span className="text-[#98c1d9]">{tags.slice(0, 3).join(', ')}</span>
-          <span>0 评论</span>
-        </div>
+      {/* 评论 */}
+      <div className="card p-[30px] md:p-[40px] mt-8">
+        <Comments postDate={post.date} />
       </div>
 
-      <hr className="my-[30px] border-[#e7e9ef]" />
-
-      {/* 文章正文 */}
-      <div className="prose prose-slate max-w-none
-        prose-headings:text-[#293241]
-        prose-p:text-[#475671]
-        prose-p:leading-[1.65]
-        prose-a:text-[#98c1d9]
-        hover:prose-a:text-[#7db9de]
-        prose-a:transition-colors
-        prose-a:no-underline
-        prose-img:rounded-[5px]
-        prose-code:text-[#475671]
-        prose-code:bg-[#f3f4f7]
-        prose-code:px-[5px]
-        prose-code:py-[2px]
-        prose-code:rounded-[3px]
-        prose-code:text-[14px]
-        prose-pre:bg-[#293241]
-        prose-pre:rounded-[5px]
-        prose-blockquote:border-l-[3px]
-        prose-blockquote:border-[#98c1d9]
-        prose-blockquote:bg-[#f3f4f7]
-        prose-blockquote:px-[20px]
-        prose-blockquote:py-[10px]
-        prose-blockquote:not-italic
-        prose-blockquote:text-[#475671]
-      ">
-        <MDXRemote source={post.content} />
-      </div>
-
-      {/* 返回 */}
-      <div className="mt-[50px] pt-[30px] border-t border-[#e7e9ef] text-center">
+      {/* 返回首页 */}
+      <div className="text-center mt-8">
         <Link
           href="/"
-          className="text-[14px] font-medium text-[#475671] hover:text-[#98c1d9] transition-colors"
+          className="text-[14px] font-medium transition-colors inline-flex items-center gap-1"
+          style={{ color: 'var(--color-muted)' }}
         >
           ← 返回首页
         </Link>

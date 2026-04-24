@@ -1,29 +1,77 @@
 import React from "react";
+import Image from "next/image";
 
 export default function AboutPage() {
   return (
-    <div className="bg-white rounded-[5px] p-[30px] shadow-[0px_12px_18px_-6px_rgba(34,56,101,0.04)]">
-      <h1 className="text-[30px] font-bold mb-[30px] text-[#293241]">关于</h1>
-      
-      <div className="prose prose-slate max-w-none text-[#475671]">
-        <p className="text-[16px] leading-[1.65] mb-6">
-          你好，我是 <strong className="text-[#293241]">Can Chou</strong>。<br/>
-          欢迎来到我的个人自留地 <em className="text-[#293241]">The Unhurried</em>。
-        </p>
+    <div className="max-w-[800px] mx-auto">
+      <div className="card p-[30px] md:p-[40px]">
+        <h1 className="text-[30px] font-bold mb-8 text-center" style={{ color: 'var(--color-heading)' }}>
+          关于
+        </h1>
 
-        <p className="text-[16px] leading-[1.65] mb-6">
-          这里记录了我的日常生活、折腾的技术心得、随手拍摄的照片，以及学习过程中的点滴感悟。
-          在这个快节奏的时代里，我希望能够“不慌不忙”地去体验生活，记录下那些微小但确切的幸福。
-        </p>
+        {/* 头像 + 介绍 */}
+        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-10">
+          <div
+            className="w-[150px] h-[150px] rounded-full border-2 flex-shrink-0 overflow-hidden transition-transform hover:scale-105 duration-300"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            <div
+              className="w-full h-full flex items-center justify-center text-white text-[48px] font-bold"
+              style={{ backgroundColor: 'var(--color-primary)' }}
+            >
+              C
+            </div>
+          </div>
 
-        <hr className="my-[30px] border-[#e7e9ef]" />
+          <div className="text-[16px] leading-[1.75]" style={{ color: 'var(--color-body)' }}>
+            <p className="mb-4">
+              你好，我是 <strong style={{ color: 'var(--color-heading)' }}>Can Chou</strong>。
+              <br />
+              欢迎来到我的个人自留地 <em style={{ color: 'var(--color-heading)' }}>The Unhurried</em>。
+            </p>
 
-        <h3 className="text-[20px] font-bold text-[#293241] mb-4">联系我</h3>
-        <ul className="list-disc pl-5 text-[16px] space-y-2">
-          <li>Email: <a href="mailto:hi@example.com" className="text-[#98c1d9] hover:text-[#7db9de] transition-colors">hi@example.com</a></li>
-          <li>GitHub: <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-[#98c1d9] hover:text-[#7db9de] transition-colors">@canchou</a></li>
-          <li>Twitter: <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-[#98c1d9] hover:text-[#7db9de] transition-colors">@canchou</a></li>
-        </ul>
+            <p className="mb-4">
+              这里记录了我的日常生活、折腾的技术心得、随手拍摄的照片，以及学习过程中的点滴感悟。
+              在这个快节奏的时代里，我希望能够"不慌不忙"地去体验生活，记录下那些微小但确切的幸福。
+            </p>
+
+            <p>
+              Everything happens for the best.
+            </p>
+          </div>
+        </div>
+
+        <hr className="divider" />
+
+        {/* 联系信息 */}
+        <div className="mt-8">
+          <h3 className="text-[20px] font-bold mb-4" style={{ color: 'var(--color-heading)' }}>
+            联系我
+          </h3>
+          <ul className="space-y-3 text-[15px]" style={{ color: 'var(--color-body)' }}>
+            <li className="flex items-center gap-3">
+              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>✉</span>
+              <span>Email: </span>
+              <a href="mailto:hi@example.com" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                hi@example.com
+              </a>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>◆</span>
+              <span>GitHub: </span>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                @canchou
+              </a>
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>𝕏</span>
+              <span>Twitter: </span>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-[var(--color-primary)] hover:text-[var(--color-primary-hover)] transition-colors">
+                @canchou
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );

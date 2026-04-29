@@ -3,66 +3,66 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* ===== 亮色主题（默认） ===== */
+/* ===== 亮色主题（默认）— 黄褐色 / 陈旧书卷 ===== */
 :root {
-  --color-bg: #f3f4f7;
-  --color-surface: #ffffff;
-  --color-surface-hover: #f8f9fb;
-  --color-border: #eef1f5;
-  --color-border-strong: #e7e9ef;
-  --color-primary: #98c1d9;
-  --color-primary-hover: #7db9de;
-  --color-heading: #293241;
-  --color-body: #475671;
-  --color-muted: #66778f;
-  --color-light: #8a9bb8;
-  --color-selection-bg: #98c1d9;
+  --color-bg: #fbf5ec;
+  --color-surface: #fffdf7;
+  --color-surface-hover: #f8f0e2;
+  --color-border: #e8dcc4;
+  --color-border-strong: #d9cba8;
+  --color-primary: #c3924b;
+  --color-primary-hover: #a87a32;
+  --color-heading: #3b2818;
+  --color-body: #5a4532;
+  --color-muted: #8b714e;
+  --color-light: #b8a080;
+  --color-selection-bg: #c3924b;
   --color-selection-text: #ffffff;
-  --color-shadow: rgba(34, 56, 101, 0.04);
-  --color-shadow-strong: rgba(34, 56, 101, 0.08);
-  --color-card-overlay: rgba(71, 86, 113, 0.06);
-  --color-tag-bg: #f3f4f7;
-  --color-code-bg: #f3f4f7;
-  --color-blockquote-bg: #f3f4f7;
-  --color-blockquote-border: #98c1d9;
-  --color-pre-bg: #293241;
-  --color-pre-text: #e1e8f1;
-  --color-input-bg: #ffffff;
-  --color-input-border: #e7e9ef;
-  --color-input-focus: #98c1d9;
+  --color-shadow: rgba(139, 113, 78, 0.06);
+  --color-shadow-strong: rgba(139, 113, 78, 0.12);
+  --color-card-overlay: rgba(90, 69, 50, 0.04);
+  --color-tag-bg: #f5ecdd;
+  --color-code-bg: #f5ecdd;
+  --color-blockquote-bg: #fbf5ec;
+  --color-blockquote-border: #c3924b;
+  --color-pre-bg: #3b2818;
+  --color-pre-text: #e8dcc4;
+  --color-input-bg: #fffdf7;
+  --color-input-border: #d9cba8;
+  --color-input-focus: #c3924b;
   --color-overlay: rgba(0, 0, 0, 0.35);
-  --color-modal-bg: rgba(255, 255, 255, 0.92);
+  --color-modal-bg: rgba(255, 253, 247, 0.94);
 }
 
 /* ===== 暗黑主题 ===== */
 [data-theme="dark"] {
-  --color-bg: #1a1d23;
-  --color-surface: #24272e;
-  --color-surface-hover: #2a2d35;
-  --color-border: #2d3139;
-  --color-border-strong: #3d4250;
-  --color-primary: #98c1d9;
-  --color-primary-hover: #7db9de;
-  --color-heading: #e8edf5;
-  --color-body: #c8d0dc;
-  --color-muted: #949eaf;
-  --color-light: #6b768a;
-  --color-selection-bg: #98c1d9;
-  --color-selection-text: #1a1d23;
+  --color-bg: #1e1b17;
+  --color-surface: #27231e;
+  --color-surface-hover: #2f2a23;
+  --color-border: #363129;
+  --color-border-strong: #494235;
+  --color-primary: #d4a85c;
+  --color-primary-hover: #e0ba6e;
+  --color-heading: #ece1cf;
+  --color-body: #c6baa7;
+  --color-muted: #998a70;
+  --color-light: #6a5d4c;
+  --color-selection-bg: #8b714e;
+  --color-selection-text: #ece1cf;
   --color-shadow: rgba(0, 0, 0, 0.15);
   --color-shadow-strong: rgba(0, 0, 0, 0.25);
-  --color-card-overlay: rgba(0, 0, 0, 0.15);
-  --color-tag-bg: #2d3139;
-  --color-code-bg: #2d3139;
-  --color-blockquote-bg: #24272e;
-  --color-blockquote-border: #98c1d9;
-  --color-pre-bg: #15171c;
-  --color-pre-text: #c8d0dc;
-  --color-input-bg: #2d3139;
-  --color-input-border: #3d4250;
-  --color-input-focus: #98c1d9;
+  --color-card-overlay: rgba(0, 0, 0, 0.12);
+  --color-tag-bg: #2f2a23;
+  --color-code-bg: #2f2a23;
+  --color-blockquote-bg: #27231e;
+  --color-blockquote-border: #d4a85c;
+  --color-pre-bg: #15120f;
+  --color-pre-text: #c6baa7;
+  --color-input-bg: #2f2a23;
+  --color-input-border: #494235;
+  --color-input-focus: #d4a85c;
   --color-overlay: rgba(0, 0, 0, 0.6);
-  --color-modal-bg: rgba(36, 39, 46, 0.95);
+  --color-modal-bg: rgba(39, 35, 30, 0.96);
 }
 
 /* ===== 基础样式 ===== */
@@ -81,9 +81,12 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* 标题使用衬线字体，营造书卷气 */
 h1, h2, h3, h4, h5, h6 {
   color: var(--color-heading);
   font-weight: 700;
+  font-family: Georgia, 'Noto Serif SC', 'Times New Roman', 'MiSans', serif;
+  letter-spacing: 0.01em;
 }
 
 a {
@@ -131,11 +134,11 @@ a:hover {
 
 /* ======== 全局组件样式 ======== */
 
-/* 卡片 */
+/* 卡片 — 带温暖阴影 */
 .card {
   background-color: var(--color-surface);
-  border-radius: 5px;
-  box-shadow: 0px 12px 18px -6px var(--color-shadow);
+  border-radius: 6px;
+  box-shadow: 0px 2px 12px var(--color-shadow);
   border: 1px solid var(--color-border);
 }
 

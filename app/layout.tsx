@@ -5,15 +5,15 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: {
-    default: 'The Unhurried',
-    template: '%s | The Unhurried',
+    default: "Jack's Space",
+    template: "%s | Jack's Space",
   },
-  description: '不慌不忙，记录生活',
+  description: "Everything happens for the best",
   openGraph: {
-    title: 'The Unhurried',
-    description: '不慌不忙，记录生活',
-    url: 'https://guanyan.me',
-    siteName: 'The Unhurried',
+    title: "Jack's Space",
+    description: "Everything happens for the best",
+    url: 'https://veryjack.com',
+    siteName: "Jack's Space",
     locale: 'zh_CN',
     type: 'website',
   },

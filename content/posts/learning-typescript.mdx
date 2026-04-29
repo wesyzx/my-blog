@@ -1,0 +1,50 @@
+---
+title: 重新学习 TypeScript 的一些笔记
+date: 2026-04-10
+category: 学习
+tags:
+  - TypeScript
+  - JavaScript
+  - 前端
+excerpt: 之前对 TypeScript 一知半解，最近系统性地重新学了一遍。记录一些容易忽略的知识点。
+cover: https://images.unsplash.com/photo-1516116216624-53e697fedbea?w=800&q=80
+published: true
+---
+
+用了 JavaScript 好几年，TypeScript 也接触过但一直停留在"加个类型标注"的水平。最近搭建博客的过程中决定好好补一补。
+
+## 几个容易被忽略的点
+
+### `unknown` vs `any`
+
+`any` 会关闭类型检查，而 `unknown` 是类型安全的。当你不知道一个值的类型时，优先用 `unknown`。
+
+```typescript
+// ❌ 不推荐
+const data: any = fetchData();
+data.foo(); // 不会报错，但运行时可能炸
+
+// ✅ 推荐
+const data: unknown = fetchData();
+if (typeof data === 'object' && data !== null) {
+  // 类型收窄后安全使用
+}
+```
+
+### 泛型约束
+
+泛型不只是 `<T>`，你还可以约束它：
+
+```typescript
+function getLength<T extends { length: number }>(arg: T): number {
+  return arg.length;
+}
+```
+
+### 工具类型
+
+TypeScript 内置了很多实用的工具类型：`Partial<T>`、`Required<T>`、`Pick<T, K>`、`Omit<T, K>` 等等。用得好的话能少写很多重复代码。
+
+## 总结
+
+TypeScript 的学习曲线确实比 JavaScript 陡，但一旦越过那个拐点，开发体验会好很多。尤其在重构的时候，类型系统能帮你发现很多潜在问题。

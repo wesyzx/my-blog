@@ -1,0 +1,32 @@
+---
+title: 从 WordPress 迁移到 Next.js 的碎碎念
+date: 2026-03-28
+category: 技术
+tags:
+  - Next.js
+  - WordPress
+  - 博客
+excerpt: WordPress 还是有些臃肿，一直想切换到静态博客。趁着最近有时间，终于把这个想法落地了。
+cover: https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&q=80
+published: true
+---
+
+WordPress 用了快四年，功能确实强大，但越来越觉得它对于个人博客来说有些过于臃肿。
+
+## 为什么想换
+
+1. **性能**：WordPress 的动态页面加载速度始终不如静态页面
+2. **维护**：要操心 PHP 版本、插件更新、安全补丁
+3. **定制**：虽然主题很多，但想完全按照自己的想法来设计还是不太方便
+
+## 为什么选 Next.js
+
+说实话，我对前端不算特别熟，但 Next.js 的文档和社区足够友好。App Router + MDX 的组合正好满足我的需求——用 Markdown 写文章，自动生成静态页面。
+
+## 迁移过程中的坑
+
+- 文章导出的格式调整（WordPress 的 HTML 转 Markdown）
+- 图片迁移到图床
+- 链接重定向的处理
+
+但总体来说，整个过程比想象中顺利。后续会专门写一篇详细的迁移教程。

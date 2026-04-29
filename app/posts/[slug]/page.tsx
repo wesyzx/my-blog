@@ -52,11 +52,11 @@ export default async function PostPage({
     .slice(0, 3)
 
   return (
-    <article className="max-w-[800px] mx-auto">
-      <div className="card p-[30px] md:p-[40px]">
+    <article className="max-w-[750px] mx-auto">
+      <div className="card p-[30px] md:p-[45px]">
         {/* 封面图 */}
         {post.cover && (
-          <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[30px]">
+          <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[35px]">
             <Image
               src={post.cover}
               alt={post.title}
@@ -68,21 +68,24 @@ export default async function PostPage({
         )}
 
         {/* 文章头部 */}
-        <div className="mb-[30px] text-center">
+        <header className="mb-[35px] text-center">
           {/* 分类 */}
           <span className="tag inline-flex mb-[15px]">{post.category}</span>
 
-          {/* 标题 */}
+          {/* 标题 — 衬线字体，大字 */}
           <h1
-            className="text-[28px] md:text-[34px] font-bold mb-[12px] leading-[1.35]"
-            style={{ color: 'var(--color-heading)' }}
+            className="text-[28px] md:text-[34px] font-bold mb-[15px] leading-[1.35]"
+            style={{
+              color: 'var(--color-heading)',
+              fontFamily: "Georgia, 'Noto Serif SC', serif",
+            }}
           >
             {post.title}
           </h1>
 
           {/* 元信息 */}
           <div
-            className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[12px] font-semibold"
+            className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
             style={{ color: 'var(--color-muted)' }}
           >
             <time>{formatDate(post.date)}</time>
@@ -90,24 +93,27 @@ export default async function PostPage({
             <span>{tags.slice(0, 3).join(', ')}</span>
             <span style={{ color: 'var(--color-border-strong)' }}>/</span>
             <Link href="#comments" style={{ color: 'inherit' }} className="hover:text-[var(--color-primary)] transition-colors">
-              添加评论
+              评论
             </Link>
           </div>
-        </div>
+        </header>
 
         <hr className="divider" />
 
-        {/* 文章正文 */}
+        {/* 文章正文 — 优化阅读体验 */}
         <div
           className="prose max-w-none
             prose-headings:font-bold
-            prose-p:leading-[1.75]
-            prose-a:no-underline
+            prose-headings:tracking-[0.01em]
+            prose-p:text-[16px] prose-p:leading-[1.85] prose-p:tracking-[0.005em]
+            prose-a:no-underline prose-a:border-b prose-a:border-dotted prose-a:pb-[1px]
             prose-a:transition-colors
-            prose-img:rounded-[5px]
+            prose-a:hover:border-solid
+            prose-img:rounded-[5px] prose-img:mx-auto
             prose-code:px-[5px] prose-code:py-[1px] prose-code:rounded-[3px] prose-code:text-[14px] prose-code:before:content-none prose-code:after:content-none
-            prose-pre:rounded-[5px]
-            prose-blockquote:border-l-[3px] prose-blockquote:px-5 prose-blockquote:py-3 prose-blockquote:not-italic
+            prose-pre:rounded-[5px] prose-pre:shadow-sm
+            prose-blockquote:border-l-[3px] prose-blockquote:px-5 prose-blockquote:py-3 prose-blockquote:not-italic prose-blockquote:text-[15px]
+            prose-li:text-[16px] prose-li:leading-[1.75]
           "
         >
           <MDXRemote source={post.content} />
@@ -136,7 +142,10 @@ export default async function PostPage({
         <div className="card p-[30px] md:p-[40px] mt-8">
           <h3
             className="text-[18px] font-bold mb-5"
-            style={{ color: 'var(--color-heading)' }}
+            style={{
+              color: 'var(--color-heading)',
+              fontFamily: "Georgia, 'Noto Serif SC', serif",
+            }}
           >
             相关文章
           </h3>
@@ -188,7 +197,7 @@ export default async function PostPage({
           className="text-[14px] font-medium transition-colors inline-flex items-center gap-1"
           style={{ color: 'var(--color-muted)' }}
         >
-          ← 返回首页
+          &larr; 返回首页
         </Link>
       </div>
     </article>

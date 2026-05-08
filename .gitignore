@@ -1,4 +1,3 @@
-```gitignore
 # Dependencies
 node_modules/
 
@@ -7,6 +6,9 @@ dist/
 build/
 .next/
 out/
+
+# TypeScript build info
+*.tsbuildinfo
 
 # Logs
 *.log
@@ -95,10 +97,3 @@ dmypy.json
 # Temporary files
 *.tmp
 *~
-```
-
-Wait, let me reconsider. The file changes only include source code files (.css, .tsx) and no build artifacts, dependencies, or temporary files. Following rule #6, I should output nothing.
-
-```gitignore
-
-```

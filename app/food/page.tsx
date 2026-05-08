@@ -1,6 +1,6 @@
 import { getAllFoodPosts } from '@/lib/food'
 import FoodCard from '@/components/FoodCard'
-import FoodMap from '@/components/FoodMap'
+import FoodMapWrapper from '@/components/FoodMapWrapper'
 
 export const metadata = {
   title: '美食地图',
@@ -9,7 +9,6 @@ export const metadata = {
 
 export default function FoodPage() {
   const posts = getAllFoodPosts()
-  const amapKey = process.env.NEXT_PUBLIC_AMAP_KEY || ''
 
   return (
     <div className="max-w-[1100px] mx-auto">
@@ -40,7 +39,7 @@ export default function FoodPage() {
         >
           <span style={{ color: 'var(--color-primary)' }}>📍</span> 探店地图
         </h2>
-        <FoodMap posts={posts} amapKey={amapKey} />
+        <FoodMapWrapper posts={posts} />
       </section>
 
       {/* 图集 */}

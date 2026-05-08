@@ -33,7 +33,7 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="mailto:hi@veryjack.com"
+            href="mailto:hi@bugan.com"
             className="social-link"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -50,7 +50,7 @@ export default function Footer() {
           className="block text-[13px] italic mb-3 transition-colors"
           style={{ color: 'var(--color-muted)' }}
         >
-          Everything happens for the best
+          为食而生
         </Link>
 
         {/* 版权 */}
@@ -61,7 +61,7 @@ export default function Footer() {
           <p>
             &copy; {new Date().getFullYear()}{' '}
             <Link href="/" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-light)' }}>
-              Jack's Space
+              不赶
             </Link>
             {' '}&middot;{' '}
             <a

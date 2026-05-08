@@ -5,16 +5,25 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Comments from '@/components/Comments'
 
+// 辅助函数：格式化日期显示
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
+/**
+ * 静态参数生成函数
+ * 告诉 Next.js 在构建时预先生成哪些文章页面，从而极大提高访问速度
+ */
 export async function generateStaticParams() {
   const posts = getAllPosts()
   return posts.map((post) => ({ slug: post.slug }))
 }
 
+/**
+ * 动态 SEO 元数据生成
+ * 根据文章内容自动设置网页标签页标题、描述和社交媒体分享图
+ */
 export async function generateMetadata({
   params,
 }: {
@@ -34,18 +43,24 @@ export async function generateMetadata({
   }
 }
 
+/**
+ * 文章详情页组件
+ */
 export default async function PostPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
+  // 1. 获取 URL 中的 slug 并查询文章数据
   const { slug } = await params
   const post = getPostBySlug(slug)
+  
+  // 如果文章不存在，直接显示 404 页面
   if (!post) notFound()
 
   const tags = post.tags.length > 0 ? post.tags : [post.category]
 
-  // 相关文章（同分类，排除当前文章）
+  // 2. 相关文章逻辑：获取同分类下的其他 3 篇文章进行推荐
   const allPosts = getAllPosts()
   const relatedPosts = allPosts
     .filter((p) => p.category === post.category && p.slug !== slug)
@@ -54,7 +69,7 @@ export default async function PostPage({
   return (
     <article className="max-w-[750px] mx-auto">
       <div className="card p-[30px] md:p-[45px]">
-        {/* 封面图 */}
+        {/* 封面图展示 */}
         {post.cover && (
           <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[35px]">
             <Image
@@ -67,12 +82,12 @@ export default async function PostPage({
           </div>
         )}
 
-        {/* 文章头部 */}
+        {/* 文章头部信息 */}
         <header className="mb-[35px] text-center">
-          {/* 分类 */}
+          {/* 分类标签 */}
           <span className="tag inline-flex mb-[15px]">{post.category}</span>
 
-          {/* 标题 — 衬线字体，大字 */}
+          {/* 文章标题 — 衬线字体，大字 */}
           <h1
             className="text-[28px] md:text-[34px] font-bold mb-[15px] leading-[1.35]"
             style={{
@@ -83,7 +98,7 @@ export default async function PostPage({
             {post.title}
           </h1>
 
-          {/* 元信息 */}
+          {/* 发布时间、标签等元信息 */}
           <div
             className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
             style={{ color: 'var(--color-muted)' }}
@@ -100,7 +115,10 @@ export default async function PostPage({
 
         <hr className="divider" />
 
-        {/* 文章正文 — 优化阅读体验 */}
+        {/* 
+          文章正文渲染区域 — 优化阅读体验
+          prose 类名来自 Tailwind Typography 插件，负责美化 Markdown 转换后的 HTML 样式
+        */}
         <div
           className="prose max-w-none
             prose-headings:font-bold
@@ -116,10 +134,11 @@ export default async function PostPage({
             prose-li:text-[16px] prose-li:leading-[1.75]
           "
         >
+          {/* 使用 MDXRemote 将 Markdown 字符串渲染为 React 组件 */}
           <MDXRemote source={post.content} />
         </div>
 
-        {/* 标签 */}
+        {/* 底部标签列表 */}
         <div className="mt-8 flex items-center flex-wrap gap-2">
           {tags.map((tag) => (
             <span key={tag} className="tag">{tag}</span>
@@ -127,17 +146,7 @@ export default async function PostPage({
         </div>
       </div>
 
-      {/* 支持按钮 */}
-      <div className="text-center mt-8">
-        <a href="/support_me" className="btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-          支持作者
-        </a>
-      </div>
-
-      {/* 相关文章 */}
+      {/* 渲染相关文章推荐块 */}
       {relatedPosts.length > 0 && (
         <div className="card p-[30px] md:p-[40px] mt-8">
           <h3
@@ -185,12 +194,12 @@ export default async function PostPage({
         </div>
       )}
 
-      {/* 评论 */}
+      {/* 评论模块 */}
       <div className="card p-[30px] md:p-[40px] mt-8">
-        <Comments postDate={post.date} />
+        <Comments />
       </div>
 
-      {/* 返回首页 */}
+      {/* 底部导航 */}
       <div className="text-center mt-8">
         <Link
           href="/"

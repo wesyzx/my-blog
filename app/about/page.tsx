@@ -27,24 +27,21 @@ export default function AboutPage() {
                 fontFamily: "Georgia, serif",
               }}
             >
-              J
+              不
             </div>
           </div>
 
           <div className="text-[16px] leading-[1.8]" style={{ color: 'var(--color-body)' }}>
             <p className="mb-4">
-              你好，我是 <strong style={{ color: 'var(--color-heading)' }}>阿杰（Jack）</strong>。
-              <br />
-              欢迎来到我的个人博客 <em style={{ color: 'var(--color-heading)' }}>Jack&apos;s Space</em>。
+              你好，欢迎来到 <em style={{ color: 'var(--color-heading)' }}>不赶</em>。
             </p>
 
             <p className="mb-4">
-              这里记录了我的日常生活、折腾的技术心得、随手拍摄的照片，以及学习过程中的点滴感悟。
-              博客始建于 2022 年上海封控期间，最初只是想找点事情分散注意力，没想到一直坚持到了现在。
+              这里记录我的美食探访、生活日常和技术折腾。不赶时间，慢慢记录，用心感受。
             </p>
 
             <p className="italic" style={{ color: 'var(--color-muted)' }}>
-              Everything happens for the best.
+              为食而生
             </p>
           </div>
         </div>
@@ -66,22 +63,22 @@ export default function AboutPage() {
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>✉</span>
               <span>Email: </span>
-              <a href="mailto:hi@veryjack.com" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
-                hi@veryjack.com
+              <a href="mailto:hi@bugan.com" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
+                hi@bugan.com
               </a>
             </li>
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>◆</span>
               <span>GitHub: </span>
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
-                @veryjack
+                @bugan
               </a>
             </li>
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>𝕏</span>
               <span>Twitter: </span>
               <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
-                @veryjack
+                @bugan
               </a>
             </li>
           </ul>

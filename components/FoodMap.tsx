@@ -1,151 +1,150 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import type { FoodMeta } from '@/lib/food'
 
-// 高德地图 JS API 类型声明
-declare global {
-  interface Window {
-    AMap: any
-    _AMapSecurityConfig: { securityJsCode: string }
-  }
+// 浅色地图样式，匹配博客淡蓝灰主题
+const LIGHT_STYLE = {
+  version: 8,
+  name: 'Light',
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: [
+        'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        'https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+    },
+  },
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+    },
+  ],
+  glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
 }
 
 interface FoodMapProps {
   posts: FoodMeta[]
-  amapKey: string
 }
 
-export default function FoodMap({ posts, amapKey }: FoodMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-  const loadedRef = useRef(false)
+export default function FoodMap({ posts }: FoodMapProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
 
   useEffect(() => {
-    if (loadedRef.current || !amapKey) return
-    loadedRef.current = true
+    if (!containerRef.current || mapRef.current) return
 
-    const scriptId = 'amap-script'
-    if (document.getElementById(scriptId)) return
+    const validPosts = posts.filter((p) => p.lng && p.lat)
 
-    const script = document.createElement('script')
-    script.id = scriptId
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${amapKey}`
-    script.onload = () => {
-      if (!mapRef.current) return
-      const AMap = window.AMap
-      if (!AMap) return
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: LIGHT_STYLE as any,
+      center: [121.4737, 31.2304],
+      zoom: 13,
+      attributionControl: false,
+    })
 
-      // 创建地图
-      const map = new AMap.Map(mapRef.current, {
-        zoom: 13,
-        center: [121.4737, 31.2304],
-        mapStyle: 'amap://styles/light',
-      })
+    map.addControl(
+      new maplibregl.NavigationControl({ showCompass: false }),
+      'bottom-right'
+    )
 
-      mapInstanceRef.current = map
+    map.on('load', () => {
+      validPosts.forEach((post) => {
+        const el = document.createElement('div')
+        el.innerHTML = `
+          <div style="
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            cursor:pointer;
+            transform:translate(-50%,-100%);
+          ">
+            <div style="
+              width:12px;height:12px;
+              border-radius:50%;
+              background:#98c1d9;
+              box-shadow:0 0 0 5px rgba(152,193,217,0.18), 0 0 0 11px rgba(152,193,217,0.07);
+            "></div>
+            <div style="
+              margin-top:8px;
+              padding:4px 12px;
+              border-radius:999px;
+              background:rgba(255,255,255,0.85);
+              backdrop-filter:blur(8px);
+              -webkit-backdrop-filter:blur(8px);
+              color:#475671;
+              font-size:12px;
+              font-weight:500;
+              letter-spacing:0.02em;
+              white-space:nowrap;
+              box-shadow:0 1px 6px rgba(41,50,65,0.08);
+            ">${post.location}</div>
+          </div>
+        `
 
-      // 自定义标记：圆点 + 柔和标签
-      const markers = posts
-        .filter((p) => p.lng && p.lat)
-        .map((post) => {
-          const html = `
-            <div class="food-marker" style="
-              display:flex;
-              flex-direction:column;
-              align-items:center;
-              cursor:pointer;
-              transform:translate(-50%,-100%);
-            ">
-              <!-- 定位圆点 + 光晕 -->
-              <div style="
-                width:12px;height:12px;
-                border-radius:50%;
-                background:#c3924b;
-                box-shadow:0 0 0 6px rgba(195,146,75,0.2), 0 0 0 12px rgba(195,146,75,0.08);
-                transition:box-shadow 0.3s ease;
-              "></div>
-              <!-- 标签 -->
-              <div style="
-                margin-top:8px;
-                padding:4px 12px;
-                border-radius:999px;
-                background:rgba(255,253,247,0.85);
-                backdrop-filter:blur(8px);
-                -webkit-backdrop-filter:blur(8px);
-                color:#5a4532;
-                font-size:12px;
-                font-weight:500;
-                letter-spacing:0.02em;
-                white-space:nowrap;
-                box-shadow:0 1px 4px rgba(139,113,78,0.12);
-                transition:background 0.3s ease, box-shadow 0.3s ease;
-              ">${post.location}</div>
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([post.lng, post.lat])
+          .addTo(map)
+
+        el.addEventListener('click', () => {
+          const popup = new maplibregl.Popup({
+            offset: [0, -16],
+            closeButton: false,
+            className: 'food-map-popup',
+          }).setHTML(`
+            <div style="padding:4px;min-width:200px">
+              <h4 style="margin:0 0 6px;font-size:15px;color:#293241;font-family:Georgia,'Noto Serif SC',serif;font-weight:700">${post.title}</h4>
+              <p style="margin:0 0 4px;font-size:12px;color:#616d80">📍 ${post.address}</p>
+              <p style="margin:0;font-size:12px;color:#8a9bb8;line-height:1.6">${post.excerpt}</p>
+              <a href="/food/${post.slug}" style="display:inline-block;margin-top:8px;font-size:12px;color:#98c1d9;text-decoration:none;font-weight:600">查看详情 →</a>
             </div>
-          `
+          `)
 
-          const marker = new AMap.Marker({
-            position: [post.lng, post.lat],
-            content: html,
-            offset: new AMap.Pixel(0, 0),
-          })
-
-          // 悬停效果
-          marker.on('mouseover', () => {
-            const el = marker.getContent()
-            if (typeof el === 'string') return
-          })
-          marker.on('mouseout', () => {
-            const el = marker.getContent()
-            if (typeof el === 'string') return
-          })
-
-          // 点击弹窗
-          marker.on('click', () => {
-            const infoContent = `
-              <div style="padding:4px;min-width:200px">
-                <h4 style="margin:0 0 6px;font-size:15px;color:#3b2818;font-family:Georgia,'Noto Serif SC',serif">${post.title}</h4>
-                <p style="margin:0 0 4px;font-size:12px;color:#8b714e">📍 ${post.address}</p>
-                <p style="margin:0;font-size:12px;color:#b8a080;line-height:1.6">${post.excerpt}</p>
-                <a href="/food/${post.slug}" style="display:inline-block;margin-top:8px;font-size:12px;color:#c3924b;text-decoration:none;font-weight:500">查看详情 →</a>
-              </div>
-            `
-            const infoWindow = new AMap.InfoWindow({
-              content: infoContent,
-              offset: new AMap.Pixel(0, -20),
-            })
-            infoWindow.open(map, marker.getPosition())
-          })
-
-          return marker
+          marker.setPopup(popup)
+          marker.togglePopup()
         })
 
-      if (markers.length > 0) {
-        map.add(markers)
-        map.setFitView(null, false, [80, 80, 80, 80])
+        markersRef.current.push(marker)
+      })
+
+      if (validPosts.length > 0) {
+        const bounds = new maplibregl.LngLatBounds()
+        validPosts.forEach((p) => bounds.extend([p.lng, p.lat]))
+        map.fitBounds(bounds, { padding: 80, maxZoom: 15 })
       }
+    })
+
+    mapRef.current = map
+
+    return () => {
+      markersRef.current.forEach((m) => m.remove())
+      markersRef.current = []
+      map.remove()
+      mapRef.current = null
     }
-
-    document.head.appendChild(script)
-
-    return () => {}
-  }, [amapKey, posts])
+  }, [posts])
 
   return (
     <div
-      ref={mapRef}
-      className="w-full rounded-[6px] border"
+      ref={containerRef}
+      className="w-full rounded-[6px] border overflow-hidden"
       style={{
         height: '450px',
-        backgroundColor: 'var(--color-tag-bg)',
+        backgroundColor: '#f3f4f7',
         borderColor: 'var(--color-border)',
       }}
-    >
-      {!amapKey && (
-        <div className="h-full flex items-center justify-center text-sm" style={{ color: 'var(--color-muted)' }}>
-          🔑 请在 .env.local 中配置 NEXT_PUBLIC_AMAP_KEY 以加载地图
-        </div>
-      )}
-    </div>
+    />
   )
 }

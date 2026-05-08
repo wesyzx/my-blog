@@ -63,21 +63,21 @@ export default function AboutPage() {
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>✉</span>
               <span>Email: </span>
-              <a href="mailto:hi@bugan.com" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
+              <a href="mailto:hi@bugan.com" className="hover:opacity-75 transition-opacity" style={{ color: 'var(--color-accent)' }}>
                 hi@bugan.com
               </a>
             </li>
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>◆</span>
               <span>GitHub: </span>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition-opacity" style={{ color: 'var(--color-accent)' }}>
                 @bugan
               </a>
             </li>
             <li className="flex items-center gap-3">
               <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>𝕏</span>
               <span>Twitter: </span>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition-opacity" style={{ color: 'var(--color-accent)' }}>
                 @bugan
               </a>
             </li>

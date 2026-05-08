@@ -50,7 +50,7 @@ export default function Header() {
     <header
       className="sticky top-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: 'var(--color-bg-page-nav)',
+        backgroundColor: 'var(--color-bg-nav)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '0.5px solid var(--color-border)',
@@ -89,7 +89,7 @@ export default function Header() {
                   {item.label}
                 </Link>
                 <div className="absolute left-0 top-full pt-2 hidden group-hover:block animate-fade-up">
-                  <div className="bg-[var(--color-bg-page-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-width-[140px] shadow-xl">
+                  <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-width-[140px] shadow-xl">
                     {postMenuItems.map((sub) => (
                       <Link key={sub.href} href={sub.href} className="block px-4 py-2 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-surface)] rounded-[var(--radius-sm)]">
                         {sub.label}
@@ -142,7 +142,7 @@ export default function Header() {
       {/* 移动端菜单 */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 top-[52px] z-40 bg-[var(--color-bg-page-page)] animate-fade-up px-6 py-8"
+          className="md:hidden fixed inset-0 top-[52px] z-40 bg-[var(--color-bg-page)] animate-fade-up px-6 py-8"
         >
           <div className="flex flex-col gap-6">
             {navItems.map((item) => (

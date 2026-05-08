@@ -91,7 +91,7 @@ export default async function PostPage({
           <h1
             className="text-[28px] md:text-[34px] font-bold mb-[15px] leading-[1.35]"
             style={{
-              color: 'var(--color-heading)',
+              color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
@@ -101,13 +101,13 @@ export default async function PostPage({
           {/* 发布时间、标签等元信息 */}
           <div
             className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
-            style={{ color: 'var(--color-muted)' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             <time>{formatDate(post.date)}</time>
-            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
+            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
             <span>{tags.slice(0, 3).join(', ')}</span>
-            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
-            <Link href="#comments" style={{ color: 'inherit' }} className="hover:text-[var(--color-primary)] transition-colors">
+            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
+            <Link href="#comments" style={{ color: 'inherit' }} className="hover:text-[var(--color-accent)] transition-colors">
               评论
             </Link>
           </div>
@@ -152,7 +152,7 @@ export default async function PostPage({
           <h3
             className="text-[18px] font-bold mb-5"
             style={{
-              color: 'var(--color-heading)',
+              color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
@@ -168,7 +168,7 @@ export default async function PostPage({
                 {rp.cover && (
                   <div
                     className="w-full aspect-[16/9] rounded-[4px] overflow-hidden mb-2"
-                    style={{ backgroundColor: 'var(--color-tag-bg)' }}
+                    style={{ backgroundColor: 'var(--color-bg-surface)' }}
                   >
                     <Image
                       src={rp.cover}
@@ -180,12 +180,12 @@ export default async function PostPage({
                   </div>
                 )}
                 <h4
-                  className="text-[14px] font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-[var(--color-primary)]"
-                  style={{ color: 'var(--color-heading)' }}
+                  className="text-[14px] font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-[var(--color-accent)]"
+                  style={{ color: 'var(--color-text-primary)' }}
                 >
                   {rp.title}
                 </h4>
-                <span className="text-[12px] mt-1 block" style={{ color: 'var(--color-light)' }}>
+                <span className="text-[12px] mt-1 block" style={{ color: 'var(--color-text-hint)' }}>
                   {formatDate(rp.date)}
                 </span>
               </Link>
@@ -204,7 +204,7 @@ export default async function PostPage({
         <Link
           href="/"
           className="text-[14px] font-medium transition-colors inline-flex items-center gap-1"
-          style={{ color: 'var(--color-muted)' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           &larr; 返回首页
         </Link>

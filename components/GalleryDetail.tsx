@@ -40,14 +40,14 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
         <h1
           className="text-[28px] md:text-[34px] font-bold mb-3"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
           {album.title}
         </h1>
         {album.excerpt && (
-          <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
             {album.excerpt}
           </p>
         )}
@@ -89,7 +89,7 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
         <Link
           href="/gallery"
           className="text-[14px] font-medium transition-colors"
-          style={{ color: 'var(--color-muted)' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           &larr; 返回相册
         </Link>

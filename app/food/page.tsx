@@ -17,13 +17,13 @@ export default function FoodPage() {
         <h1
           className="text-[32px] font-bold mb-2"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
           美食地图
         </h1>
-        <p className="text-[15px]" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
           记录探访过的美食，用味蕾丈量这座城市。
         </p>
       </div>
@@ -33,11 +33,11 @@ export default function FoodPage() {
         <h2
           className="text-[18px] font-bold mb-4 flex items-center gap-2"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
-          <span style={{ color: 'var(--color-primary)' }}>📍</span> 探店地图
+          <span style={{ color: 'var(--color-accent)' }}>📍</span> 探店地图
         </h2>
         <FoodMapWrapper posts={posts} />
       </section>
@@ -47,16 +47,16 @@ export default function FoodPage() {
         <h2
           className="text-[18px] font-bold mb-4 flex items-center gap-2"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
-          <span style={{ color: 'var(--color-primary)' }}>📸</span> 美食图集
+          <span style={{ color: 'var(--color-accent)' }}>📸</span> 美食图集
         </h2>
 
         {posts.length === 0 ? (
           <div className="card p-12 text-center">
-            <p className="text-sm" style={{ color: 'var(--color-muted)' }}>
+            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
               还没有美食记录，快去探店吧 🍜
             </p>
           </div>

@@ -62,7 +62,7 @@ export default async function FoodPostPage({
           {/* 标签 */}
           <div className="flex items-center justify-center gap-2 mb-[15px]">
             {post.tags.map((tag) => (
-              <span key={tag} className="tag">{tag}</span>
+              <span key={tag} className="tag-pill">{tag}</span>
             ))}
           </div>
 
@@ -70,7 +70,7 @@ export default async function FoodPostPage({
           <h1
             className="text-[28px] md:text-[34px] font-bold mb-[15px] leading-[1.35]"
             style={{
-              color: 'var(--color-heading)',
+              color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
@@ -80,12 +80,12 @@ export default async function FoodPostPage({
           {/* 地点 & 日期 */}
           <div
             className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
-            style={{ color: 'var(--color-muted)' }}
+            style={{ color: 'var(--color-text-muted)' }}
           >
             <span>📍 {post.location}</span>
-            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
+            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
             <time>{formatDate(post.date)}</time>
-            <span style={{ color: 'var(--color-border-strong)' }}>/</span>
+            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
             <span>{post.address}</span>
           </div>
         </header>
@@ -117,7 +117,7 @@ export default async function FoodPostPage({
             <h3
               className="text-[18px] font-bold mb-4"
               style={{
-                color: 'var(--color-heading)',
+                color: 'var(--color-text-primary)',
                 fontFamily: "Georgia, 'Noto Serif SC', serif",
               }}
             >
@@ -128,7 +128,7 @@ export default async function FoodPostPage({
                 <div
                   key={i}
                   className="relative aspect-[4/3] rounded-[4px] overflow-hidden"
-                  style={{ backgroundColor: 'var(--color-tag-bg)' }}
+                  style={{ backgroundColor: 'var(--color-bg-surface)' }}
                 >
                   <Image
                     src={img}
@@ -157,7 +157,7 @@ export default async function FoodPostPage({
           <h3
             className="text-[18px] font-bold mb-5"
             style={{
-              color: 'var(--color-heading)',
+              color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
@@ -172,7 +172,7 @@ export default async function FoodPostPage({
               >
                 <div
                   className="w-full aspect-[4/3] rounded-[4px] overflow-hidden mb-2"
-                  style={{ backgroundColor: 'var(--color-tag-bg)' }}
+                  style={{ backgroundColor: 'var(--color-bg-surface)' }}
                 >
                   {rp.cover && (
                     <Image
@@ -185,12 +185,12 @@ export default async function FoodPostPage({
                   )}
                 </div>
                 <h4
-                  className="text-[14px] font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-[var(--color-primary)]"
-                  style={{ color: 'var(--color-heading)' }}
+                  className="text-[14px] font-semibold leading-snug line-clamp-2 transition-colors group-hover:text-[var(--color-accent)]"
+                  style={{ color: 'var(--color-text-primary)' }}
                 >
                   {rp.title}
                 </h4>
-                <span className="text-[12px] mt-1 block" style={{ color: 'var(--color-light)' }}>
+                <span className="text-[12px] mt-1 block" style={{ color: 'var(--color-text-hint)' }}>
                   📍 {rp.location}
                 </span>
               </Link>
@@ -204,7 +204,7 @@ export default async function FoodPostPage({
         <Link
           href="/food"
           className="text-[14px] font-medium transition-colors inline-flex items-center gap-1"
-          style={{ color: 'var(--color-muted)' }}
+          style={{ color: 'var(--color-text-muted)' }}
         >
           &larr; 返回美食地图
         </Link>

@@ -85,13 +85,13 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
         <h1
           className="text-[32px] font-bold mb-2"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
           相册
         </h1>
-        <p className="text-[15px]" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
           随着快门的开启，时间被凝固下来，作为「此时此刻」的记录是不可重复的，也就成为永远。
         </p>
       </div>
@@ -107,9 +107,9 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
               className="px-4 py-1.5 rounded-[3px] text-[14px] font-medium transition-colors cursor-pointer border-0"
               style={{
                 backgroundColor: active
-                  ? 'var(--color-primary)'
-                  : 'var(--color-tag-bg)',
-                color: active ? '#ffffff' : 'var(--color-body)',
+                  ? 'var(--color-accent)'
+                  : 'var(--color-bg-surface)',
+                color: active ? '#ffffff' : 'var(--color-text-secondary)',
               }}
             >
               {cat}
@@ -121,7 +121,7 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
       {/* 照片 justified 布局 */}
       {pagedPhotos.length === 0 ? (
         <div className="text-center py-20">
-          <p className="text-[14px]" style={{ color: 'var(--color-light)' }}>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-hint)' }}>
             暂无照片
           </p>
         </div>
@@ -143,20 +143,20 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
       {totalPages > 1 && (
         <div
           className="mt-10 flex items-center justify-center gap-1 text-[14px] font-medium"
-          style={{ color: 'var(--color-heading)' }}
+          style={{ color: 'var(--color-text-primary)' }}
         >
           {safePage > 1 ? (
             <button
               onClick={() => setPage(safePage - 1)}
-              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-primary)] bg-transparent border-0 cursor-pointer"
-              style={{ color: 'var(--color-body)' }}
+              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               上一页
             </button>
           ) : (
             <span
               className="px-3 h-9 flex items-center justify-center rounded-[3px]"
-              style={{ color: 'var(--color-light)', cursor: 'not-allowed' }}
+              style={{ color: 'var(--color-text-hint)', cursor: 'not-allowed' }}
             >
               上一页
             </span>
@@ -167,7 +167,7 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
               <span
                 key={p}
                 className="w-9 h-9 flex items-center justify-center rounded-[3px] text-white"
-                style={{ backgroundColor: 'var(--color-primary)' }}
+                style={{ backgroundColor: 'var(--color-accent)' }}
               >
                 {p}
               </span>
@@ -175,8 +175,8 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
               <button
                 key={p}
                 onClick={() => setPage(p)}
-                className="w-9 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-primary)] bg-transparent border-0 cursor-pointer"
-                style={{ color: 'var(--color-body)' }}
+                className="w-9 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
+                style={{ color: 'var(--color-text-secondary)' }}
               >
                 {p}
               </button>
@@ -186,15 +186,15 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
           {safePage < totalPages ? (
             <button
               onClick={() => setPage(safePage + 1)}
-              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-primary)] bg-transparent border-0 cursor-pointer"
-              style={{ color: 'var(--color-body)' }}
+              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               下一页
             </button>
           ) : (
             <span
               className="px-3 h-9 flex items-center justify-center rounded-[3px]"
-              style={{ color: 'var(--color-light)', cursor: 'not-allowed' }}
+              style={{ color: 'var(--color-text-hint)', cursor: 'not-allowed' }}
             >
               下一页
             </span>

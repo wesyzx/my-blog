@@ -1,80 +1,50 @@
+'use client'
+
 import Link from 'next/link'
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear()
+
   return (
     <footer
-      className="mt-[50px] pt-[40px] pb-[50px] text-center border-t"
+      className="mt-[64px] border-t transition-colors duration-300"
       style={{
-        backgroundColor: 'var(--color-bg)',
+        backgroundColor: 'var(--color-bg-surface)',
         borderColor: 'var(--color-border)',
       }}
     >
-      <div className="max-w-[1100px] mx-auto px-4">
-        {/* 社交图标 */}
-        <div className="flex items-center justify-center gap-4 mb-6">
-          <a
-            href="https://twitter.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="social-link"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-          </a>
-          <a
-            href="https://github.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="social-link"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-          </a>
-          <a
-            href="mailto:hi@bugan.com"
-            className="social-link"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
-            </svg>
-          </a>
-          <span style={{ color: 'var(--color-border-strong)' }}>|</span>
-          <a href="/feed.xml" className="social-link font-medium text-[14px]">RSS</a>
-        </div>
-
-        {/* 标语 */}
-        <Link
-          href="/"
-          className="block text-[13px] italic mb-3 transition-colors"
-          style={{ color: 'var(--color-muted)' }}
-        >
-          为食而生
-        </Link>
-
-        {/* 版权 */}
-        <div
-          className="flex flex-col items-center justify-center text-[12px] gap-1"
-          style={{ color: 'var(--color-light)' }}
-        >
-          <p>
-            &copy; {new Date().getFullYear()}{' '}
-            <Link href="/" className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-light)' }}>
-              不赶
-            </Link>
-            {' '}&middot;{' '}
-            <a
-              href="https://creativecommons.org/licenses/by-nc-nd/4.0/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:opacity-70 transition-opacity"
-              style={{ color: 'var(--color-light)' }}
+      <div className="max-w-[1100px] mx-auto px-6 py-12">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          {/* 左侧标语 */}
+          <div className="flex flex-col items-center md:items-start gap-2">
+            <Link 
+              href="/" 
+              className="text-[14px] font-medium tracking-wide hover:opacity-80 transition-opacity"
+              style={{ color: 'var(--color-accent)' }}
             >
-              CC BY-NC-ND 4.0
-            </a>
-          </p>
-          <p>Powered by Next.js</p>
+              Everything happens for the best
+            </Link>
+            <div className="subtitle-en text-[12px] opacity-60">不赶 / The Unhurried</div>
+          </div>
+
+          {/* 右侧版权与协议 */}
+          <div className="flex flex-col items-center md:items-end gap-2 text-[12px] text-[var(--color-text-muted)]">
+            <p>
+              © {currentYear} <span className="text-[var(--color-text-primary)] font-medium">不赶</span>
+              {' · '}
+              <a
+                href="https://creativecommons.org/licenses/by-nc-nd/4.0/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[var(--color-accent)] transition-colors"
+              >
+                CC BY-NC-ND 4.0
+              </a>
+            </p>
+            <p className="opacity-60">Powered by Next.js & TailwindCSS</p>
+          </div>
+
         </div>
       </div>
     </footer>

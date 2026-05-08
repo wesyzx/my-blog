@@ -30,10 +30,10 @@ export default function Comments() {
     return (
       <section id="comments">
         <div className="text-center py-12">
-          <p className="text-[18px] font-bold mb-2" style={{ color: 'var(--color-heading)' }}>
+          <p className="text-[18px] font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
             评论已提交 ✨
           </p>
-          <p className="text-[14px]" style={{ color: 'var(--color-muted)' }}>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
             感谢你的留言，审核通过后将显示在这里。
           </p>
         </div>
@@ -46,7 +46,7 @@ export default function Comments() {
       <h2
         className="text-[20px] font-bold mb-6"
         style={{
-          color: 'var(--color-heading)',
+          color: 'var(--color-text-primary)',
           fontFamily: "Georgia, 'Noto Serif SC', serif",
         }}
       >
@@ -58,7 +58,7 @@ export default function Comments() {
         <div
           className="rounded-[5px] p-5 mb-4 border"
           style={{
-            backgroundColor: 'var(--color-tag-bg)',
+            backgroundColor: 'var(--color-bg-surface)',
             borderColor: 'var(--color-border)',
           }}
         >
@@ -107,7 +107,7 @@ export default function Comments() {
               <div
                 className="absolute bottom-12 right-3 p-3 rounded-[8px] border shadow-lg grid grid-cols-11 gap-1.5 z-10"
                 style={{
-                  backgroundColor: 'var(--color-surface)',
+                  backgroundColor: 'var(--color-bg-card)',
                   borderColor: 'var(--color-border)',
                 }}
               >
@@ -126,7 +126,7 @@ export default function Comments() {
           </div>
 
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <label className="flex items-center gap-2 text-[13px] cursor-pointer" style={{ color: 'var(--color-muted)' }}>
+            <label className="flex items-center gap-2 text-[13px] cursor-pointer" style={{ color: 'var(--color-text-muted)' }}>
               <input
                 type="checkbox"
                 className="rounded"
@@ -143,7 +143,7 @@ export default function Comments() {
       </form>
 
       {/* 暂无评论提示 */}
-      <p className="text-center py-8 text-[14px]" style={{ color: 'var(--color-light)' }}>
+      <p className="text-center py-8 text-[14px]" style={{ color: 'var(--color-text-hint)' }}>
         暂无评论，来做第一个留言的人吧 👋
       </p>
     </section>

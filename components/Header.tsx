@@ -2,7 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
+/**
+ * 博文分类下拉菜单项
+ */
 const postMenuItems = [
   { label: '生活', href: '/?category=生活' },
   { label: '技术', href: '/?category=技术' },
@@ -10,6 +14,9 @@ const postMenuItems = [
   { label: '学习', href: '/?category=学习' },
 ]
 
+/**
+ * 主导航菜单项
+ */
 const navItems = [
   { label: '博文', href: '/', hasDropdown: true },
   { label: '说说', href: '/say' },
@@ -22,6 +29,7 @@ const navItems = [
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isDark, setIsDark] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const html = document.documentElement
@@ -40,53 +48,50 @@ export default function Header() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b"
+      className="sticky top-0 z-50 transition-all duration-300"
       style={{
-        backgroundColor: 'var(--color-surface)',
-        borderColor: 'var(--color-border)',
+        backgroundColor: 'var(--color-bg-page-nav)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '0.5px solid var(--color-border)',
       }}
     >
-      {/* ===== 主导航栏 ===== */}
-      <div className="max-w-[1100px] mx-auto px-4 md:px-8 h-[60px] flex items-center justify-between">
-        {/* Logo — 温暖简洁 */}
-        <Link href="/" className="flex items-center gap-3 leading-tight group">
+      <div className="max-w-[1100px] mx-auto px-6 h-[52px] flex items-center justify-between">
+        
+        {/* Logo - 站名 */}
+        <Link href="/" className="flex items-center gap-2 group">
           <div
-            className="w-[38px] h-[38px] rounded-full flex items-center justify-center text-white text-[16px] font-bold"
-            style={{ backgroundColor: 'var(--color-primary)' }}
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: 'var(--color-accent)' }}
+          ></div>
+          <span
+            className="text-[18px] font-medium tracking-tight"
+            style={{
+              color: 'var(--color-text-primary)',
+              fontFamily: 'var(--font-ui)',
+            }}
           >
-            不
-          </div>
-          <div className="flex flex-col">
-            <span
-              className="text-[22px] font-extrabold tracking-tight leading-none"
-              style={{
-                color: 'var(--color-heading)',
-                fontFamily: "Georgia, 'Noto Serif SC', serif",
-              }}
-            >
-              不赶
-            </span>
-            <span className="text-[11px] font-medium italic mt-0.5" style={{ color: 'var(--color-muted)' }}>
-              为食而生
-            </span>
-          </div>
+            不赶
+          </span>
+          <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
         </Link>
 
-        {/* 桌面导航 */}
+        {/* 桌面端导航 */}
         <nav className="hidden md:flex items-center gap-1">
-          {navItems.map((item) =>
-            item.hasDropdown ? (
+          {navItems.map((item) => {
+            const isActive = pathname === item.href
+            return item.hasDropdown ? (
               <div key={item.label} className="relative group">
-                <Link href={item.href} className="nav-link inline-flex items-center gap-1">
+                <Link 
+                  href={item.href} 
+                  className={`nav-link inline-flex items-center gap-1 ${isActive ? 'active' : ''}`}
+                >
                   {item.label}
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="mt-0.5">
-                    <path d="M2 3l3 4 3-4" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                  </svg>
                 </Link>
-                <div className="absolute left-0 top-full pt-2 hidden group-hover:block">
-                  <div className="dropdown-menu">
+                <div className="absolute left-0 top-full pt-2 hidden group-hover:block animate-fade-up">
+                  <div className="bg-[var(--color-bg-page-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-width-[140px] shadow-xl">
                     {postMenuItems.map((sub) => (
-                      <Link key={sub.href} href={sub.href} className="dropdown-item">
+                      <Link key={sub.href} href={sub.href} className="block px-4 py-2 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-surface)] rounded-[var(--radius-sm)]">
                         {sub.label}
                       </Link>
                     ))}
@@ -94,32 +99,41 @@ export default function Header() {
                 </div>
               </div>
             ) : (
-              <Link key={item.label} href={item.href} className="nav-link">
+              <Link 
+                key={item.label} 
+                href={item.href} 
+                className={`nav-link ${isActive ? 'active' : ''}`}
+              >
                 {item.label}
               </Link>
             )
-          )}
+          })}
 
-          <span className="mx-1" style={{ color: 'var(--color-border-strong)' }}>|</span>
-          <button onClick={toggleTheme} className="nav-icon text-[16px]" aria-label="切换主题">
+          <div className="w-[1px] h-3 mx-2" style={{ backgroundColor: 'var(--color-border)' }}></div>
+          
+          <button onClick={toggleTheme} className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors">
             {isDark ? '☀' : '☾'}
           </button>
-          <button className="nav-icon text-[18px]" aria-label="搜索">
-            ⌕
+          
+          <button className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
           </button>
         </nav>
 
-        {/* 移动端菜单按钮 */}
+        {/* 移动端汉堡菜单 */}
         <button
-          className="md:hidden p-2 rounded"
+          className="md:hidden p-2"
           onClick={() => setMenuOpen(!menuOpen)}
-          style={{ color: 'var(--color-heading)' }}
+          style={{ color: 'var(--color-text-primary)' }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             {menuOpen ? (
               <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" />
             ) : (
-              <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" />
+              <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
             )}
           </svg>
         </button>
@@ -128,26 +142,35 @@ export default function Header() {
       {/* 移动端菜单 */}
       {menuOpen && (
         <div
-          className="md:hidden border-t absolute w-full shadow-lg"
-          style={{
-            backgroundColor: 'var(--color-surface)',
-            borderColor: 'var(--color-border)',
-          }}
+          className="md:hidden fixed inset-0 top-[52px] z-40 bg-[var(--color-bg-page-page)] animate-fade-up px-6 py-8"
         >
-          <Link href="/" className="mobile-nav-item" onClick={() => setMenuOpen(false)}>
-            博文
-          </Link>
-          {postMenuItems.map((item) => (
-            <Link key={item.href} href={item.href} className="mobile-nav-sub" onClick={() => setMenuOpen(false)}>
-              └ {item.label}
-            </Link>
-          ))}
-
-          {navItems.filter(n => !n.hasDropdown).map((item) => (
-            <Link key={item.href} href={item.href} className="mobile-nav-item" onClick={() => setMenuOpen(false)}>
-              {item.label}
-            </Link>
-          ))}
+          <div className="flex flex-col gap-6">
+            {navItems.map((item) => (
+              <div key={item.label}>
+                <Link 
+                  href={item.href} 
+                  className="text-[20px] font-medium text-[var(--color-text-primary)]"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+                {item.hasDropdown && (
+                  <div className="grid grid-cols-2 gap-4 mt-4 ml-2">
+                    {postMenuItems.map((sub) => (
+                      <Link 
+                        key={sub.href} 
+                        href={sub.href} 
+                        className="text-[14px] text-[var(--color-text-secondary)]"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </header>

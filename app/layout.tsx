@@ -62,7 +62,7 @@ export default function RootLayout({
         <Header />
 
         {/* 主内容区域：控制页面背景色和最大宽度 */}
-        <main className="min-h-screen py-5 md:py-[30px]" style={{ backgroundColor: 'var(--color-bg)' }}>
+        <main className="min-h-screen py-5 md:py-[30px]" style={{ backgroundColor: 'var(--color-bg-page)' }}>
           <div className="max-w-[1100px] mx-auto px-4 md:px-8">
             {/* 这里的 children 代表具体的页面内容，如首页或文章页 */}
             {children}

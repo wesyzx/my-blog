@@ -2,92 +2,70 @@ import Link from "next/link";
 import Image from "next/image";
 import { PostMeta } from "@/lib/posts";
 
+/**
+ * 格式化日期：YYYY.MM.DD
+ */
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
-  return d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}.${month}.${day}`;
 }
 
 export default function PostCard({ post }: { post: PostMeta }) {
-  const tags = post.tags.length > 0 ? post.tags : [post.category];
-
   return (
-    <article
-      className="py-6 flex flex-col md:flex-row gap-5"
-      style={{ borderBottom: '1px solid var(--color-border)' }}
-    >
-      {/* 缩略图 */}
+    <article className="card post-card group h-full flex flex-col">
+      {/* 封面图 (16:9 比例) */}
       <Link
         href={"/posts/" + post.slug}
-        className="block group relative w-full md:w-[200px] h-[120px] md:h-[128px] flex-shrink-0 overflow-hidden rounded-[5px]"
-        style={{ backgroundColor: 'var(--color-tag-bg)' }}
+        className="block relative aspect-video w-full overflow-hidden"
+        style={{ backgroundColor: 'var(--color-bg-surface)' }}
       >
         {post.cover ? (
           <Image
             src={post.cover}
             alt={post.title}
             fill
-            sizes="(max-width: 768px) 100vw, 200px"
-            className="object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+            sizes="(max-width: 768px) 100vw, 400px"
+            className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center font-medium text-sm px-4 text-center leading-snug"
-            style={{ color: 'var(--color-muted)' }}
-          >
-            {post.title}
+          <div className="w-full h-full flex items-center justify-center p-6 text-center">
+             <span className="subtitle-en opacity-20 text-[24px]">THE UNHURRIED</span>
           </div>
         )}
       </Link>
 
-      {/* 文字内容 */}
-      <div className="flex-1 flex flex-col justify-center min-w-0">
+      {/* 卡片内容区 */}
+      <div className="flex-1 flex flex-col p-5">
         {/* 分类标签 */}
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="tag">{post.category}</span>
+        <div className="mb-2">
+          <span className="tag-category">{post.category}</span>
         </div>
 
-        {/* 标题 — 使用衬线字体 */}
-        <h2
-          className="text-[18px] md:text-[20px] font-bold mb-2 md:mb-3 leading-[1.4]"
-          style={{
-            color: 'var(--color-heading)',
-            fontFamily: "Georgia, 'Noto Serif SC', serif",
-          }}
-        >
+        {/* 文章标题 */}
+        <h2 className="text-[15px] font-medium leading-relaxed mb-3 flex-1 line-clamp-2">
           <Link
             href={"/posts/" + post.slug}
-            className="hover:text-[var(--color-primary)] transition-colors line-clamp-2"
-            style={{ color: 'inherit' }}
+            className="text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors"
           >
             {post.title}
           </Link>
         </h2>
 
-        {/* 摘要 */}
-        {post.excerpt && (
-          <p
-            className="text-[13px] leading-relaxed mb-2 line-clamp-2"
-            style={{ color: 'var(--color-light)' }}
+        {/* 元信息：日期 */}
+        <div className="flex items-center justify-between mt-auto">
+          <div className="flex items-center gap-4 text-[12px] text-[var(--color-text-muted)]">
+            <time>{formatDate(post.date)}</time>
+          </div>
+          
+          {/* 阅读更多入口 */}
+          <Link 
+            href={"/posts/" + post.slug}
+            className="text-[11px] font-bold tracking-widest text-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            {post.excerpt}
-          </p>
-        )}
-
-        {/* 元信息 */}
-        <div
-          className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[12px] font-medium"
-          style={{ color: 'var(--color-muted)' }}
-        >
-          <time>{formatDate(post.date)}</time>
-          <span style={{ color: 'var(--color-border-strong)' }}>/</span>
-          <span>{tags.slice(0, 2).join(", ")}</span>
-          <span style={{ color: 'var(--color-border-strong)' }}>/</span>
-          <Link
-            href={"/posts/" + post.slug + "#comments"}
-            className="hover:text-[var(--color-primary)] transition-colors"
-            style={{ color: 'inherit' }}
-          >
-            评论
+            READ MORE →
           </Link>
         </div>
       </div>

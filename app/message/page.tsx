@@ -41,13 +41,13 @@ export default function MessagePage() {
         <h1
           className="text-[30px] font-bold mb-2"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
           留言板
         </h1>
-        <p className="text-[15px] mb-8" style={{ color: 'var(--color-muted)' }}>
+        <p className="text-[15px] mb-8" style={{ color: 'var(--color-text-muted)' }}>
           留下你的想法和建议
         </p>
 
@@ -56,7 +56,7 @@ export default function MessagePage() {
           <div
             className="rounded-[5px] p-5 mb-8 border"
             style={{
-              backgroundColor: 'var(--color-tag-bg)',
+              backgroundColor: 'var(--color-bg-surface)',
               borderColor: 'var(--color-border)',
             }}
           >
@@ -80,7 +80,7 @@ export default function MessagePage() {
             />
             <div className="flex items-center justify-between">
               {submitted && (
-                <span className="text-[13px]" style={{ color: 'var(--color-primary)' }}>
+                <span className="text-[13px]" style={{ color: 'var(--color-accent)' }}>
                   ✅ 留言成功！
                 </span>
               )}
@@ -94,7 +94,7 @@ export default function MessagePage() {
 
         {/* 留言列表 */}
         {messages.length === 0 ? (
-          <p className="text-center py-12 text-[14px]" style={{ color: 'var(--color-light)' }}>
+          <p className="text-center py-12 text-[14px]" style={{ color: 'var(--color-text-hint)' }}>
             还没有留言，来做第一个说话的人 ✍️
           </p>
         ) : (
@@ -107,20 +107,20 @@ export default function MessagePage() {
               >
                 <div
                   className="w-[46px] h-[46px] rounded-full flex-shrink-0 flex items-center justify-center text-white font-bold text-[18px]"
-                  style={{ backgroundColor: 'var(--color-primary)' }}
+                  style={{ backgroundColor: 'var(--color-accent)' }}
                 >
                   {msg.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <span className="font-bold text-[16px]" style={{ color: 'var(--color-heading)' }}>
+                    <span className="font-bold text-[16px]" style={{ color: 'var(--color-text-primary)' }}>
                       {msg.name}
                     </span>
-                    <span className="text-[12px] font-medium" style={{ color: 'var(--color-light)' }}>
+                    <span className="text-[12px] font-medium" style={{ color: 'var(--color-text-hint)' }}>
                       {msg.date}
                     </span>
                   </div>
-                  <p className="text-[15px] leading-relaxed" style={{ color: 'var(--color-body)' }}>
+                  <p className="text-[15px] leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                     {msg.content}
                   </p>
                 </div>

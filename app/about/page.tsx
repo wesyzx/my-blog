@@ -7,7 +7,7 @@ export default function AboutPage() {
         <h1
           className="text-[30px] font-bold mb-8 text-center"
           style={{
-            color: 'var(--color-heading)',
+            color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
           }}
         >
@@ -23,7 +23,7 @@ export default function AboutPage() {
             <div
               className="w-full h-full flex items-center justify-center text-white text-[48px] font-bold"
               style={{
-                backgroundColor: 'var(--color-primary)',
+                backgroundColor: 'var(--color-accent)',
                 fontFamily: "Georgia, serif",
               }}
             >
@@ -31,16 +31,16 @@ export default function AboutPage() {
             </div>
           </div>
 
-          <div className="text-[16px] leading-[1.8]" style={{ color: 'var(--color-body)' }}>
+          <div className="text-[16px] leading-[1.8]" style={{ color: 'var(--color-text-secondary)' }}>
             <p className="mb-4">
-              你好，欢迎来到 <em style={{ color: 'var(--color-heading)' }}>不赶</em>。
+              你好，欢迎来到 <em style={{ color: 'var(--color-text-primary)' }}>不赶</em>。
             </p>
 
             <p className="mb-4">
               这里记录我的美食探访、生活日常和技术折腾。不赶时间，慢慢记录，用心感受。
             </p>
 
-            <p className="italic" style={{ color: 'var(--color-muted)' }}>
+            <p className="italic" style={{ color: 'var(--color-text-muted)' }}>
               为食而生
             </p>
           </div>
@@ -53,31 +53,31 @@ export default function AboutPage() {
           <h3
             className="text-[20px] font-bold mb-4"
             style={{
-              color: 'var(--color-heading)',
+              color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
             联系我
           </h3>
-          <ul className="space-y-3 text-[15px]" style={{ color: 'var(--color-body)' }}>
+          <ul className="space-y-3 text-[15px]" style={{ color: 'var(--color-text-secondary)' }}>
             <li className="flex items-center gap-3">
-              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>✉</span>
+              <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>✉</span>
               <span>Email: </span>
-              <a href="mailto:hi@bugan.com" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
+              <a href="mailto:hi@bugan.com" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
                 hi@bugan.com
               </a>
             </li>
             <li className="flex items-center gap-3">
-              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>◆</span>
+              <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>◆</span>
               <span>GitHub: </span>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
                 @bugan
               </a>
             </li>
             <li className="flex items-center gap-3">
-              <span className="w-6 text-center" style={{ color: 'var(--color-primary)' }}>𝕏</span>
+              <span className="w-6 text-center" style={{ color: 'var(--color-accent)' }}>𝕏</span>
               <span>Twitter: </span>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-primary-hover)] transition-colors" style={{ color: 'var(--color-primary)' }}>
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-accent-hover)] transition-colors" style={{ color: 'var(--color-accent)' }}>
                 @bugan
               </a>
             </li>

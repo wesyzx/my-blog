@@ -26,7 +26,7 @@ export default function FoodCard({ post }: { post: FoodMeta }) {
       ) : (
         <div
           className="w-full h-full flex items-center justify-center text-sm"
-          style={{ backgroundColor: 'var(--color-tag-bg)', color: 'var(--color-muted)' }}
+          style={{ backgroundColor: 'var(--color-bg-surface)', color: 'var(--color-text-muted)' }}
         >
           {post.title}
         </div>

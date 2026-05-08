@@ -33,6 +33,8 @@ export interface Post extends PostMeta {
  * @returns 排序后的文章元数据数组
  */
 export function getAllPosts(): PostMeta[] {
+  if (!fs.existsSync(postsDirectory)) return []
+
   // 读取文章目录下的所有文件名
   const fileNames = fs.readdirSync(postsDirectory)
 

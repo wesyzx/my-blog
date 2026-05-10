@@ -82,8 +82,9 @@ export default function Footer() {
               borderColor: 'var(--color-border)',
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm4.95 18l-1.414 1.414L9.414 13.12l-2.12 2.12L6 13.828V18h4.172l-1.293-1.293 2.12-2.12L16.95 18z"/>
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
+              <circle cx="64" cy="64" r="64" fill="black"/>
+              <path d="M106.317 112.014L49.167 38.4H38.4v51.2h10.767V58.531l49.556 63.615 7.594-10.132z" fill="white"/>
             </svg>
             Next.js
           </Link>
@@ -95,8 +96,9 @@ export default function Footer() {
               borderColor: 'var(--color-border)',
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16.5 2.25a.75.75 0 01.75.75v2.25H19.5a3 3 0 013 3V19.5a3 3 0 01-3 3h-15a3 3 0 01-3-3V8.25a3 3 0 013-3h2.25V3a.75.75 0 011.5 0v2.25h6V3a.75.75 0 01.75-.75zM4.5 8.25a1.5 1.5 0 00-1.5 1.5V19.5a1.5 1.5 0 001.5 1.5h15a1.5 1.5 0 001.5-1.5V9.75a1.5 1.5 0 00-1.5-1.5h-15zm11.78 2.47a.75.75 0 010 1.06l-2.47 2.47 2.47 2.47a.75.75 0 11-1.06 1.06l-3-3a.75.75 0 010-1.06l3-3a.75.75 0 011.06 0zM7.72 10.78a.75.75 0 000 1.06l3 3a.75.75 0 01-1.06 1.06l-3-3a.75.75 0 010-1.06l3-3a.75.75 0 011.06 0z"/>
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
+              <path d="M64 16C37.5 16 16 37.5 16 64s21.5 48 48 48 48-21.5 48-48S90.5 16 64 16zm23.5 71.5l-6.5 4-13-16-13 16-6.5-4 19.5-24 19.5 24z" fill="#F6821F"/>
+              <path d="M40 64c0-13.3 10.7-24 24-24s24 10.7 24 24-10.7 24-24 24c-5.5 0-10.7-1.9-14.8-5l-4.7 5.8c5.4 4.3 12.3 6.9 19.5 6.9 17.7 0 32-14.3 32-32S105.7 32 88 32 56 46.3 56 64c0 2.1.2 4.2.6 6.2l-7.5 9.2C48.4 76.5 48 70.3 48 64c0-22.1 17.9-40 40-40s40 17.9 40 40-17.9 40-40 40c-8.7 0-16.7-2.8-23.2-7.5l-4.8 5.9c7.7 5.9 17.4 9.4 28 9.4 26.5 0 48-21.5 48-48S114.5 16 88 16 40 37.5 40 64z" fill="#FAAE44"/>
             </svg>
             Cloudflare
           </span>
@@ -108,9 +110,15 @@ export default function Footer() {
               borderColor: 'var(--color-border)',
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
+              <defs>
+                <linearGradient id="eo-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#04B7FB"/>
+                  <stop offset="100%" stopColor="#0078D4"/>
+                </linearGradient>
+              </defs>
+              <circle cx="64" cy="64" r="56" stroke="url(#eo-grad)" strokeWidth="8" fill="none"/>
+              <path d="M64 24C41.9 24 24 41.9 24 64s17.9 40 40 40 40-17.9 40-40S86.1 24 64 24zm0 8c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm0 12c-11 0-20 9-20 20s9 20 20 20 20-9 20-20-9-20-20-20z" fill="url(#eo-grad)"/>
             </svg>
             EdgeOne
           </span>

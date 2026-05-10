@@ -2,5 +2,12 @@
   "attachmentFolderPath": "public/images",
   "newLinkFormat": "relative",
   "useMarkdownLinks": true,
-  "showUnsupportedFiles": true
+  "showUnsupportedFiles": true,
+  "userIgnoreFilters": [
+    "app/",
+    "components/",
+    "lib/",
+    "node_modules/"
+  ],
+  "promptDelete": false
 }

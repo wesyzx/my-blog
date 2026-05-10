@@ -50,7 +50,7 @@ export default function FoodMap({ posts }: FoodMapProps) {
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: LIGHT_STYLE as any,
-      center: [121.4737, 31.2304],
+      center: [121.55, 29.87],
       zoom: 13,
       attributionControl: false,
     })

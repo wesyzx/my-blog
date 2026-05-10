@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "f3fcd703699ad43c",
+        "id": "b1e542fcd8b679fd",
         "type": "tabs",
         "children": [
           {
-            "id": "092a3fc67c10569b",
+            "id": "42e1f497d47f7710",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -176,8 +176,9 @@
       "bases:新建数据库": false
     }
   },
-  "active": "092a3fc67c10569b",
+  "active": "42e1f497d47f7710",
   "lastOpenFiles": [
+    "content/say/二次测试.md",
     "content/say/二次测试.md",
     "content/say/hello-world.md",
     "content/say/未命名",

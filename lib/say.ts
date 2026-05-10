@@ -7,7 +7,6 @@ const sayDirectory = path.join(process.cwd(), 'content/say')
 export interface SayMeta {
   slug: string
   date: string
-  pinned: boolean
   content: string
 }
 
@@ -25,16 +24,10 @@ export function getAllSays(): SayMeta[] {
       return {
         slug,
         date: data.date ? new Date(data.date).toISOString() : '',
-        pinned: data.pinned === true,
         content: content.trim(),
       }
     })
-    .sort((a, b) => {
-      // 置顶优先，然后按日期倒序
-      if (a.pinned && !b.pinned) return -1
-      if (!a.pinned && b.pinned) return 1
-      return a.date < b.date ? 1 : -1
-    })
+    .sort((a, b) => (a.date < b.date ? 1 : -1))
 
   return says
 }

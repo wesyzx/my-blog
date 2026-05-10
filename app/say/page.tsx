@@ -1,5 +1,5 @@
 import { getAllSays } from '@/lib/say'
-import SayComments from '@/components/SayComments'
+import WalineComments from '@/components/WalineComments'
 
 function formatDateFull(dateStr: string) {
   const d = new Date(dateStr)
@@ -53,7 +53,7 @@ export default function SayPage() {
               </div>
 
               {/* 评论区 */}
-              <SayComments saySlug={say.slug} />
+              <WalineComments path={`/say/${say.slug}`} />
             </div>
           ))}
         </div>

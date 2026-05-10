@@ -3,7 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import Comments from '@/components/Comments'
+import WalineComments from '@/components/WalineComments'
 
 // 辅助函数：格式化日期显示
 function formatDate(dateStr: string) {
@@ -85,7 +85,7 @@ export default async function PostPage({
         {/* 文章头部信息 */}
         <header className="mb-[35px] text-center">
           {/* 分类标签 */}
-          <span className="tag inline-flex mb-[15px]">{post.category}</span>
+          <span className="tag-category inline-flex mb-[15px]">{post.category}</span>
 
           {/* 文章标题 — 衬线字体，大字 */}
           <h1
@@ -141,7 +141,7 @@ export default async function PostPage({
         {/* 底部标签列表 */}
         <div className="mt-8 flex items-center flex-wrap gap-2">
           {tags.map((tag) => (
-            <span key={tag} className="tag">{tag}</span>
+            <span key={tag} className="tag-category">{tag}</span>
           ))}
         </div>
       </div>
@@ -196,7 +196,7 @@ export default async function PostPage({
 
       {/* 评论模块 */}
       <div className="card p-[30px] md:p-[40px] mt-8">
-        <Comments />
+        <WalineComments path={`/posts/${post.slug}`} />
       </div>
 
       {/* 底部导航 */}

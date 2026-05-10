@@ -30,10 +30,12 @@ export default function WalineComments({
         lang: 'zh-CN',
         dark: false,
         login: 'disable',
-        placeholder: '写下你的想法...',
         pageSize: 10,
-        requiredMeta: ['nick'],
+        meta: ['nick'],
         imageUploader: false,
+        locale: {
+          placeholder: '写下你的想法...',
+        },
       })
     })
   }, [path])

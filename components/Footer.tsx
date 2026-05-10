@@ -71,6 +71,19 @@ export default function Footer() {
           </a>
         </div>
 
+        {/* 备案号 */}
+        <div className="flex items-center justify-center mb-5 text-[12px]">
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[var(--color-accent)] transition-colors"
+            style={{ color: 'var(--color-text-hint)' }}
+          >
+            浙ICP备16031853号-1
+          </a>
+        </div>
+
         {/* 第三行：技术标识 */}
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
           <Link

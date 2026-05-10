@@ -17,9 +17,9 @@ export function getAllSays(): SayMeta[] {
   const fileNames = fs.readdirSync(sayDirectory)
 
   const says = fileNames
-    .filter((f) => f.endsWith('.mdx'))
+    .filter((f) => f.endsWith('.md'))
     .map((f) => {
-      const slug = f.replace(/\.mdx$/, '')
+      const slug = f.replace(/\.md$/, '')
       const raw = fs.readFileSync(path.join(sayDirectory, f), 'utf8')
       const { data, content } = matter(raw)
       return {

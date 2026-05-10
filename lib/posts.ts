@@ -39,10 +39,10 @@ export function getAllPosts(): PostMeta[] {
   const fileNames = fs.readdirSync(postsDirectory)
 
   const posts = fileNames
-    .filter((fileName) => fileName.endsWith('.mdx')) // 只处理 .mdx 后缀的文件
+    .filter((fileName) => fileName.endsWith('.md')) // 只处理 .md 后缀的文件
     .map((fileName) => {
       // 去掉文件后缀作为 slug
-      const slug = fileName.replace(/\.mdx$/, '')
+      const slug = fileName.replace(/\.md$/, '')
       const fullPath = path.join(postsDirectory, fileName)
       
       // 读取文件字符串内容
@@ -87,7 +87,7 @@ export function getAllPosts(): PostMeta[] {
  */
 export function getPostBySlug(slug: string): Post | null {
   try {
-    const fullPath = path.join(postsDirectory, `${slug}.mdx`)
+    const fullPath = path.join(postsDirectory, `${slug}.md`)
     const fileContents = fs.readFileSync(fullPath, 'utf8')
     
     // 解析元数据 (data) 和 正文内容 (content)

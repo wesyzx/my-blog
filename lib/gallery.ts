@@ -24,9 +24,9 @@ export function getAllGalleryItems(): GalleryMeta[] {
 
   const fileNames = fs.readdirSync(galleryDirectory)
   const items = fileNames
-    .filter((f) => f.endsWith('.mdx'))
+    .filter((f) => f.endsWith('.md'))
     .map((f) => {
-      const slug = f.replace(/\.mdx$/, '')
+      const slug = f.replace(/\.md$/, '')
       const raw = fs.readFileSync(path.join(galleryDirectory, f), 'utf8')
       const { data } = matter(raw)
       return {
@@ -48,7 +48,7 @@ export function getAllGalleryItems(): GalleryMeta[] {
 
 export function getGalleryBySlug(slug: string): GalleryItem | null {
   try {
-    const raw = fs.readFileSync(path.join(galleryDirectory, `${slug}.mdx`), 'utf8')
+    const raw = fs.readFileSync(path.join(galleryDirectory, `${slug}.md`), 'utf8')
     const { data, content } = matter(raw)
     return {
       slug,

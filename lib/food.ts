@@ -29,9 +29,9 @@ export function getAllFoodPosts(): FoodMeta[] {
   const fileNames = fs.readdirSync(foodDirectory)
 
   const posts = fileNames
-    .filter((fileName) => fileName.endsWith('.mdx'))
+    .filter((fileName) => fileName.endsWith('.md'))
     .map((fileName) => {
-      const slug = fileName.replace(/\.mdx$/, '')
+      const slug = fileName.replace(/\.md$/, '')
       const fullPath = path.join(foodDirectory, fileName)
       const fileContents = fs.readFileSync(fullPath, 'utf8')
       const { data } = matter(fileContents)
@@ -61,7 +61,7 @@ export function getAllFoodPosts(): FoodMeta[] {
 
 export function getFoodPostBySlug(slug: string): FoodPost | null {
   try {
-    const fullPath = path.join(foodDirectory, `${slug}.mdx`)
+    const fullPath = path.join(foodDirectory, `${slug}.md`)
     const fileContents = fs.readFileSync(fullPath, 'utf8')
     const { data, content } = matter(fileContents)
 

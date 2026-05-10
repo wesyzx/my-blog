@@ -178,6 +178,7 @@
   },
   "active": "42e1f497d47f7710",
   "lastOpenFiles": [
+    "components/RunningTime.tsx",
     "components/ArtalkComments.tsx",
     "node_modules/marked/README.md",
     "node_modules/marked/LICENSE.md",
@@ -191,7 +192,6 @@
     "node_modules/recaptcha-v3/dist/ReCaptchaInstance.js",
     "node_modules/recaptcha-v3/dist/ReCaptchaInstance.d.ts",
     "node_modules/recaptcha-v3/dist/ReCaptcha.js",
-    "node_modules/recaptcha-v3/dist/ReCaptcha.d.ts",
     "node_modules/recaptcha-v3/CHANGELOG.md",
     "node_modules/marked/man/marked.1.md",
     "node_modules/vue/README.md",

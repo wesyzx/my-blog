@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "394a2fbf27f0ae39",
+        "id": "1a5c06e22c7b3f46",
         "type": "tabs",
         "children": [
           {
-            "id": "5c34222e3151ba69",
+            "id": "b9d1192621271b91",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -176,14 +176,14 @@
       "bases:新建数据库": false
     }
   },
-  "active": "5c34222e3151ba69",
+  "active": "b9d1192621271b91",
   "lastOpenFiles": [
+    "content/say/hello-world.md",
     "content/gallery/west-lake-sunset.md",
     "content/gallery/late-night-ramen.md",
     "content/gallery/kyoto-autumn.md",
     "content/gallery/coffee-shop.md",
     "content/gallery/after-rain.md",
-    "content/about.md",
-    "content/say/hello-world.md"
+    "content/about.md"
   ]
 }

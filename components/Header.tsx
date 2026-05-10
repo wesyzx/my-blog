@@ -89,7 +89,7 @@ export default function Header() {
                   {item.label}
                 </Link>
                 <div className="absolute left-0 top-full pt-2 hidden group-hover:block animate-fade-up">
-                  <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-width-[140px] shadow-xl">
+                  <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-w-[140px] shadow-xl">
                     {postMenuItems.map((sub) => (
                       <Link key={sub.href} href={sub.href} className="block px-4 py-2 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-surface)] rounded-[var(--radius-sm)]">
                         {sub.label}

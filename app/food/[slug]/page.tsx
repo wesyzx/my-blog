@@ -3,7 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import WalineComments from '@/components/WalineComments'
+import ArtalkComments from '@/components/ArtalkComments'
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
@@ -202,7 +202,7 @@ export default async function FoodPostPage({
 
       {/* 评论 */}
       <div className="card p-[30px] md:p-[40px] mt-8">
-        <WalineComments path={`/food/${post.slug}`} />
+        <ArtalkComments pageKey={`/food/${post.slug}`} pageTitle={post.title} />
       </div>
 
       {/* 返回 */}

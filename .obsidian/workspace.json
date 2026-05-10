@@ -178,6 +178,7 @@
   },
   "active": "42e1f497d47f7710",
   "lastOpenFiles": [
+    "components/ArtalkComments.tsx",
     "node_modules/marked/README.md",
     "node_modules/marked/LICENSE.md",
     "node_modules/recaptcha-v3/package.json",
@@ -212,7 +213,6 @@
     "node_modules/@vue/compiler-dom/README.md",
     "node_modules/@vue/compiler-core/README.md",
     "node_modules/@vueuse/core/README.md",
-    "node_modules/@types/web-bluetooth/README.md",
-    "node_modules/@waline/client/README.md"
+    "node_modules/@types/web-bluetooth/README.md"
   ]
 }

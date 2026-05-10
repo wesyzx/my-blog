@@ -3,7 +3,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import WalineComments from '@/components/WalineComments'
+import ArtalkComments from '@/components/ArtalkComments'
 
 // 辅助函数：格式化日期显示
 function formatDate(dateStr: string) {
@@ -196,7 +196,7 @@ export default async function PostPage({
 
       {/* 评论模块 */}
       <div className="card p-[30px] md:p-[40px] mt-8">
-        <WalineComments path={`/posts/${post.slug}`} />
+        <ArtalkComments pageKey={`/posts/${post.slug}`} pageTitle={post.title} />
       </div>
 
       {/* 底部导航 */}

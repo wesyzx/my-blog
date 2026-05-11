@@ -49,6 +49,18 @@ export default function Header() {
     setIsDark(html.getAttribute('data-theme') === 'dark')
   }, [])
 
+  // 移动端菜单打开时锁定 body 滚动，防止背后页面内容滚动透出
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
   const toggleTheme = () => {
     const html = document.documentElement
     const next = !isDark
@@ -143,10 +155,15 @@ export default function Header() {
         </button>
       </div>
 
-      {/* 移动端菜单 */}
+      {/* 移动端菜单：全屏遮罩，锁 body 滚动，z-[100] 确保覆盖 header */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 top-[52px] z-50 bg-[#F5F4F0] dark:bg-[#1C1B18] animate-fade-up px-6 py-8 overflow-y-auto"
+          className="md:hidden fixed inset-0 top-[52px] z-[100] animate-fade-up px-6 py-8 overflow-y-auto"
+          style={{
+            backgroundColor: 'var(--color-bg-page)',
+            overscrollBehavior: 'contain',
+            paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+          }}
         >
           <div className="flex flex-col gap-6">
             {navItems.map((item) => (

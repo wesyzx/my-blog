@@ -4,21 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "41d2b6ff2dd0fcbc",
+        "id": "be6c8fa35c6d1e2f",
         "type": "tabs",
         "children": [
           {
-            "id": "3e27b2b91addeedb",
+            "id": "26d8db9ec80fc033",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "content/gallery/after-rain.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "after-rain"
+              "title": "新标签页"
             }
           }
         ]
@@ -94,7 +90,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "content/gallery/after-rain.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +99,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "after-rain 的反向链接列表"
+              "title": "反向链接"
             }
           },
           {
@@ -113,12 +108,11 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "content/gallery/after-rain.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "after-rain 的出链列表"
+              "title": "出链"
             }
           },
           {
@@ -156,13 +150,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "content/gallery/after-rain.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "after-rain 的大纲"
+              "title": "大纲"
             }
           }
         ]
@@ -183,10 +176,12 @@
       "bases:新建数据库": false
     }
   },
-  "active": "3e27b2b91addeedb",
+  "active": "26d8db9ec80fc033",
   "lastOpenFiles": [
+    "content/say/三次测试.md",
     "content/say/二次测试.md",
     "content/say/hello-world.md",
+    "content/gallery/after-rain.md",
     "content/about.md",
     "未命名.md",
     "components/SayCommentsToggle.tsx",
@@ -218,8 +213,6 @@
     "node_modules/@vue/runtime-dom/README.md",
     "node_modules/@vue/runtime-core/README.md",
     "node_modules/@vue/reactivity/README.md",
-    "node_modules/@vue/compiler-ssr/README.md",
-    "node_modules/@vue/compiler-sfc/README.md",
-    "node_modules/@vue/compiler-dom/README.md"
+    "node_modules/@vue/compiler-ssr/README.md"
   ]
 }

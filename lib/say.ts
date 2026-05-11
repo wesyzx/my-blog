@@ -16,6 +16,7 @@ export interface SayMeta {
   slug: string
   date: string
   content: string
+  image?: string
 }
 
 /**
@@ -36,6 +37,7 @@ export function getAllSays(): SayMeta[] {
         slug,
         date: data.date ? new Date(data.date).toISOString() : '',
         content: content.trim(),
+        image: data.image || undefined,
       }
     })
     .sort((a, b) => (a.date < b.date ? 1 : -1))

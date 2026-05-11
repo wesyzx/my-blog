@@ -11,11 +11,6 @@ interface SayCommentsToggleProps {
   pageTitle: string
 }
 
-/**
- * 说说评论收折组件
- * - Artalk API 获取评论数展示在按钮上
- * - 点击展开/收起评论区
- */
 export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsToggleProps) {
   const [open, setOpen] = useState(false)
   const [count, setCount] = useState<number | null>(null)
@@ -42,14 +37,16 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
   }, [pageKey])
 
   return (
-    <div className="mt-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="text-[13px] font-medium transition-colors hover:text-[var(--color-accent)]"
-        style={{ color: 'var(--color-text-muted)' }}
-      >
-        {open ? '收起评论' : `评论${count !== null ? ` (${count})` : ''}`}
-      </button>
+    <div>
+      <div className="flex justify-end mt-4">
+        <button
+          onClick={() => setOpen(!open)}
+          className="text-[12px] transition-colors hover:text-[var(--color-accent)]"
+          style={{ color: 'var(--color-text-hint)' }}
+        >
+          {open ? '收起评论' : `评论${count !== null ? `（${count}）` : ''}`}
+        </button>
+      </div>
       {open && <ArtalkComments pageKey={pageKey} pageTitle={pageTitle} />}
     </div>
   )

@@ -1,5 +1,5 @@
 import { getAllSays } from '@/lib/say'
-import ArtalkComments from '@/components/ArtalkComments'
+import SayCommentsToggle from '@/components/SayCommentsToggle'
 
 function formatDateFull(dateStr: string) {
   const d = new Date(dateStr)
@@ -33,27 +33,58 @@ export default function SayPage() {
         <div className="space-y-5">
           {says.map((say) => (
             <div key={say.slug} className="card p-[30px] md:p-[40px]">
-              {/* 日期 */}
-              <h2
-                className="text-[18px] font-bold mb-5"
-                style={{
-                  color: 'var(--color-text-primary)',
-                  fontFamily: "Georgia, 'Noto Serif SC', serif",
-                }}
-              >
-                {formatDateFull(say.date)}
-              </h2>
+              {/* 作者信息行：小头像 + 名字 + 日期 */}
+              <div className="flex items-center gap-3 mb-5">
+                {/* 小头像 */}
+                <div
+                  className="w-[36px] h-[36px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[18px] font-bold"
+                  style={{
+                    backgroundColor: 'var(--color-accent)',
+                    fontFamily: 'Georgia, serif',
+                  }}
+                >
+                  C
+                </div>
 
-              {/* 正文 */}
+                {/* 名字和日期 */}
+                <div className="flex flex-col">
+                  <span
+                    className="text-[14px] font-medium leading-tight"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    不赶
+                  </span>
+                  <span
+                    className="text-[12px] leading-tight mt-0.5"
+                    style={{ color: 'var(--color-text-hint)' }}
+                  >
+                    {formatDateFull(say.date)}
+                  </span>
+                </div>
+              </div>
+
+              {/* 正文 - 大号字体 */}
               <div
-                className="text-[15px] leading-[1.85] mb-6 whitespace-pre-wrap"
+                className="text-[17px] leading-[1.9] mb-5 whitespace-pre-wrap"
                 style={{ color: 'var(--color-text-secondary)' }}
               >
                 {say.content}
               </div>
 
-              {/* 评论区 */}
-              <ArtalkComments pageKey={`/say/${say.slug}`} pageTitle={say.slug} />
+              {/* 配图 */}
+              {say.image && (
+                <div className="mb-5 rounded-lg overflow-hidden">
+                  <img
+                    src={say.image}
+                    alt=""
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+
+              {/* 评论按钮 — 右下角 */}
+              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={say.slug} />
             </div>
           ))}
         </div>

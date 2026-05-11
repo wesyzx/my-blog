@@ -1,24 +1,40 @@
+/**
+ * 相册内容管理模块
+ *
+ * 读取 content/gallery/ 目录下的 Markdown 文件，
+ * 每个相册包含标题、分类、封面图和图片数组，
+ * 用于相册列表页和单本相册详情页。
+ */
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+/** 相册文件存放目录 */
 const galleryDirectory = path.join(process.cwd(), 'content/gallery')
 
+/** 相册元数据 */
 export interface GalleryMeta {
   slug: string
   title: string
   date: string
-  category: string          // 旅游 / 美食 / 日常 / 摄影
+  category: string // 旅游 / 美食 / 日常 / 摄影
   cover: string
   images: string[]
   excerpt: string
   published: boolean
 }
 
+/** 完整相册（含描述正文） */
 export interface GalleryItem extends GalleryMeta {
   content: string
 }
 
+/** 相册分类列表 */
+export const GALLERY_CATEGORIES = ['全部', '旅游', '美食', '日常', '摄影']
+
+/**
+ * 获取所有相册（按日期倒序）
+ */
 export function getAllGalleryItems(): GalleryMeta[] {
   if (!fs.existsSync(galleryDirectory)) return []
 
@@ -46,6 +62,9 @@ export function getAllGalleryItems(): GalleryMeta[] {
   return items
 }
 
+/**
+ * 根据 slug 获取单个相册详情
+ */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
   try {
     const raw = fs.readFileSync(path.join(galleryDirectory, `${slug}.md`), 'utf8')
@@ -65,5 +84,3 @@ export function getGalleryBySlug(slug: string): GalleryItem | null {
     return null
   }
 }
-
-export const GALLERY_CATEGORIES = ['全部', '旅游', '美食', '日常', '摄影']

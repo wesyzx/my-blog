@@ -1,5 +1,18 @@
 'use client'
 
+/**
+ * 全局顶部导航栏组件
+ *
+ * 功能：
+ * - Logo + 站名
+ * - 「博文」下拉菜单（生活/技术/摄影/学习分类）
+ * - 导航链接：说说 / 美食 / 相册 / 留言板 / 关于
+ * - 深色/浅色主题切换
+ * - 移动端汉堡菜单
+ *
+ * 使用 CSS 变量适配明暗主题，
+ * 粘性定位（sticky）始终在页面顶部可见。
+ */
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

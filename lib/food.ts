@@ -1,28 +1,41 @@
+/**
+ * 美食探店内容管理模块
+ *
+ * 读取 content/food/ 目录下的 Markdown 文件，
+ * 每条探店记录包含地理位置（经纬度）、地址、图集等字段，
+ * 用于美食地图页面和探店详情页。
+ */
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 
+/** 探店记录存放目录 */
 const foodDirectory = path.join(process.cwd(), 'content/food')
 
+/** 探店记录元数据 */
 export interface FoodMeta {
   slug: string
   title: string
   date: string
-  location: string       // 餐厅/地点名称
-  address: string         // 详细地址
-  lng: number             // 经度
-  lat: number             // 纬度
-  cover: string           // 封面图
-  images: string[]        // 图集
+  location: string // 餐厅/地点名称
+  address: string // 详细地址
+  lng: number // 经度（用于地图标注）
+  lat: number // 纬度（用于地图标注）
+  cover: string
+  images: string[] // 店内图集
   tags: string[]
   excerpt: string
   published: boolean
 }
 
+/** 完整探店记录（含正文） */
 export interface FoodPost extends FoodMeta {
   content: string
 }
 
+/**
+ * 获取所有探店记录（按日期倒序）
+ */
 export function getAllFoodPosts(): FoodMeta[] {
   if (!fs.existsSync(foodDirectory)) return []
 
@@ -59,6 +72,9 @@ export function getAllFoodPosts(): FoodMeta[] {
   return posts
 }
 
+/**
+ * 根据 slug 获取单篇探店详情
+ */
 export function getFoodPostBySlug(slug: string): FoodPost | null {
   try {
     const fullPath = path.join(foodDirectory, `${slug}.md`)

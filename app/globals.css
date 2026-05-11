@@ -1,3 +1,24 @@
+/**
+ * 全局样式文件
+ *
+ * ===== 设计系统 =====
+ * 主色调：砖红 #E8523A
+ * 背景：暖米色系（页面 #F5F4F0 → 卡片 #FAFAF8 → 白色 #FFF）
+ * 文字：深棕 #2C2B28 → 中灰 #5F5E5A → 浅灰 #888780
+ *
+ * ===== 字体栈 =====
+ * 中文：PingFang SC > Hiragino Sans GB > Microsoft YaHei
+ * 英文衬线：Playfair Display（标题） / Lora（正文）
+ * 英文无衬线：系统 UI 字体（导航、标签）
+ *
+ * ===== 结构 =====
+ * 一、设计规范变量 (Design Tokens)
+ * 二、基础样式重置
+ * 三、全局组件样式（卡片、导航、标签、按钮、输入框）
+ * 四、动画效果
+ * 五、Tailwind Typography 适配
+ * 六、实用工具类（分隔线、滚动条、选中色）
+ */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Noto+Serif+SC:wght@400;500;700&display=swap');
 @import url('https://unpkg.com/misans@4.0.0/lib/misans.css');
 

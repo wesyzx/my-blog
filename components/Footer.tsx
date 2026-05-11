@@ -1,5 +1,13 @@
 'use client'
 
+/**
+ * 全局底部栏组件
+ *
+ * 展示三行信息：
+ * 1. 博客运行时间 + 不蒜子访客统计
+ * 2. 版权声明 + 许可证
+ * 3. ICP 备案号 + 技术栈标识（Next.js / Cloudflare / EdgeOne）
+ */
 import { useEffect } from 'react'
 import Link from 'next/link'
 import RunningTime from './RunningTime'

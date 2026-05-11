@@ -1,3 +1,13 @@
+/**
+ * 根布局组件 —— 博客的 HTML 骨架
+ *
+ * 所有页面都包裹在此布局中：
+ *   <html> → <head>（主题防闪烁脚本） → <body>
+ *     → <Header /> → <main>{children}</main> → <Footer />
+ *
+ * 全局 SEO 元数据在此配置（标题、描述、OpenGraph），
+ * 子页面可通过 generateMetadata 覆盖。
+ */
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'

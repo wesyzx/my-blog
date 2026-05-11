@@ -1,3 +1,15 @@
+/**
+ * 博客首页
+ *
+ * 布局结构：
+ * 1. 置顶推荐文章（Hero 区域，大图 + 标题 + 摘要）
+ * 2. 左侧：分类切换栏 + 文章卡片流（2 列网格）+ 分页
+ * 3. 右侧：作者信息卡片 + 标签云
+ *
+ * 支持 URL 参数：
+ *   ?category=生活  → 按分类筛选
+ *   ?page=2         → 翻页
+ */
 import { getAllPosts, getAllCategories } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
 import Link from "next/link";

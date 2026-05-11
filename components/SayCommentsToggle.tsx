@@ -27,7 +27,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
       limit: '1',
       flat_mode: 'true',
     })
-    fetch(`${SERVER}/api/v2/comment?${params.toString()}`)
+    fetch(`${SERVER}/api/v2/comments?${params.toString()}`)
       .then((res) => res.json())
       .then((data: any) => {
         const t =

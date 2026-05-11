@@ -16,19 +16,24 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
-    // 从 Artalk API 获取该页面的评论数量
+    // 请求留言列表（limit=1），从响应中提取 total 作为评论数
     const params = new URLSearchParams({
       site_name: SITE,
       page_key: pageKey,
-      type: 'page_comment',
+      limit: '1',
+      flat_mode: 'true',
     })
-    fetch(`${SERVER}/api/v2/stats?${params.toString()}`)
+    fetch(`${SERVER}/api/v2/comment?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
-        const c = data?.data?.comment_count
-        if (typeof c === 'number') {
-          setCount(c)
-        }
+        // 兼容多种响应格式：{ total, data: { total }, data: { comments: [...] }, data: [...], ... }
+        const t =
+          typeof data?.total === 'number' ? data.total :
+          typeof data?.data?.total === 'number' ? data.data.total :
+          Array.isArray(data?.data?.comments) ? data.data.comments.length :
+          Array.isArray(data?.data) ? data.data.length :
+          null
+        if (typeof t === 'number') setCount(t)
       })
       .catch(() => {})
   }, [pageKey])

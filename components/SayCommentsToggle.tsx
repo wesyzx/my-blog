@@ -31,6 +31,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
       .then((res) => res.json())
       .then((data: any) => {
         const t =
+          typeof data?.count === 'number' ? data.count :
           typeof data?.total === 'number' ? data.total :
           typeof data?.data?.total === 'number' ? data.data.total :
           Array.isArray(data?.data) ? data.data.length :

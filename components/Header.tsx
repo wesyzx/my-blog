@@ -15,7 +15,6 @@
  */
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 /**
@@ -74,17 +73,10 @@ export default function Header() {
         
         {/* Logo - 头像 + 站名 */}
         <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-            <Image
-              src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
-              alt="不赶"
-              width={24}
-              height={24}
-              className="object-cover"
-            />
-          </div>
+          {/* 红色圆点装饰 */}
+          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--color-accent)' }}></div>
           <span
-            className="text-[18px] font-medium tracking-tight"
+            className="text-[24px] font-bold tracking-tight"
             style={{
               color: 'var(--color-text-primary)',
               fontFamily: 'var(--font-ui)',

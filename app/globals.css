@@ -127,7 +127,7 @@ a:hover {
 /* 导航链接 */
 .nav-link {
   font-family: var(--font-ui);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 400;
   padding: 8px 12px;
   color: var(--color-text-secondary);
@@ -185,7 +185,7 @@ a:hover {
 .subtitle-en {
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 13px;
+  font-size: 15px;
   color: var(--color-text-muted);
 }
 

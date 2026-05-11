@@ -71,7 +71,7 @@ export default function Header() {
               fontFamily: 'var(--font-ui)',
             }}
           >
-            不赶
+            Can Chou
           </span>
           <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
         </Link>
@@ -135,7 +135,7 @@ export default function Header() {
       {/* 移动端菜单 */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 top-[52px] z-40 bg-[var(--color-bg-page)] animate-fade-up px-6 py-8"
+          className="md:hidden fixed inset-0 top-[52px] z-50 bg-[#F5F4F0] dark:bg-[#1C1B18] animate-fade-up px-6 py-8 overflow-y-auto"
         >
           <div className="flex flex-col gap-6">
             {navItems.map((item) => (

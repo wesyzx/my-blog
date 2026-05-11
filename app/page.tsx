@@ -123,12 +123,12 @@ export default async function Home({
           {/* 1. 作者卡片 */}
           <div className="sidebar-widget text-center">
             <div className="w-20 h-20 mx-auto rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-[28px] font-medium mb-4">
-               不
+               C
             </div>
-            <h3 className="text-[16px] font-medium mb-1">不赶</h3>
+            <h3 className="text-[16px] font-medium mb-1">Can Chou</h3>
             <p className="subtitle-en mb-4">The Unhurried Pilot</p>
             <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed px-2">
-              为食而生，不赶时间。保持克制，记录日常。
+              为食而生，保持克制，记录日常。
             </p>
             <div className="flex justify-center gap-3 mt-6">
                <a href="#" className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[12px] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]">𝕏</a>

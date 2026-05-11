@@ -1,7 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ArtalkComments from './ArtalkComments'
+
+const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
+const SITE = 'Can Chou'
 
 interface SayCommentsToggleProps {
   pageKey: string
@@ -10,6 +13,19 @@ interface SayCommentsToggleProps {
 
 export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsToggleProps) {
   const [open, setOpen] = useState(false)
+  const [count, setCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    // 从 Artalk API 获取该页面的评论数量
+    fetch(`${SERVER}/api/v2/stats/page?site=${encodeURIComponent(SITE)}&page_key=${encodeURIComponent(pageKey)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.data?.comment_count !== undefined) {
+          setCount(data.data.comment_count)
+        }
+      })
+      .catch(() => {})
+  }, [pageKey])
 
   return (
     <div>
@@ -18,7 +34,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
         className="text-[13px] font-medium transition-colors hover:text-[var(--color-accent)]"
         style={{ color: 'var(--color-text-muted)' }}
       >
-        {open ? '收起评论' : '评论'}
+        {open ? '收起评论' : `评论${count !== null ? ` (${count})` : ''}`}
       </button>
       {open && <ArtalkComments pageKey={pageKey} pageTitle={pageTitle} />}
     </div>

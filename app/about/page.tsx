@@ -30,7 +30,7 @@ export default function AboutPage() {
                 fontFamily: 'Georgia, serif',
               }}
             >
-              不
+              C
             </div>
           </div>
         </div>

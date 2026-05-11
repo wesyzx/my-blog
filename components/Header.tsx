@@ -18,20 +18,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * 博文分类下拉菜单项
- */
-const postMenuItems = [
-  { label: '生活', href: '/?category=生活' },
-  { label: '技术', href: '/?category=技术' },
-  { label: '摄影', href: '/?category=摄影' },
-  { label: '学习', href: '/?category=学习' },
-]
-
-/**
  * 主导航菜单项
  */
 const navItems = [
-  { label: '博文', href: '/', hasDropdown: true },
+  { label: '博文', href: '/' },
   { label: '说说', href: '/say' },
   { label: '美食', href: '/food' },
   { label: '相册', href: '/gallery' },
@@ -108,25 +98,7 @@ export default function Header() {
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href
-              return item.hasDropdown ? (
-                <div key={item.label} className="relative group">
-                  <Link
-                    href={item.href}
-                    className={`nav-link inline-flex items-center gap-1 ${isActive ? 'active' : ''}`}
-                  >
-                    {item.label}
-                  </Link>
-                  <div className="absolute left-0 top-full pt-2 hidden group-hover:block animate-fade-up">
-                    <div className="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-2 min-w-[140px] shadow-xl">
-                      {postMenuItems.map((sub) => (
-                        <Link key={sub.href} href={sub.href} className="block px-4 py-2 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-surface)] rounded-[var(--radius-sm)]">
-                          {sub.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
+              return (
                 <Link
                   key={item.label}
                   href={item.href}
@@ -175,37 +147,18 @@ export default function Header() {
           <div className="flex-1 overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
             <div className="flex flex-col gap-6 py-4">
               {navItems.map((item) => (
-                <div key={item.label}>
-                  <Link
-                    href={item.href}
-                    className="text-[22px] font-semibold"
-                    style={{
-                      color: 'var(--color-text-primary)',
-                      fontFamily: "Georgia, 'Noto Serif SC', serif",
-                    }}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                  {item.hasDropdown && (
-                    <div className="grid grid-cols-2 gap-3 mt-3 ml-2">
-                      {postMenuItems.map((sub) => (
-                        <Link
-                          key={sub.href}
-                          href={sub.href}
-                          className="text-[16px] px-3 py-2 rounded-lg transition-colors"
-                          style={{
-                            color: 'var(--color-text-secondary)',
-                            backgroundColor: 'var(--color-bg-surface)',
-                          }}
-                          onClick={() => setMenuOpen(false)}
-                        >
-                          {sub.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="text-[22px] font-semibold"
+                  style={{
+                    color: 'var(--color-text-primary)',
+                    fontFamily: "Georgia, 'Noto Serif SC', serif",
+                  }}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
               ))}
             </div>
           </div>

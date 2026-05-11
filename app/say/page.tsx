@@ -1,5 +1,8 @@
 import { getAllSays } from '@/lib/say'
+import Image from 'next/image'
 import SayCommentsToggle from '@/components/SayCommentsToggle'
+
+const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
 
 function formatDateFull(dateStr: string) {
   const d = new Date(dateStr)
@@ -19,7 +22,7 @@ export default function SayPage() {
           说说
         </h1>
         <p className="text-[14px] mb-0" style={{ color: 'var(--color-text-muted)' }}>
-          零碎的思考和日常
+          Can Chou 的零碎思考和日常
         </p>
       </div>
 
@@ -36,14 +39,14 @@ export default function SayPage() {
               {/* 作者信息行：小头像 + 名字 + 日期 */}
               <div className="flex items-center gap-3 mb-5">
                 {/* 小头像 */}
-                <div
-                  className="w-[36px] h-[36px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[18px] font-bold"
-                  style={{
-                    backgroundColor: 'var(--color-accent)',
-                    fontFamily: 'Georgia, serif',
-                  }}
-                >
-                  C
+                <div className="w-[36px] h-[36px] rounded-full flex-shrink-0 overflow-hidden">
+                  <Image
+                    src={AUTHOR_AVATAR}
+                    alt="Can Chou"
+                    width={36}
+                    height={36}
+                    className="object-cover"
+                  />
                 </div>
 
                 {/* 名字和日期 */}
@@ -52,7 +55,7 @@ export default function SayPage() {
                     className="text-[14px] font-medium leading-tight"
                     style={{ color: 'var(--color-text-primary)' }}
                   >
-                    不赶
+                    Can Chou
                   </span>
                   <span
                     className="text-[12px] leading-tight mt-0.5"

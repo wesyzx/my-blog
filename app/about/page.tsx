@@ -19,19 +19,14 @@ export default function AboutPage() {
 
         {/* 头像 */}
         <div className="flex justify-center mb-10">
-          <div
-            className="w-[150px] h-[150px] rounded-full border-2 flex-shrink-0 overflow-hidden"
-            style={{ borderColor: 'var(--color-border)' }}
-          >
-            <div
-              className="w-full h-full flex items-center justify-center text-white text-[48px] font-bold"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                fontFamily: 'Georgia, serif',
-              }}
-            >
-              C
-            </div>
+          <div className="w-[150px] h-[150px] rounded-full overflow-hidden border-2 flex-shrink-0" style={{ borderColor: 'var(--color-border)' }}>
+            <Image
+              src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
+              alt="Can Chou"
+              width={150}
+              height={150}
+              className="object-cover"
+            />
           </div>
         </div>
 

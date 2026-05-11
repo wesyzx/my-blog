@@ -134,8 +134,14 @@ export default async function Home({
         <aside className="hidden lg:block space-y-8 animate-fade-up">
           {/* 1. 作者卡片 */}
           <div className="sidebar-widget text-center">
-            <div className="w-20 h-20 mx-auto rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-[28px] font-medium mb-4">
-               C
+            <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border border-[var(--color-border)] mb-4">
+              <Image
+                src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
+                alt="Can Chou"
+                width={80}
+                height={80}
+                className="object-cover"
+              />
             </div>
             <h3 className="text-[16px] font-medium mb-1">Can Chou</h3>
             <p className="subtitle-en mb-4">The Unhurried Pilot</p>

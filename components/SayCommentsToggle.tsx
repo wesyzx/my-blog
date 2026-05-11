@@ -17,11 +17,17 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
 
   useEffect(() => {
     // 从 Artalk API 获取该页面的评论数量
-    fetch(`${SERVER}/api/v2/stats/page?site=${encodeURIComponent(SITE)}&page_key=${encodeURIComponent(pageKey)}`)
+    const params = new URLSearchParams({
+      site_name: SITE,
+      page_key: pageKey,
+      type: 'page_comment',
+    })
+    fetch(`${SERVER}/api/v2/stats?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data?.data?.comment_count !== undefined) {
-          setCount(data.data.comment_count)
+        const c = data?.data?.comment_count
+        if (typeof c === 'number') {
+          setCount(c)
         }
       })
       .catch(() => {})

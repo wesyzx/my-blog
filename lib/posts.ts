@@ -2,7 +2,7 @@
  * 文章内容管理模块
  *
  * 负责读取 content/posts/ 目录下的 Markdown 文件，
- * 使用 gray-matter 解析 Frontmatter（标题、日期、标签等），
+ * 使用 gray-matter 解析 Frontmatter（标题、日期、分类、标签等），
  * 为博客的文章列表和详情页提供数据。
  */
 import fs from 'fs'
@@ -17,6 +17,7 @@ export interface PostMeta {
   slug: string // 文章唯一标识，取自文件名
   title: string
   date: string
+  category: string // 博文分类：生活 / 技术 / 摄影 / 学习
   tags: string[]
   excerpt: string // 摘要
   cover: string // 封面图 URL
@@ -51,6 +52,7 @@ export function getAllPosts(): PostMeta[] {
         slug,
         title: data.title || '',
         date: data.date ? new Date(data.date).toISOString() : '',
+        category: data.category || '未分类',
         tags: Array.isArray(data.tags)
           ? data.tags.map((tag: unknown) => String(tag))
           : typeof data.tags === 'string'
@@ -81,6 +83,7 @@ export function getPostBySlug(slug: string): Post | null {
       slug,
       title: data.title || '',
       date: data.date ? new Date(data.date).toISOString() : '',
+      category: data.category || '未分类',
       tags: Array.isArray(data.tags)
         ? data.tags.map((tag: unknown) => String(tag))
         : typeof data.tags === 'string'
@@ -94,5 +97,15 @@ export function getPostBySlug(slug: string): Post | null {
   } catch {
     return null
   }
+}
+
+/**
+ * 获取所有文章中出现的分类列表
+ * @returns 分类数组，首位固定为「全部」
+ */
+export function getAllCategories(): string[] {
+  const posts = getAllPosts()
+  const categories = posts.map((post) => post.category)
+  return ['全部', ...Array.from(new Set(categories))]
 }
 

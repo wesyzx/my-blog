@@ -39,6 +39,11 @@ export default function PostCard({ post }: { post: PostMeta }) {
 
       {/* 卡片内容区 */}
       <div className="flex-1 flex flex-col p-5">
+        {/* 分类标签 */}
+        <div className="mb-2">
+          <span className="tag-category">{post.category}</span>
+        </div>
+
         {/* 文章标题 */}
         <h2 className="text-[15px] font-medium leading-relaxed mb-3 flex-1 line-clamp-2">
           <Link

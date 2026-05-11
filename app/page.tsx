@@ -1,63 +1,71 @@
 /**
  * 博客首页
  *
- * 布局结构：
- * 1. 置顶推荐文章（Hero 区域，大图 + 标题 + 摘要）
- * 2. 左侧：文章卡片流（2 列网格）+ 分页
- * 3. 右侧：作者信息卡片 + 标签云
+ * 支持 URL 参数：
+ *   ?category=生活 → 按分类筛选，显示「分类：生活」页头
+ *   ?page=2        → 翻页
  */
-import { getAllPosts } from "@/lib/posts";
+import { getAllPosts, getAllCategories } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
 import Link from "next/link";
 import Image from "next/image";
 
-/** 每页显示文章数量 */
 const POSTS_PER_PAGE = 6;
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ category?: string; page?: string }>;
 }) {
   const params = await searchParams;
+  const currentCategory = params.category ?? "";
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
 
   const allPosts = getAllPosts();
-  const totalPages = Math.max(1, Math.ceil(allPosts.length / POSTS_PER_PAGE));
+  const categories = getAllCategories();
+
+  const filtered = currentCategory
+    ? allPosts.filter((p) => p.category === currentCategory)
+    : allPosts;
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const start = (safePage - 1) * POSTS_PER_PAGE;
-  const pagedPosts = allPosts.slice(start, start + POSTS_PER_PAGE);
+  const pagedPosts = filtered.slice(start, start + POSTS_PER_PAGE);
 
-  // 首页第一篇文章作为 Featured Post
-  const featuredPost = safePage === 1 ? pagedPosts[0] : null;
+  // 首页 + 第1页 + 无分类筛选时展示 Featured Post
+  const featuredPost = !currentCategory && safePage === 1 ? pagedPosts[0] : null;
   const listPosts = featuredPost ? pagedPosts.slice(1) : pagedPosts;
 
   function pageHref(page: number): string {
-    const params = new URLSearchParams();
-    if (page > 1) params.set("page", String(page));
-    const qs = params.toString();
+    const p = new URLSearchParams();
+    if (currentCategory) p.set("category", currentCategory);
+    if (page > 1) p.set("page", String(page));
+    const qs = p.toString();
     return qs ? "/?" + qs : "/";
-  }
-
-  function renderPagination() {
-    if (totalPages <= 1) return null;
-    return (
-      <div className="mt-16 flex items-center justify-center gap-4 text-[13px] font-medium animate-fade-up">
-        {safePage > 1 && (
-          <Link href={pageHref(safePage - 1)} className="hover:text-[var(--color-accent)]">← PREV</Link>
-        )}
-        <span className="text-[var(--color-text-muted)] tracking-widest">{safePage} / {totalPages}</span>
-        {safePage < totalPages && (
-          <Link href={pageHref(safePage + 1)} className="hover:text-[var(--color-accent)]">NEXT →</Link>
-        )}
-      </div>
-    );
   }
 
   return (
     <div className="max-w-[1100px] mx-auto px-6 py-12">
+      {/* 分类筛选时显示页头：分类：生活 */}
+      {currentCategory && (
+        <div className="mb-12 text-center">
+          <h1
+            className="text-[32px] font-bold mb-3"
+            style={{
+              color: 'var(--color-text-primary)',
+              fontFamily: "Georgia, 'Noto Serif SC', serif",
+            }}
+          >
+            分类：{currentCategory}
+          </h1>
+          <p className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
+            共 {filtered.length} 篇文章
+          </p>
+        </div>
+      )}
 
-      {/* 1. 置顶推荐区域 */}
+      {/* Featured Post */}
       {featuredPost && (
         <section className="mb-20 animate-fade-up">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-[var(--color-bg-surface)] rounded-[var(--radius-xl)] p-8 border border-[var(--color-border)]">
@@ -70,6 +78,7 @@ export default async function Home({
               />
             </Link>
             <div className="flex flex-col gap-4">
+              <span className="tag-category self-start">{featuredPost.category}</span>
               <h2 className="text-[28px] md:text-[32px] font-medium leading-tight">
                 <Link href={`/posts/${featuredPost.slug}`} className="hover:text-[var(--color-accent)] transition-colors">
                   {featuredPost.title}
@@ -87,23 +96,49 @@ export default async function Home({
         </section>
       )}
 
-      {/* 2. 主体内容：文章列表 + 侧边栏 */}
+      {/* 主体：文章列表 + 侧边栏 */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-12">
 
-        {/* 左侧文章流 */}
+        {/* 左侧：分类切换 + 文章流 */}
         <main>
+          {/* 分类切换栏 */}
+          <div className="flex flex-wrap gap-3 mb-12 border-b border-[var(--color-border)] pb-6">
+            {categories.map((cat, idx) => {
+              const active = idx === 0 ? !currentCategory : currentCategory === cat;
+              return (
+                <Link
+                  key={cat}
+                  href={idx === 0 ? "/" : `/?category=${cat}`}
+                  className={`tag-pill ${active ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white' : ''}`}
+                >
+                  {cat}
+                </Link>
+              );
+            })}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-up">
             {listPosts.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
           </div>
 
-          {renderPagination()}
+          {/* 分页 */}
+          {totalPages > 1 && (
+            <div className="mt-16 flex items-center justify-center gap-4 text-[13px] font-medium animate-fade-up">
+              {safePage > 1 && (
+                <Link href={pageHref(safePage - 1)} className="hover:text-[var(--color-accent)]">← PREV</Link>
+              )}
+              <span className="text-[var(--color-text-muted)] tracking-widest">{safePage} / {totalPages}</span>
+              {safePage < totalPages && (
+                <Link href={pageHref(safePage + 1)} className="hover:text-[var(--color-accent)]">NEXT →</Link>
+              )}
+            </div>
+          )}
         </main>
 
-        {/* 右侧侧边栏 */}
+        {/* 右侧：作者卡片 + 标签云 */}
         <aside className="hidden lg:block space-y-8 animate-fade-up">
-          {/* 作者卡片 */}
           <div className="sidebar-widget text-center">
             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border border-[var(--color-border)] mb-4">
               <Image
@@ -126,7 +161,6 @@ export default async function Home({
             </div>
           </div>
 
-          {/* 标签云 */}
           <div className="sidebar-widget">
             <h4 className="text-[11px] font-bold tracking-[0.1em] text-[var(--color-text-muted)] mb-4 uppercase">Tags / 标签云</h4>
             <div className="flex flex-wrap gap-2">

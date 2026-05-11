@@ -18,18 +18,18 @@ import './globals.css'
  * 这里的配置会作为默认值应用到所有页面
  */
 export const metadata: Metadata = {
-  // 标题模板：子页面设置 "关于" 时，最终显示为 "关于 | 不赶"
+  // 标题模板：子页面设置 "关于" 时，最终显示为 "关于 | 莫赶"
   title: {
-    default: "不赶",
-    template: "%s | 不赶",
+    default: "莫赶",
+    template: "%s | 莫赶",
   },
-  description: "为食而生，不赶时间",
+  description: "为食而生，莫赶时间",
   // 社交媒体分享时的 OpenGraph 配置
   openGraph: {
-    title: "不赶",
-    description: "为食而生，不赶时间",
+    title: "莫赶",
+    description: "为食而生，莫赶时间",
     url: 'https://veryjack.com',
-    siteName: "不赶",
+    siteName: "莫赶",
     locale: 'zh_CN',
     type: 'website',
   },

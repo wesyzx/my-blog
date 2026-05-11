@@ -21,7 +21,7 @@ interface ArtalkCommentsProps {
 /** Artalk 服务端地址 */
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
 /** 站点名称 */
-const SITE = '不赶'
+const SITE = '莫赶'
 
 export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsProps) {
   /** 评论区 DOM 容器 */

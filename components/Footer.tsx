@@ -62,7 +62,7 @@ export default function Footer() {
           <span style={{ color: 'var(--color-text-muted)' }}>
             © 2016–2026{' '}
             <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>
-              不赶
+              莫赶
             </span>
           </span>
           <span style={{ color: 'var(--color-border-hover)' }}>·</span>

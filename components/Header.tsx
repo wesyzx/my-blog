@@ -82,7 +82,7 @@ export default function Header() {
               fontFamily: 'var(--font-ui)',
             }}
           >
-            不赶
+            莫赶
           </span>
           <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
         </Link>

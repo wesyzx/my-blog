@@ -15,7 +15,7 @@ import ArtalkComments from '@/components/ArtalkComments'
 /** Artalk 服务端地址 */
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
 /** 站点名称，与 Artalk 管理面板一致 */
-const SITE = '不赶'
+const SITE = '莫赶'
 
 export default function MessagePage() {
   /** 留言板评论总数 */

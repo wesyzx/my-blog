@@ -13,7 +13,7 @@ import ArtalkComments from './ArtalkComments'
 /** Artalk 服务端地址，优先读取环境变量 */
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
 /** 站点名称，与 Artalk 管理面板配置一致 */
-const SITE = '不赶'
+const SITE = '莫赶'
 
 interface SayCommentsToggleProps {
   /** 页面唯一标识，如 /say/hello-world */

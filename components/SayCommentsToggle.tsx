@@ -3,7 +3,7 @@
 /**
  * 说说评论收折组件
  *
- * - 通过 Artalk stats API 获取单页评论数，显示为「评论（N）」
+ * - 通过 Artalk API 获取单页评论数，显示为「评论（N）」
  * - 按钮位于右下角，点击展开/收起评论区
  * - 中文括号格式，与页面整体设计保持一致
  */
@@ -30,21 +30,23 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
     const params = new URLSearchParams({
       site_name: SITE,
       page_key: pageKey,
+      limit: '1',
+      flat_mode: 'true',
     })
-    // Artalk stats API：轻量级端点，仅返回评论数量，适合列表页批量获取
-    fetch(`${SERVER}/api/v2/stats/page_comment?${params.toString()}`)
+    // 通过 Artalk 评论接口获取评论总数（stats API 不可靠，改用 comments 接口）
+    fetch(`${SERVER}/api/v2/comments?${params.toString()}`)
       .then((res) => res.json())
       .then((data: any) => {
-        // stats API 返回格式：{ data: N } 或直接返回数字 N
+        // 兼容多种返回格式：{ count: N } / { total: N } / { data: { total: N } } / { data: [...] }
         const t =
-          typeof data?.data === 'number' ? data.data :
-          typeof data === 'number' ? data :
+          typeof data?.count === 'number' ? data.count :
+          typeof data?.total === 'number' ? data.total :
+          typeof data?.data?.total === 'number' ? data.data.total :
+          Array.isArray(data?.data) ? data.data.length :
           null
         if (typeof t === 'number') setCount(t)
       })
-      .catch((e) => {
-        console.error('Artalk stats API 获取失败:', e)
-      })
+      .catch(() => {})
   }, [pageKey])
 
   return (

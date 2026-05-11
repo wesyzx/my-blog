@@ -7,18 +7,14 @@ interface ArtalkCommentsProps {
   pageKey: string
   /** 页面标题（可选，显示在 Artalk 管理面板中） */
   pageTitle?: string
-  /** Artalk 渲染完成后的回调，用于读取评论数等 */
-  onReady?: () => void
 }
 
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
 const SITE = '不赶'
 
-export default function ArtalkComments({ pageKey, pageTitle, onReady }: ArtalkCommentsProps) {
+export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const loadedRef = useRef(false)
-  const onReadyRef = useRef(onReady)
-  onReadyRef.current = onReady
 
   useEffect(() => {
     if (loadedRef.current) return
@@ -44,8 +40,6 @@ export default function ArtalkComments({ pageKey, pageTitle, onReady }: ArtalkCo
           requiredMeta: ['nick', 'mail'],
           flatMode: true,
         })
-        // Artalk 初始化完成后通知外部（延迟确保 DOM 渲染完成）
-        if (onReadyRef.current) setTimeout(onReadyRef.current, 1200)
       }
     }
     document.body.appendChild(script)

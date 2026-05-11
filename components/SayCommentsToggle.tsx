@@ -1,59 +1,43 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import ArtalkComments from './ArtalkComments'
+
+const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
+const SITE = '不赶'
 
 interface SayCommentsToggleProps {
   pageKey: string
   pageTitle: string
 }
 
-const COUNT_CACHE_KEY = 'artalk_count_'
-
-function getCachedCount(pageKey: string): number | null {
-  try {
-    const v = localStorage.getItem(COUNT_CACHE_KEY + pageKey)
-    return v ? parseInt(v, 10) : null
-  } catch { return null }
-}
-
-function setCachedCount(pageKey: string, count: number) {
-  try { localStorage.setItem(COUNT_CACHE_KEY + pageKey, String(count)) } catch {}
-}
-
 /**
  * 说说评论收折组件
- * - 默认显示「评论」按钮
- * - 优先从 localStorage 读取缓存的评论数展示
- * - 展开后监听 Artalk DOM，读取真实评论数并更新缓存
+ * - Artalk API 获取评论数展示在按钮上
+ * - 点击展开/收起评论区
  */
 export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsToggleProps) {
   const [open, setOpen] = useState(false)
-  const [count, setCount] = useState<number | null>(() => getCachedCount(pageKey))
+  const [count, setCount] = useState<number | null>(null)
 
-  // Artalk 加载完成后从 DOM 中读取评论数
-  const onArtalkReady = useCallback(() => {
-    // Artalk 渲染后会在 DOM 中显示评论总数，尝试读取
-    const tryRead = () => {
-      const el = document.querySelector('.atk-comment-count, [data-atk-comment-count]')
-      if (el) {
-        const n = parseInt(el.textContent || '', 10)
-        if (!isNaN(n)) {
-          setCount(n)
-          setCachedCount(pageKey, n)
-          return
-        }
-      }
-      // 降级：数评论列表项
-      const items = document.querySelectorAll('.atk-comment')
-      if (items.length > 0) {
-        setCount(items.length)
-        setCachedCount(pageKey, items.length)
-      }
-    }
-    // Artalk 异步渲染，延迟一下再读
-    setTimeout(tryRead, 800)
-    setTimeout(tryRead, 2000)
+  useEffect(() => {
+    const params = new URLSearchParams({
+      site_name: SITE,
+      page_key: pageKey,
+      limit: '1',
+      flat_mode: 'true',
+    })
+    fetch(`${SERVER}/api/v2/comment?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data: any) => {
+        const t =
+          typeof data?.total === 'number' ? data.total :
+          typeof data?.data?.total === 'number' ? data.data.total :
+          Array.isArray(data?.data) ? data.data.length :
+          null
+        if (typeof t === 'number') setCount(t)
+      })
+      .catch(() => {})
   }, [pageKey])
 
   return (
@@ -65,13 +49,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
       >
         {open ? '收起评论' : `评论${count !== null ? ` (${count})` : ''}`}
       </button>
-      {open && (
-        <ArtalkComments
-          pageKey={pageKey}
-          pageTitle={pageTitle}
-          onReady={onArtalkReady}
-        />
-      )}
+      {open && <ArtalkComments pageKey={pageKey} pageTitle={pageTitle} />}
     </div>
   )
 }

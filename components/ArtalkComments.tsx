@@ -37,6 +37,8 @@ export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsPro
           site: SITE,
           pageKey,
           pageTitle,
+          requiredMeta: ['nick', 'mail'],
+          flatMode: true,
         })
       }
     }

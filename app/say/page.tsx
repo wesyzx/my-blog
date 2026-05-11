@@ -1,5 +1,5 @@
 import { getAllSays } from '@/lib/say'
-import ArtalkComments from '@/components/ArtalkComments'
+import SayCommentsToggle from '@/components/SayCommentsToggle'
 
 function formatDateFull(dateStr: string) {
   const d = new Date(dateStr)
@@ -53,7 +53,7 @@ export default function SayPage() {
               </div>
 
               {/* 评论区 */}
-              <ArtalkComments pageKey={`/say/${say.slug}`} pageTitle={say.slug} />
+              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={say.slug} />
             </div>
           ))}
         </div>

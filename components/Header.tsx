@@ -84,7 +84,7 @@ export default function Header() {
               fontFamily: 'var(--font-ui)',
             }}
           >
-            Can Chou
+            不赶
           </span>
           <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
         </Link>

@@ -10,7 +10,7 @@ interface ArtalkCommentsProps {
 }
 
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
-const SITE = 'Can Chou'
+const SITE = '不赶'
 
 export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsProps) {
   const containerRef = useRef<HTMLDivElement>(null)

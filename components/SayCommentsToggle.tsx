@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import ArtalkComments from './ArtalkComments'
 
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
-const SITE = 'Can Chou'
+const SITE = '不赶'
 
 interface SayCommentsToggleProps {
   pageKey: string

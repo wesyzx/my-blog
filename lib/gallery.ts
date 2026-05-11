@@ -29,9 +29,6 @@ export interface GalleryItem extends GalleryMeta {
   content: string
 }
 
-/** 相册分类列表 */
-export const GALLERY_CATEGORIES = ['全部', '旅游', '美食', '日常', '摄影']
-
 /**
  * 获取所有相册（按日期倒序）
  */

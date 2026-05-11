@@ -1,13 +1,24 @@
 'use client'
 
+/**
+ * 说说评论收折组件
+ *
+ * - 通过 Artalk stats API 获取单页评论数，显示为「评论（N）」
+ * - 按钮位于右下角，点击展开/收起评论区
+ * - 中文括号格式，与页面整体设计保持一致
+ */
 import { useState, useEffect } from 'react'
 import ArtalkComments from './ArtalkComments'
 
+/** Artalk 服务端地址，优先读取环境变量 */
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
+/** 站点名称，与 Artalk 管理面板配置一致 */
 const SITE = '不赶'
 
 interface SayCommentsToggleProps {
+  /** 页面唯一标识，如 /say/hello-world */
   pageKey: string
+  /** 页面标题，显示在 Artalk 管理面板 */
   pageTitle: string
 }
 
@@ -20,11 +31,11 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
       site_name: SITE,
       page_key: pageKey,
     })
-    // 使用 Artalk stats API 获取单页评论数（更轻量、可靠）
+    // Artalk stats API：轻量级端点，仅返回评论数量，适合列表页批量获取
     fetch(`${SERVER}/api/v2/stats/page_comment?${params.toString()}`)
       .then((res) => res.json())
       .then((data: any) => {
-        // stats API 返回 { data: N } 或直接返回数字
+        // stats API 返回格式：{ data: N } 或直接返回数字 N
         const t =
           typeof data?.data === 'number' ? data.data :
           typeof data === 'number' ? data :
@@ -38,6 +49,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
 
   return (
     <div>
+      {/* 按钮右对齐，使用 muted/hint 色系保持低调 */}
       <div className="flex justify-end mt-4">
         <button
           onClick={() => setOpen(!open)}
@@ -47,6 +59,7 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
           {open ? '收起评论' : `评论${count !== null ? `（${count}）` : ''}`}
         </button>
       </div>
+      {/* 展开后才加载 Artalk，避免首屏不必要的 JS/CSS 加载 */}
       {open && <ArtalkComments pageKey={pageKey} pageTitle={pageTitle} />}
     </div>
   )

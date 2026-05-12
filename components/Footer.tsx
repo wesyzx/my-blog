@@ -35,9 +35,9 @@ export default function Footer() {
           <RunningTime />
           <span style={{ color: 'var(--color-border-hover)' }}>|</span>
           <span style={{ color: 'var(--color-text-muted)' }}>
-            总访问{' '}
+            总浏览{' '}
             <span
-              id="busuanzi_value_site_uv"
+              id="busuanzi_value_site_pv"
               style={{ color: 'var(--color-accent)', fontWeight: 500 }}
             >
               -
@@ -46,14 +46,14 @@ export default function Footer() {
           </span>
           <span style={{ color: 'var(--color-border-hover)' }}>|</span>
           <span style={{ color: 'var(--color-text-muted)' }}>
-            今日{' '}
+            访客{' '}
             <span
-              id="busuanzi_value_site_pv"
+              id="busuanzi_value_site_uv"
               style={{ color: 'var(--color-accent)', fontWeight: 500 }}
             >
               -
             </span>{' '}
-            次浏览
+            人
           </span>
         </div>
 

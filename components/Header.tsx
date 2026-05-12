@@ -15,7 +15,6 @@
  */
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 
 /**
@@ -90,17 +89,9 @@ export default function Header() {
         }}
       >
         <div className="max-w-[1100px] mx-auto px-6 h-[52px] flex items-center justify-between">
-          {/* Logo - 头像 + 站名 */}
+          {/* Logo - 红点 + 站名 */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-[28px] h-[28px] rounded-full overflow-hidden flex-shrink-0">
-              <Image
-                src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
-                alt="不赶"
-                width={28}
-                height={28}
-                className="object-cover"
-              />
-            </div>
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--color-accent)' }}></div>
             <span
               className="text-[24px] font-bold tracking-tight"
               style={{
@@ -108,7 +99,7 @@ export default function Header() {
                 fontFamily: 'var(--font-ui)',
               }}
             >
-              不赶
+              莫赶
             </span>
             <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
           </Link>

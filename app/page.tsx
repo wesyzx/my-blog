@@ -2,8 +2,13 @@
  * 博客首页
  *
  * 支持 URL 参数：
- *   ?category=生活 → 按分类筛选，显示「分类：生活」页头
+ *   ?category=生活 → 按分类筛选
  *   ?page=2        → 翻页
+ *
+ * 设计风格参考极简博客：
+ * - 无边框卡片，靠留白分隔
+ * - 优雅的排版层次
+ * - 侧边栏作者信息
  */
 import { getAllPosts, getAllCategories } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
@@ -46,70 +51,114 @@ export default async function Home({
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto px-6 py-12">
-      {/* 分类筛选时显示页头：分类：生活 */}
+    <div className="max-w-[1100px] mx-auto px-6 py-10 md:py-14">
+
+      {/* ===== 分类筛选标题 ===== */}
       {currentCategory && (
-        <div className="mb-12 text-center">
+        <div className="mb-14 text-center">
+          <p className="text-[12px] tracking-[0.15em] uppercase mb-2" style={{ color: 'var(--color-text-hint)' }}>
+            Category
+          </p>
           <h1
-            className="text-[32px] font-bold mb-3"
+            className="text-[36px] font-bold"
             style={{
               color: 'var(--color-text-primary)',
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
-            分类：{currentCategory}
+            {currentCategory}
           </h1>
-          <p className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
-            共 {filtered.length} 篇文章
+          <p className="text-[13px] mt-3" style={{ color: 'var(--color-text-muted)' }}>
+            {filtered.length} 篇文章
           </p>
         </div>
       )}
 
-      {/* Featured Post */}
+      {/* ===== Featured Post ===== */}
       {featuredPost && (
-        <section className="mb-20 animate-fade-up">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-[var(--color-bg-surface)] rounded-[var(--radius-xl)] p-8 border border-[var(--color-border)]">
-            <Link href={`/posts/${featuredPost.slug}`} className="block relative aspect-video rounded-[var(--radius-lg)] overflow-hidden shadow-sm">
+        <section className="mb-20">
+          <div className="relative">
+            <Link
+              href={`/posts/${featuredPost.slug}`}
+              className="block relative aspect-[21/9] w-full overflow-hidden rounded-xl mb-6"
+              style={{ backgroundColor: 'var(--color-bg-surface)' }}
+            >
               <Image
                 src={featuredPost.cover || '/next.svg'}
                 alt={featuredPost.title}
                 fill
-                className="object-cover hover:scale-105 transition-transform duration-700"
+                className="object-cover hover:scale-[1.02] transition-transform duration-700"
+                priority
               />
             </Link>
-            <div className="flex flex-col gap-4">
-              <span className="tag-category self-start">{featuredPost.category}</span>
-              <h2 className="text-[28px] md:text-[32px] font-medium leading-tight">
-                <Link href={`/posts/${featuredPost.slug}`} className="hover:text-[var(--color-accent)] transition-colors">
+            <div className="max-w-[680px]">
+              <div className="flex items-center gap-3 mb-4">
+                <span
+                  className="text-[11px] font-medium tracking-[0.1em] px-2.5 py-1 rounded-full border"
+                  style={{
+                    color: 'var(--color-accent)',
+                    borderColor: 'var(--color-accent)',
+                    opacity: 0.7,
+                  }}
+                >
+                  {featuredPost.category}
+                </span>
+                <span className="text-[12px] tracking-widest" style={{ color: 'var(--color-text-hint)' }}>
+                  FEATURED
+                </span>
+              </div>
+              <h2 className="text-[26px] md:text-[32px] font-bold leading-[1.35] mb-4">
+                <Link
+                  href={`/posts/${featuredPost.slug}`}
+                  className="hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
                   {featuredPost.title}
                 </Link>
               </h2>
-              <p className="text-[15px] text-[var(--color-text-secondary)] line-clamp-3">
+              <p className="text-[15px] leading-[1.8] line-clamp-2" style={{ color: 'var(--color-text-secondary)' }}>
                 {featuredPost.excerpt}
               </p>
-              <div className="flex items-center gap-4 mt-4 text-[12px] text-[var(--color-text-muted)]">
-                 <span>{new Date(featuredPost.date).toLocaleDateString('zh-CN')}</span>
-                 <span className="subtitle-en opacity-40">FEATURED LOG</span>
-              </div>
+              <time className="inline-block mt-4 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
+                {new Date(featuredPost.date).toLocaleDateString('zh-CN', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </time>
             </div>
           </div>
         </section>
       )}
 
-      {/* 主体：文章列表 + 侧边栏 */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-12">
+      {/* ===== 主体：文章列表 + 侧边栏 ===== */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-14">
 
         {/* 左侧：分类切换 + 文章流 */}
         <main>
-          {/* 分类切换栏 */}
-          <div className="flex flex-wrap gap-3 mb-12 border-b border-[var(--color-border)] pb-6">
-            {categories.map((cat, idx) => {
-              const active = idx === 0 ? !currentCategory : currentCategory === cat;
+          {/* 分类切换栏 — 轻量化 */}
+          <div className="flex flex-wrap items-center gap-1 mb-14">
+            <Link
+              href="/"
+              className={`text-[13px] font-medium px-3.5 py-1.5 rounded-full transition-colors ${
+                !currentCategory
+                  ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-page)]'
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
+              }`}
+            >
+              全部
+            </Link>
+            {categories.map((cat) => {
+              const active = currentCategory === cat;
               return (
                 <Link
                   key={cat}
-                  href={idx === 0 ? "/" : `/?category=${cat}`}
-                  className={`tag-pill ${active ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-white' : ''}`}
+                  href={`/?category=${cat}`}
+                  className={`text-[13px] font-medium px-3.5 py-1.5 rounded-full transition-colors ${
+                    active
+                      ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-page)]'
+                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
+                  }`}
                 >
                   {cat}
                 </Link>
@@ -117,7 +166,8 @@ export default async function Home({
             })}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-up">
+          {/* 文章卡片网格 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
             {listPosts.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
@@ -125,48 +175,97 @@ export default async function Home({
 
           {/* 分页 */}
           {totalPages > 1 && (
-            <div className="mt-16 flex items-center justify-center gap-4 text-[13px] font-medium animate-fade-up">
+            <div className="mt-16 flex items-center justify-center gap-6 text-[13px] font-medium">
               {safePage > 1 && (
-                <Link href={pageHref(safePage - 1)} className="hover:text-[var(--color-accent)]">← PREV</Link>
+                <Link
+                  href={pageHref(safePage - 1)}
+                  className="hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  ← PREV
+                </Link>
               )}
-              <span className="text-[var(--color-text-muted)] tracking-widest">{safePage} / {totalPages}</span>
+              <span className="tracking-[0.15em]" style={{ color: 'var(--color-text-hint)' }}>
+                {safePage} / {totalPages}
+              </span>
               {safePage < totalPages && (
-                <Link href={pageHref(safePage + 1)} className="hover:text-[var(--color-accent)]">NEXT →</Link>
+                <Link
+                  href={pageHref(safePage + 1)}
+                  className="hover:opacity-70 transition-opacity"
+                  style={{ color: 'var(--color-text-secondary)' }}
+                >
+                  NEXT →
+                </Link>
               )}
             </div>
           )}
         </main>
 
-        {/* 右侧：作者卡片 + 标签云 */}
-        <aside className="hidden lg:block space-y-8 animate-fade-up">
-          <div className="sidebar-widget text-center">
-            <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border border-[var(--color-border)] mb-4">
-              <Image
-                src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
-                alt="Can Chou"
-                width={80}
-                height={80}
-                className="object-cover"
-              />
-            </div>
-            <h3 className="text-[16px] font-medium mb-1">Can Chou</h3>
-            <p className="subtitle-en mb-4">The Unhurried Pilot</p>
-            <p className="text-[13px] text-[var(--color-text-muted)] leading-relaxed px-2">
-              为食而生，保持克制，记录日常。
-            </p>
-            <div className="flex justify-center gap-3 mt-6">
-               <a href="#" className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[12px] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]">𝕏</a>
-               <a href="#" className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[12px] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]">GH</a>
-               <a href="#" className="w-8 h-8 rounded-full border border-[var(--color-border)] flex items-center justify-center text-[12px] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]">RSS</a>
-            </div>
-          </div>
+        {/* 右侧：侧边栏 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-[80px] space-y-10">
 
-          <div className="sidebar-widget">
-            <h4 className="text-[11px] font-bold tracking-[0.1em] text-[var(--color-text-muted)] mb-4 uppercase">Tags / 标签云</h4>
-            <div className="flex flex-wrap gap-2">
-               {['摄影', '旅行', '代码', '美食', '思考'].map(tag => (
-                 <span key={tag} className="tag-pill text-[11px] px-3 py-1 cursor-pointer">#{tag}</span>
-               ))}
+            {/* 作者卡片 */}
+            <div className="text-center">
+              <div className="w-[72px] h-[72px] mx-auto rounded-full overflow-hidden mb-3"
+                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
+              >
+                <Image
+                  src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
+                  alt="Can Chou"
+                  width={72}
+                  height={72}
+                  className="object-cover"
+                />
+              </div>
+              <h3 className="text-[15px] font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
+                Can Chou
+              </h3>
+              <p className="text-[11px] tracking-[0.08em] mb-3" style={{ color: 'var(--color-text-hint)' }}>
+                THE UNHURRIED PILOT
+              </p>
+              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                为食而生，保持克制，记录日常。
+              </p>
+
+              <div className="flex justify-center gap-4 mt-5">
+                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+                </a>
+                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                </a>
+                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+                </a>
+              </div>
+            </div>
+
+            {/* 分隔线 */}
+            <div style={{ borderTop: '0.5px solid var(--color-border)' }} />
+
+            {/* 标签云 */}
+            <div>
+              <h4
+                className="text-[10px] font-bold tracking-[0.15em] uppercase mb-4"
+                style={{ color: 'var(--color-text-hint)' }}
+              >
+                Tags
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {['摄影', '旅行', '代码', '美食', '思考'].map(tag => (
+                  <span
+                    key={tag}
+                    className="text-[12px] px-3 py-1 rounded-full cursor-pointer transition-colors hover:text-[var(--color-accent)]"
+                    style={{
+                      color: 'var(--color-text-muted)',
+                      backgroundColor: 'var(--color-bg-surface)',
+                    }}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </aside>

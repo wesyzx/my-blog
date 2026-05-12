@@ -5,10 +5,7 @@
  *   ?category=生活 → 按分类筛选
  *   ?page=2        → 翻页
  *
- * 设计风格参考极简博客：
- * - 无边框卡片，靠留白分隔
- * - 优雅的排版层次
- * - 侧边栏作者信息
+ * 参考图2布局：作者信息在右上角，文章列表在下
  */
 import { getAllPosts, getAllCategories } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
@@ -16,6 +13,46 @@ import Link from "next/link";
 import Image from "next/image";
 
 const POSTS_PER_PAGE = 6;
+
+/** 作者卡片（复用组件） */
+function AuthorCard() {
+  return (
+    <div className="text-center">
+      <div
+        className="w-[64px] h-[64px] mx-auto rounded-full overflow-hidden mb-3"
+        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
+      >
+        <Image
+          src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
+          alt="Can Chou"
+          width={64}
+          height={64}
+          className="object-cover"
+        />
+      </div>
+      <h3 className="text-[15px] font-semibold mb-0.5" style={{ color: 'var(--color-text-primary)' }}>
+        Can Chou
+      </h3>
+      <p className="text-[11px] tracking-[0.06em] mb-3" style={{ color: 'var(--color-text-hint)' }}>
+        THE UNHURRIED PILOT
+      </p>
+      <p className="text-[12px] leading-relaxed px-1" style={{ color: 'var(--color-text-muted)' }}>
+        为食而生，保持克制，记录日常。
+      </p>
+      <div className="flex justify-center gap-3 mt-4">
+        <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+        </a>
+        <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        </a>
+        <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
+        </a>
+      </div>
+    </div>
+  );
+}
 
 export default async function Home({
   searchParams,
@@ -38,7 +75,6 @@ export default async function Home({
   const start = (safePage - 1) * POSTS_PER_PAGE;
   const pagedPosts = filtered.slice(start, start + POSTS_PER_PAGE);
 
-  // 首页 + 第1页 + 无分类筛选时展示 Featured Post
   const featuredPost = !currentCategory && safePage === 1 ? pagedPosts[0] : null;
   const listPosts = featuredPost ? pagedPosts.slice(1) : pagedPosts;
 
@@ -74,13 +110,14 @@ export default async function Home({
         </div>
       )}
 
-      {/* ===== Featured Post ===== */}
+      {/* ===== 上排：Featured Post（左）+ 作者卡片（右上） ===== */}
       {featuredPost && (
-        <section className="mb-20">
-          <div className="relative">
+        <section className="mb-14 grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10">
+          {/* Featured Post */}
+          <div>
             <Link
               href={`/posts/${featuredPost.slug}`}
-              className="block relative aspect-[21/9] w-full overflow-hidden rounded-xl mb-6"
+              className="block relative aspect-[21/9] w-full overflow-hidden rounded-xl mb-5"
               style={{ backgroundColor: 'var(--color-bg-surface)' }}
             >
               <Image
@@ -91,185 +128,120 @@ export default async function Home({
                 priority
               />
             </Link>
-            <div className="max-w-[680px]">
-              <div className="flex items-center gap-3 mb-4">
-                <span
-                  className="text-[11px] font-medium tracking-[0.1em] px-2.5 py-1 rounded-full border"
-                  style={{
-                    color: 'var(--color-accent)',
-                    borderColor: 'var(--color-accent)',
-                    opacity: 0.7,
-                  }}
-                >
-                  {featuredPost.category}
-                </span>
-                <span className="text-[12px] tracking-widest" style={{ color: 'var(--color-text-hint)' }}>
-                  FEATURED
-                </span>
-              </div>
-              <h2 className="text-[26px] md:text-[32px] font-bold leading-[1.35] mb-4">
-                <Link
-                  href={`/posts/${featuredPost.slug}`}
-                  className="hover:opacity-70 transition-opacity"
-                  style={{ color: 'var(--color-text-primary)' }}
-                >
-                  {featuredPost.title}
-                </Link>
-              </h2>
-              <p className="text-[15px] leading-[1.8] line-clamp-2" style={{ color: 'var(--color-text-secondary)' }}>
-                {featuredPost.excerpt}
-              </p>
-              <time className="inline-block mt-4 text-[13px]" style={{ color: 'var(--color-text-muted)' }}>
-                {new Date(featuredPost.date).toLocaleDateString('zh-CN', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </time>
-            </div>
+            <span
+              className="inline-block text-[11px] font-medium tracking-[0.1em] px-2.5 py-1 rounded-full border mb-3"
+              style={{ color: 'var(--color-accent)', borderColor: 'var(--color-accent)', opacity: 0.7 }}
+            >
+              {featuredPost.category}
+            </span>
+            <h2 className="text-[24px] md:text-[28px] font-bold leading-[1.35] mb-3">
+              <Link href={`/posts/${featuredPost.slug}`} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-text-primary)' }}>
+                {featuredPost.title}
+              </Link>
+            </h2>
+            <p className="text-[14px] leading-[1.8] line-clamp-2" style={{ color: 'var(--color-text-secondary)' }}>
+              {featuredPost.excerpt}
+            </p>
           </div>
+
+          {/* 作者卡片 — 右上角 */}
+          <aside className="hidden lg:block pt-2">
+            <AuthorCard />
+          </aside>
         </section>
       )}
 
-      {/* ===== 主体：文章列表 + 侧边栏 ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-14">
-
-        {/* 左侧：分类切换 + 文章流 */}
-        <main>
-          {/* 分类切换栏 — 轻量化 */}
-          <div className="flex flex-wrap items-center gap-1 mb-14">
+      {/* ===== 下排：分类切换 + 文章列表 ===== */}
+      {/* 分类切换栏 */}
+      <div className="flex flex-wrap items-center gap-1 mb-10">
+        <Link
+          href="/"
+          className={`text-[13px] font-medium px-3.5 py-1.5 rounded-full transition-colors ${
+            !currentCategory
+              ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-page)]'
+              : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
+          }`}
+        >
+          全部
+        </Link>
+        {categories.map((cat) => {
+          const active = currentCategory === cat;
+          return (
             <Link
-              href="/"
+              key={cat}
+              href={`/?category=${cat}`}
               className={`text-[13px] font-medium px-3.5 py-1.5 rounded-full transition-colors ${
-                !currentCategory
+                active
                   ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-page)]'
                   : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
               }`}
             >
-              全部
+              {cat}
             </Link>
-            {categories.map((cat) => {
-              const active = currentCategory === cat;
-              return (
-                <Link
-                  key={cat}
-                  href={`/?category=${cat}`}
-                  className={`text-[13px] font-medium px-3.5 py-1.5 rounded-full transition-colors ${
-                    active
-                      ? 'bg-[var(--color-text-primary)] text-[var(--color-bg-page)]'
-                      : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-surface)]'
-                  }`}
-                >
-                  {cat}
-                </Link>
-              );
-            })}
-          </div>
+          );
+        })}
+      </div>
 
-          {/* 文章卡片网格 */}
+      {/* 文章列表区 */}
+      {featuredPost ? (
+        /* 有 Featured 时：文章全宽两列，无侧边栏 */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
+          {listPosts.map((post) => (
+            <PostCard key={post.slug} post={post} />
+          ))}
+        </div>
+      ) : (
+        /* 无 Featured 时：文章（左）+ 侧边栏（右） */
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-12">
             {listPosts.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
           </div>
-
-          {/* 分页 */}
-          {totalPages > 1 && (
-            <div className="mt-16 flex items-center justify-center gap-6 text-[13px] font-medium">
-              {safePage > 1 && (
-                <Link
-                  href={pageHref(safePage - 1)}
-                  className="hover:opacity-70 transition-opacity"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  ← PREV
-                </Link>
-              )}
-              <span className="tracking-[0.15em]" style={{ color: 'var(--color-text-hint)' }}>
-                {safePage} / {totalPages}
-              </span>
-              {safePage < totalPages && (
-                <Link
-                  href={pageHref(safePage + 1)}
-                  className="hover:opacity-70 transition-opacity"
-                  style={{ color: 'var(--color-text-secondary)' }}
-                >
-                  NEXT →
-                </Link>
-              )}
+          <aside className="hidden lg:block">
+            <div className="sticky top-[80px] space-y-10">
+              <AuthorCard />
+              <div style={{ borderTop: '0.5px solid var(--color-border)' }} />
+              <div>
+                <h4 className="text-[10px] font-bold tracking-[0.15em] uppercase mb-4" style={{ color: 'var(--color-text-hint)' }}>
+                  Tags
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(tag => (
+                    <Link
+                      key={tag}
+                      href={`/?category=${tag}`}
+                      className="text-[12px] px-3 py-1 rounded-full transition-colors hover:text-[var(--color-accent)]"
+                      style={{ color: 'var(--color-text-muted)', backgroundColor: 'var(--color-bg-surface)' }}
+                    >
+                      {tag}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
+          </aside>
+        </div>
+      )}
+
+      {/* 分页 */}
+      {totalPages > 1 && (
+        <div className="mt-16 flex items-center justify-center gap-6 text-[13px] font-medium">
+          {safePage > 1 && (
+            <Link href={pageHref(safePage - 1)} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-text-secondary)' }}>
+              ← PREV
+            </Link>
           )}
-        </main>
-
-        {/* 右侧：侧边栏 */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-[80px] space-y-10">
-
-            {/* 作者卡片 */}
-            <div className="text-center">
-              <div className="w-[72px] h-[72px] mx-auto rounded-full overflow-hidden mb-3"
-                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}
-              >
-                <Image
-                  src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
-                  alt="Can Chou"
-                  width={72}
-                  height={72}
-                  className="object-cover"
-                />
-              </div>
-              <h3 className="text-[15px] font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>
-                Can Chou
-              </h3>
-              <p className="text-[11px] tracking-[0.08em] mb-3" style={{ color: 'var(--color-text-hint)' }}>
-                THE UNHURRIED PILOT
-              </p>
-              <p className="text-[13px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-                为食而生，保持克制，记录日常。
-              </p>
-
-              <div className="flex justify-center gap-4 mt-5">
-                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
-                </a>
-                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
-                </a>
-                <a href="#" className="p-1.5 rounded-full hover:bg-[var(--color-bg-surface)] transition-colors" style={{ color: 'var(--color-text-muted)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 11a9 9 0 019 9"/><path d="M4 4a16 16 0 0116 16"/><circle cx="5" cy="19" r="1"/></svg>
-                </a>
-              </div>
-            </div>
-
-            {/* 分隔线 */}
-            <div style={{ borderTop: '0.5px solid var(--color-border)' }} />
-
-            {/* 标签云 */}
-            <div>
-              <h4
-                className="text-[10px] font-bold tracking-[0.15em] uppercase mb-4"
-                style={{ color: 'var(--color-text-hint)' }}
-              >
-                Tags
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {['摄影', '旅行', '代码', '美食', '思考'].map(tag => (
-                  <span
-                    key={tag}
-                    className="text-[12px] px-3 py-1 rounded-full cursor-pointer transition-colors hover:text-[var(--color-accent)]"
-                    style={{
-                      color: 'var(--color-text-muted)',
-                      backgroundColor: 'var(--color-bg-surface)',
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </aside>
-      </div>
+          <span className="tracking-[0.15em]" style={{ color: 'var(--color-text-hint)' }}>
+            {safePage} / {totalPages}
+          </span>
+          {safePage < totalPages && (
+            <Link href={pageHref(safePage + 1)} className="hover:opacity-70 transition-opacity" style={{ color: 'var(--color-text-secondary)' }}>
+              NEXT →
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

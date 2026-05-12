@@ -30,7 +30,7 @@ export default function Footer() {
       }}
     >
       <div className="max-w-[1100px] mx-auto px-6 py-10">
-        {/* 第一行：运行时间 + 访客统计 */}
+        {/* 第一行：运行时间 + 浏览统计 */}
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] mb-5">
           <RunningTime />
           <span style={{ color: 'var(--color-border-hover)' }}>|</span>
@@ -43,17 +43,6 @@ export default function Footer() {
               -
             </span>{' '}
             次
-          </span>
-          <span style={{ color: 'var(--color-border-hover)' }}>|</span>
-          <span style={{ color: 'var(--color-text-muted)' }}>
-            访客{' '}
-            <span
-              id="busuanzi_value_site_uv"
-              style={{ color: 'var(--color-accent)', fontWeight: 500 }}
-            >
-              -
-            </span>{' '}
-            人
           </span>
         </div>
 

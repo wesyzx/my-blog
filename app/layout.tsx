@@ -47,7 +47,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
-        {/* 
+        {/* RSS 自动发现：让 RSS 阅读器可以找到订阅地址 */}
+        <link rel="alternate" type="application/rss+xml" title="莫赶 RSS" href="/rss.xml" />
+        {/*
           关键脚本：防闪烁主题检测
           在 React 加载之前运行，从本地存储读取用户的主题偏好（深色/浅色）
           并立即应用 data-theme 属性，防止页面加载时出现颜色瞬间跳变。

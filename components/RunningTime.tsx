@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-const START_DATE = new Date('2016-01-01T00:00:00+08:00')
+const START_DATE = new Date('2025-09-25T00:00:00+08:00')
 
 function calcElapsed() {
   const now = new Date()

@@ -81,23 +81,6 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* 又拍云联盟：免费 CDN + 云存储赞助 */}
-        <div className="flex items-center justify-center mb-5">
-          <a
-            href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-70 transition-opacity"
-            style={{ color: 'var(--color-text-hint)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
-              <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8"/>
-              <path d="M40 56c4-6 12-8 18-4s6 14 2 20M78 78c3-6 12-8 18-2s6 14-2 20" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
-            </svg>
-            本网站由又拍云提供 CDN 加速 / 云存储服务
-          </a>
-        </div>
-
         {/* 第三行：技术标识 */}
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
           <Link
@@ -149,6 +132,29 @@ export default function Footer() {
             </svg>
             EdgeOne
           </span>
+
+          <Link
+            href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+            style={{
+              color: 'var(--color-text-hint)',
+              borderColor: 'var(--color-border)',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
+              <defs>
+                <linearGradient id="upy-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#1DB0F0"/>
+                  <stop offset="100%" stopColor="#00C851"/>
+                </linearGradient>
+              </defs>
+              <circle cx="64" cy="64" r="58" stroke="url(#upy-grad)" strokeWidth="8" fill="none"/>
+              <path d="M82 48c-3 6-12 8-18 2s-4-14 2-20M52 76c-4-6-12-8-18-2s-4 14 3 20" stroke="url(#upy-grad)" strokeWidth="7" strokeLinecap="round"/>
+            </svg>
+            又拍云
+          </Link>
         </div>
       </div>
     </footer>

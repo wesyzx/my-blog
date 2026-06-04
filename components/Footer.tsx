@@ -81,6 +81,23 @@ export default function Footer() {
           </a>
         </div>
 
+        {/* 又拍云联盟：免费 CDN + 云存储赞助 */}
+        <div className="flex items-center justify-center mb-5">
+          <a
+            href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[12px] hover:opacity-70 transition-opacity"
+            style={{ color: 'var(--color-text-hint)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 128 128" fill="none">
+              <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="8"/>
+              <path d="M40 56c4-6 12-8 18-4s6 14 2 20M78 78c3-6 12-8 18-2s6 14-2 20" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+            </svg>
+            本网站由又拍云提供 CDN 加速 / 云存储服务
+          </a>
+        </div>
+
         {/* 第三行：技术标识 */}
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
           <Link

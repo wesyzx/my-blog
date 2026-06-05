@@ -14,10 +14,10 @@ import RunningTime from './RunningTime'
 
 export default function Footer() {
   useEffect(() => {
-    // 加载不蒜子访客统计脚本
+    // 杜老师自建不蒜子（比官方 busuanzi.ibruce.info 更稳定）
     const script = document.createElement('script')
-    script.async = true
-    script.src = '//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js'
+    script.src = 'https://jsd.dusays.com/npm/penndu@17.0.0/bsz.js'
+    script.setAttribute('data-prefix', 'busuanzi_value')  // 兼容原版 ID
     document.body.appendChild(script)
   }, [])
 
@@ -36,13 +36,15 @@ export default function Footer() {
           <span style={{ color: 'var(--color-border-hover)' }}>|</span>
           <span style={{ color: 'var(--color-text-muted)' }}>
             总浏览{' '}
-            <span
-              id="busuanzi_value_site_pv"
-              style={{ color: 'var(--color-accent)', fontWeight: 500 }}
-            >
-              -
-            </span>{' '}
-            次
+            <span id="busuanzi_container_site_pv">
+              <span
+                id="busuanzi_value_site_pv"
+                style={{ color: 'var(--color-accent)', fontWeight: 500 }}
+              >
+                -
+              </span>{' '}
+              次
+            </span>
           </span>
         </div>
 

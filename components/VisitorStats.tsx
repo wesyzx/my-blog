@@ -24,23 +24,21 @@ export default function VisitorStats() {
     const ctrl = new AbortController()
 
     async function run() {
-      // 记录 PV
       try {
         await fetch(`${SERVER}/api/v2/pages/pv`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             page_key: pathname,
-            page_title: typeof document !== 'undefined' ? document.title : pathname,
+            page_title: document.title,
             site_name: SITE,
           }),
           signal: ctrl.signal,
         })
-      } catch (e) {
-        console.error('[VisitorStats] PV record failed:', e)
+      } catch {
+        // CORS 或网络错误，不阻断展示
       }
 
-      // 查询汇总
       try {
         const sitePages = ['/', '/about', '/food', '/gallery', '/message', '/say']
         const res = await fetch(
@@ -48,7 +46,6 @@ export default function VisitorStats() {
           { signal: ctrl.signal }
         )
         const json = await res.json()
-        console.log('[VisitorStats] stats response:', json)
         if (json.data) {
           const total = Object.values(json.data).reduce(
             (sum: number, v: unknown) => sum + (typeof v === 'number' ? v : 0),
@@ -56,8 +53,8 @@ export default function VisitorStats() {
           )
           setSitePv(total)
         }
-      } catch (e) {
-        console.error('[VisitorStats] stats query failed:', e)
+      } catch {
+        // 查询失败保持 -
       }
     }
 

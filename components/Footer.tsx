@@ -4,23 +4,15 @@
  * 全局底部栏组件
  *
  * 展示三行信息：
- * 1. 博客运行时间 + 不蒜子访客统计
+ * 1. 博客运行时间 + 自建访客统计
  * 2. 版权声明 + 许可证
  * 3. ICP 备案号 + 技术栈标识（Next.js / Cloudflare / EdgeOne）
  */
-import { useEffect } from 'react'
 import Link from 'next/link'
 import RunningTime from './RunningTime'
+import VisitorStats from './VisitorStats'
 
 export default function Footer() {
-  useEffect(() => {
-    // 杜老师自建不蒜子（比官方 busuanzi.ibruce.info 更稳定）
-    const script = document.createElement('script')
-    script.src = 'https://jsd.dusays.com/npm/penndu@17.0.0/bsz.js'
-    script.setAttribute('data-prefix', 'busuanzi_value')  // 兼容原版 ID
-    document.body.appendChild(script)
-  }, [])
-
   return (
     <footer
       className="mt-[64px] border-t transition-colors duration-300"
@@ -34,18 +26,7 @@ export default function Footer() {
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] mb-5">
           <RunningTime />
           <span style={{ color: 'var(--color-border-hover)' }}>|</span>
-          <span style={{ color: 'var(--color-text-muted)' }}>
-            总浏览{' '}
-            <span id="busuanzi_container_site_pv">
-              <span
-                id="busuanzi_value_site_pv"
-                style={{ color: 'var(--color-accent)', fontWeight: 500 }}
-              >
-                -
-              </span>{' '}
-              次
-            </span>
-          </span>
+          <VisitorStats />
         </div>
 
         {/* 第二行：版权 + 协议 */}

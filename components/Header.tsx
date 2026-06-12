@@ -28,11 +28,30 @@ const postMenuItems = [
 ]
 
 /**
+ * 抽屉下拉菜单项
+ */
+const drawerMenuItems = [
+  { label: '好物', href: '/more/goods' },
+  { label: '应用', href: '/more/apps' },
+  { label: '书影音', href: '/more/media' },
+  { label: '友情链接', href: '/more/friends' },
+  { label: '愿望清单', href: '/more/wishlist' },
+  { label: '人生地图', href: '/more/map' },
+]
+
+/**
  * 主导航菜单项
  */
-const navItems = [
-  { label: '博文', href: '/', hasDropdown: true },
-  { label: '抽屉', href: '/more' },
+type NavItem = {
+  label: string;
+  href: string;
+  hasDropdown?: boolean;
+  subItems?: { label: string; href: string }[];
+};
+
+const navItems: NavItem[] = [
+  { label: '博文', href: '/', hasDropdown: true, subItems: postMenuItems },
+  { label: '抽屉', href: '/more', hasDropdown: true, subItems: drawerMenuItems },
   { label: '说说', href: '/say' },
   { label: '美食', href: '/food' },
   { label: '相册', href: '/gallery' },

@@ -189,9 +189,9 @@ export default function Header() {
                   >
                     {item.label}
                   </Link>
-                  {item.hasDropdown && (
+                  {item.hasDropdown && item.subItems && (
                     <div className="grid grid-cols-2 gap-3 mt-3 ml-2">
-                      {postMenuItems.map((sub) => (
+                      {item.subItems.map((sub) => (
                         <Link
                           key={sub.href}
                           href={sub.href}

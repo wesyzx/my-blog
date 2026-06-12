@@ -32,6 +32,7 @@ const postMenuItems = [
  */
 const navItems = [
   { label: '博文', href: '/', hasDropdown: true },
+  { label: '抽屉', href: '/more' },
   { label: '说说', href: '/say' },
   { label: '美食', href: '/food' },
   { label: '相册', href: '/gallery' },

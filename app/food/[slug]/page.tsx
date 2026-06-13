@@ -11,7 +11,7 @@ function formatDate(dateStr: string) {
 }
 
 export async function generateStaticParams() {
-  const posts = getAllFoodPosts()
+  const posts = await getAllFoodPosts()
   return posts.map((post) => ({ slug: post.slug }))
 }
 
@@ -21,7 +21,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = getFoodPostBySlug(slug)
+  const post = await getFoodPostBySlug(slug)
   if (!post) return {}
   return {
     title: `${post.title} - 美食地图`,
@@ -35,10 +35,11 @@ export default async function FoodPostPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const post = getFoodPostBySlug(slug)
+  const post = await getFoodPostBySlug(slug)
   if (!post) notFound()
 
-  const relatedPosts = getAllFoodPosts()
+  const allPosts = await getAllFoodPosts()
+  const relatedPosts = allPosts
     .filter((p) => p.slug !== slug)
     .slice(0, 3)
 

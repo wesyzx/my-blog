@@ -13,9 +13,9 @@ export default defineConfig({
     publicFolder: "public",
   },
   media: {
-    tina: {
-      mediaRoot: "uploads",
-      publicFolder: "public",
+    loadCustomStore: async () => {
+      const pack = await import("./upyun-media-store");
+      return pack.UpyunMediaStore;
     },
   },
   schema: {

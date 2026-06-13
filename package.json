@@ -23,6 +23,7 @@
     "react-photo-album": "^3.6.0",
     "rss-parser": "^3.13.0",
     "tinacms": "^3.9.1",
+    "upyun": "^3.4.6",
     "yet-another-react-lightbox": "^3.32.0"
   },
   "devDependencies": {

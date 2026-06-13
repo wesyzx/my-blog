@@ -7,8 +7,8 @@ export const metadata = {
   description: '记录探访过的美食，用味蕾丈量这座城市。',
 }
 
-export default function FoodPage() {
-  const posts = getAllFoodPosts()
+export default async function FoodPage() {
+  const posts = await getAllFoodPosts()
 
   return (
     <div className="max-w-[1100px] mx-auto px-6 py-12 md:py-20 animate-fade-up">

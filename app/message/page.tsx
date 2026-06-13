@@ -4,6 +4,7 @@
  * 留言板页面
  *
  * 已应用极简单列布局标准。
+ * 移除了占位图，优化了纵向间距以减少空白感。
  */
 import { useState, useEffect } from 'react'
 import ArtalkComments from '@/components/ArtalkComments'
@@ -38,7 +39,7 @@ export default function MessagePage() {
   return (
     <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
       {/* 页面头部 */}
-      <header className="mb-16">
+      <header className="mb-12">
         <h1
           className="text-[32px] md:text-[40px] font-bold mb-4"
           style={{
@@ -48,7 +49,7 @@ export default function MessagePage() {
         >
           留言板
         </h1>
-        <div className="flex items-center gap-4 text-[15px] text-[var(--color-text-muted)]">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-[15px] text-[var(--color-text-muted)]">
           <p>感谢缘分让我们相遇，一切都是最好的安排。</p>
           {count !== null && (
             <span className="text-[var(--color-accent)] font-medium">
@@ -58,14 +59,8 @@ export default function MessagePage() {
         </div>
       </header>
 
-      {/* 装饰头图 */}
-      <div className="h-[200px] md:h-[300px] bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] flex items-center justify-center mb-16 overflow-hidden">
-        <span className="text-[13px] text-[var(--color-text-hint)] uppercase tracking-widest opacity-30">
-          Message Board Header
-        </span>
-      </div>
-
-      <div className="prose max-w-none mb-16">
+      {/* 欢迎引导语 */}
+      <div className="prose max-w-none mb-12">
         <blockquote
           className="border-l-[3px] border-[var(--color-accent)] bg-[var(--color-bg-surface)] px-6 py-4 rounded-r-lg not-italic text-[16px] text-[var(--color-text-secondary)]"
         >
@@ -74,7 +69,7 @@ export default function MessagePage() {
       </div>
 
       {/* 评论区 */}
-      <div className="mt-20">
+      <div className="mt-12">
         <ArtalkComments pageKey="/message" pageTitle="留言板" />
       </div>
     </div>

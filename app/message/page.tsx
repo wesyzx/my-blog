@@ -74,7 +74,7 @@ export default function MessagePage() {
       </div>
 
       {/* 评论区 */}
-      <div className="pt-10 border-t border-[var(--color-border)]">
+      <div className="mt-20">
         <ArtalkComments pageKey="/message" pageTitle="留言板" />
       </div>
     </div>

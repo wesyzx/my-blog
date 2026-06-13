@@ -57,7 +57,7 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
   )
 
   return (
-    <div className="max-w-[800px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+    <div className="max-w-[1100px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
       {/* 页面头部 */}
       <header className="mb-16">
         <h1

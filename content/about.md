@@ -11,4 +11,4 @@
 
 * ✉ Email: wesyzx\@gmail.com
 * ◆ GitHub: github.com/wesyzx
-* 𝕏 Twitter: [@](https://twitter.com)wesyzx
+* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)

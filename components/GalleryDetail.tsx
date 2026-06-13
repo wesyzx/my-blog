@@ -34,11 +34,11 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
   )
 
   return (
-    <article className="max-w-[1100px] mx-auto">
-      {/* 标题 */}
-      <div className="text-center mb-8">
+    <div className="max-w-[1100px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      {/* 页面头部 */}
+      <header className="mb-16">
         <h1
-          className="text-[28px] md:text-[34px] font-bold mb-3"
+          className="text-[32px] md:text-[40px] font-bold mb-4"
           style={{
             color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
@@ -47,53 +47,53 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
           {album.title}
         </h1>
         {album.excerpt && (
-          <p className="text-[14px]" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-[15px] text-[var(--color-text-muted)]">
             {album.excerpt}
           </p>
         )}
-      </div>
+      </header>
 
-      {/* 照片 justified 布局 */}
-      {photos.length > 0 && (
+      {/* 照片瀑布流布局 */}
+      {photos.length > 0 ? (
         <div className="gallery-grid">
           <PhotoAlbum
             layout="rows"
             photos={photos}
             targetRowHeight={380}
-            spacing={5}
+            spacing={8}
             padding={0}
             rowConstraints={{ minPhotos: 2, maxPhotos: 4 }}
             onClick={({ index }) => setLightboxIndex(index)}
           />
         </div>
+      ) : (
+        <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
+          <p className="text-[14px] text-[var(--color-text-hint)]">
+            本相册暂无照片
+          </p>
+        </div>
       )}
 
-      {/* Lightbox */}
+      {/* 全屏灯箱 */}
       <Lightbox
         open={lightboxIndex >= 0}
         index={lightboxIndex}
         close={() => setLightboxIndex(-1)}
         slides={lightboxSlides}
         plugins={[Fullscreen, Zoom]}
-        styles={{
-          container: {
-            backgroundColor: 'rgba(0, 0, 0, 0.92)',
-          },
-        }}
-        carousel={{ finite: false }}
+        styles={{ container: { backgroundColor: 'rgba(0, 0, 0, 0.94)' } }}
         controller={{ closeOnBackdropClick: true }}
       />
 
-      {/* 返回 */}
-      <div className="text-center mt-10">
+      {/* 返回首页 */}
+      <div className="mt-20 text-center">
         <Link
           href="/gallery"
-          className="text-[14px] font-medium transition-colors"
-          style={{ color: 'var(--color-text-muted)' }}
+          className="text-[14px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
         >
           &larr; 返回相册
         </Link>
       </div>
-    </article>
+    </div>
   )
 }

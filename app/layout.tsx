@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "莫赶",
     description: "为食而生，莫赶时间",
-    url: 'https://veryjack.com',
+    url: 'https://guanyan.me',
     siteName: "莫赶",
     locale: 'zh_CN',
     type: 'website',

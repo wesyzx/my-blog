@@ -8,31 +8,36 @@ export const metadata: Metadata = {
 };
 
 // 豆瓣 ID，用户可以自行替换
-const DOUBAN_ID = 'ahshq'; // 使用占位符，可修改为真实的豆瓣ID
+const DOUBAN_ID = 'ahshq'; 
 
 export default async function MediaPage() {
   const items = await getDoubanInterests(DOUBAN_ID);
 
   return (
-    <div className="max-w-[900px] mx-auto py-12 animate-fade-up">
-      <header className="mb-12">
-        <h1 className="text-[32px] font-medium mb-6 text-[var(--color-text-primary)]">书影音</h1>
-        <div className="border-l-4 border-[var(--color-accent)] pl-4 py-2 bg-[var(--color-bg-surface)] rounded-r-[var(--radius-sm)] mb-4">
-          <p className="text-[15px] text-[var(--color-text-secondary)] italic">
-            精神食粮，定期补给。
-          </p>
-        </div>
-        <p className="text-[13px] text-[var(--color-text-muted)]">
-          同步自豆瓣 (ID: {DOUBAN_ID}) 的近期动态
+    <div className="max-w-[1100px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      <header className="mb-16">
+        <h1
+          className="text-[32px] md:text-[40px] font-bold mb-4"
+          style={{
+            color: 'var(--color-text-primary)',
+            fontFamily: "Georgia, 'Noto Serif SC', serif",
+          }}
+        >
+          书影音
+        </h1>
+        <p className="text-[15px] text-[var(--color-text-muted)]">
+          精神食粮，定期补给。同步自豆瓣 (ID: {DOUBAN_ID}) 的近期动态。
         </p>
       </header>
 
       {items.length === 0 ? (
-        <div className="text-center py-20 text-[var(--color-text-muted)]">
-          暂无动态，或由于网络原因未能拉取到豆瓣数据。
+        <div className="text-center py-20 border border-dashed border-[var(--color-border)] rounded-xl">
+          <p className="text-[var(--color-text-muted)]">
+            暂无动态，或由于网络原因未能拉取到豆瓣数据。
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {items.map((item) => (
             <a
               key={item.id}
@@ -41,9 +46,8 @@ export default async function MediaPage() {
               rel="noopener noreferrer"
               className="group flex flex-col gap-3"
             >
-              <div className="relative aspect-[2/3] w-full rounded-[var(--radius-md)] overflow-hidden shadow-sm border border-[var(--color-border)] group-hover:shadow-md group-hover:border-[var(--color-accent)] transition-all duration-300">
+              <div className="relative aspect-[2/3] w-full rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] group-hover:shadow-md group-hover:border-[var(--color-accent)] transition-all duration-300 bg-[var(--color-bg-surface)]">
                 {item.cover ? (
-                  /* 使用 unoptimized 绕过 next/image 对外部未配置域名的限制 */
                   <Image
                     src={item.cover}
                     alt={item.title}
@@ -52,27 +56,27 @@ export default async function MediaPage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full bg-[var(--color-bg-surface)] flex items-center justify-center text-[var(--color-text-muted)]">
+                  <div className="w-full h-full flex items-center justify-center text-[var(--color-text-hint)] text-[12px]">
                     No Cover
                   </div>
                 )}
                 
-                {/* 右上角类别标签 */}
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-[var(--radius-sm)] bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium tracking-wider">
+                {/* 类别标签 */}
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-white text-[10px] font-medium tracking-wider">
                   {item.action}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-[14px] font-medium text-[var(--color-text-primary)] line-clamp-1 group-hover:text-[var(--color-accent)] transition-colors">
+                <h3 className="text-[14px] font-bold text-[var(--color-text-primary)] line-clamp-1 group-hover:text-[var(--color-accent)] transition-colors">
                   {item.title}
                 </h3>
                 {item.rating && (
-                  <div className="text-[12px] text-[#f5a623] mt-1">
+                  <div className="text-[12px] text-[#f5a623] mt-0.5">
                     {item.rating}
                   </div>
                 )}
-                <div className="text-[12px] text-[var(--color-text-muted)] mt-1">
+                <div className="text-[12px] text-[var(--color-text-hint)] mt-1 font-serif italic">
                   {new Date(item.date).toLocaleDateString('zh-CN')}
                 </div>
               </div>

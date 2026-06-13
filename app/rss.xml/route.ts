@@ -6,7 +6,7 @@
  */
 import { getAllPosts } from '@/lib/posts'
 
-const SITE_URL = 'https://veryjack.com'
+const SITE_URL = 'https://guanyan.me'
 const SITE_TITLE = '莫赶'
 const SITE_DESCRIPTION = '为食而生，莫赶时间'
 

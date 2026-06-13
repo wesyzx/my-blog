@@ -4,12 +4,14 @@ import { defineConfig } from "tinacms";
 console.log("TinaCMS Build Config:", {
   branch: "main",
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID ? "Found" : "Missing",
+  isLocal: process.env.TINA_PUBLIC_IS_LOCAL === "true",
 });
 
 export default defineConfig({
   branch: "main",
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
   token: process.env.TINA_TOKEN,
+  local: process.env.TINA_PUBLIC_IS_LOCAL === "true",
 
   build: {
     outputFolder: "tina-admin",

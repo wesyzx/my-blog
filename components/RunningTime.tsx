@@ -27,21 +27,21 @@ export default function RunningTime() {
   }, [])
 
   return (
-    <span style={{ color: 'var(--color-text-muted)' }}>
+    <span style={{ color: 'var(--color-text-muted)' }} suppressHydrationWarning>
       本站已运行{' '}
-      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
+      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }} suppressHydrationWarning>
         {elapsed.days}
       </span>{' '}
       天{' '}
-      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
+      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }} suppressHydrationWarning>
         {pad(elapsed.hours)}
       </span>{' '}
       时{' '}
-      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
+      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }} suppressHydrationWarning>
         {pad(elapsed.minutes)}
       </span>{' '}
       分{' '}
-      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }}>
+      <span style={{ color: 'var(--color-accent)', fontWeight: 500 }} suppressHydrationWarning>
         {pad(elapsed.seconds)}
       </span>{' '}
       秒

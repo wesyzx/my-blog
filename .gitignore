@@ -99,6 +99,5 @@ dmypy.json
 *~
 
 # TinaCMS
-tina/__generated__
 node_modules
 .tina

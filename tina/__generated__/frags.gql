@@ -1,0 +1,59 @@
+fragment PostParts on Post {
+  __typename
+  title
+  date
+  category
+  tags
+  excerpt
+  cover
+  published
+  body
+}
+
+fragment SayParts on Say {
+  __typename
+  date
+  image
+  body
+}
+
+fragment FoodParts on Food {
+  __typename
+  title
+  date
+  location
+  address
+  lng
+  lat
+  cover
+  images
+  tags
+  excerpt
+  published
+  body
+}
+
+fragment GalleryParts on Gallery {
+  __typename
+  title
+  date
+  category
+  cover
+  images
+  excerpt
+  published
+  body
+}
+
+fragment MoreParts on More {
+  __typename
+  title
+  desc
+  icon
+  body
+}
+
+fragment AboutParts on About {
+  __typename
+  body
+}

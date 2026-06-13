@@ -1,12 +1,15 @@
 import { defineConfig } from "tinacms";
 
-// Your hosting provider likely exposes this as an environment variable
-const branch = process.env.HEAD || process.env.VERCEL_GIT_COMMIT_REF || "main";
+// 调试信息：在构建日志中输出配置状态（不输出敏感 Token）
+console.log("TinaCMS Build Config:", {
+  branch: "main",
+  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID ? "Found" : "Missing",
+});
 
 export default defineConfig({
-  branch,
-  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID || "static-id", // Get this from tina.io
-  token: process.env.TINA_TOKEN || "static-token", // Get this from tina.io
+  branch: "main",
+  clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID,
+  token: process.env.TINA_TOKEN,
 
   build: {
     outputFolder: "tina-admin",

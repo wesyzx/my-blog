@@ -11,11 +11,11 @@ export default function FoodPage() {
   const posts = getAllFoodPosts()
 
   return (
-    <div className="max-w-[1100px] mx-auto">
-      {/* 头部 */}
-      <div className="mb-8">
+    <div className="max-w-[800px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      {/* 页面头部 */}
+      <header className="mb-16">
         <h1
-          className="text-[32px] font-bold mb-2"
+          className="text-[32px] md:text-[40px] font-bold mb-4"
           style={{
             color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
@@ -23,45 +23,41 @@ export default function FoodPage() {
         >
           美食地图
         </h1>
-        <p className="text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
+        <p className="text-[15px] text-[var(--color-text-muted)]">
           记录探访过的美食，用味蕾丈量这座城市。
         </p>
-      </div>
+      </header>
 
       {/* 地图 */}
-      <section className="mb-10">
+      <section className="mb-16">
         <h2
-          className="text-[18px] font-bold mb-4 flex items-center gap-2"
-          style={{
-            color: 'var(--color-text-primary)',
-            fontFamily: "Georgia, 'Noto Serif SC', serif",
-          }}
+          className="text-[20px] font-bold mb-6 flex items-center gap-2 text-[var(--color-text-primary)]"
+          style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
         >
           <span style={{ color: 'var(--color-accent)' }}>📍</span> 探店地图
         </h2>
-        <FoodMapWrapper posts={posts} />
+        <div className="rounded-xl overflow-hidden border border-[var(--color-border)] shadow-sm">
+          <FoodMapWrapper posts={posts} />
+        </div>
       </section>
 
       {/* 图集 */}
       <section>
         <h2
-          className="text-[18px] font-bold mb-4 flex items-center gap-2"
-          style={{
-            color: 'var(--color-text-primary)',
-            fontFamily: "Georgia, 'Noto Serif SC', serif",
-          }}
+          className="text-[20px] font-bold mb-6 flex items-center gap-2 text-[var(--color-text-primary)]"
+          style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
         >
           <span style={{ color: 'var(--color-accent)' }}>📸</span> 美食图集
         </h2>
 
         {posts.length === 0 ? (
-          <div className="card p-12 text-center">
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
+            <p className="text-sm text-[var(--color-text-muted)]">
               还没有美食记录，快去探店吧 🍜
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {posts.map((post) => (
               <FoodCard key={post.slug} post={post} />
             ))}

@@ -3,26 +3,18 @@
 /**
  * 留言板页面
  *
- * 参考 veryjack.com/board 的设计：
- * - 顶部装饰头图区（可替换为实际图片）
- * - 多行引导文案 + 引用块
- * - Artalk 评论数展示
- * - 独立卡片中的评论区
+ * 已应用极简单列布局标准。
  */
 import { useState, useEffect } from 'react'
 import ArtalkComments from '@/components/ArtalkComments'
 
-/** Artalk 服务端地址 */
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
-/** 站点名称，与 Artalk 管理面板一致 */
 const SITE = '莫赶'
 
 export default function MessagePage() {
-  /** 留言板评论总数 */
   const [count, setCount] = useState<number | null>(null)
 
   useEffect(() => {
-    // 通过 Artalk 通用评论接口获取留言板的评论总数
     const params = new URLSearchParams({
       site_name: SITE,
       page_key: '/message',
@@ -32,7 +24,6 @@ export default function MessagePage() {
     fetch(`${SERVER}/api/v2/comments?${params.toString()}`)
       .then((res) => res.json())
       .then((data: any) => {
-        // 兼容多种 Artalk API 返回格式
         const t =
           typeof data?.count === 'number' ? data.count :
           typeof data?.total === 'number' ? data.total :
@@ -45,67 +36,45 @@ export default function MessagePage() {
   }, [])
 
   return (
-    <div className="max-w-[800px] mx-auto">
-      {/* ===== 留言板介绍卡片 ===== */}
-      <div className="card overflow-hidden mb-5">
-        {/* 装饰头图区：替换为 <img src="..." /> 即可使用真实图片 */}
-        <div className="h-[200px] md:h-[260px] bg-[var(--color-bg-surface)] flex items-center justify-center">
-          <span className="text-[13px]" style={{ color: 'var(--color-text-hint)' }}>
-            留言板头图
-          </span>
-        </div>
-
-        <div className="p-[30px] md:p-[45px]">
-          {/* 页面标题 */}
-          <h1
-            className="text-[30px] font-bold mb-4"
-            style={{
-              color: 'var(--color-text-primary)',
-              fontFamily: "Georgia, 'Noto Serif SC', serif",
-            }}
-          >
-            留言板
-          </h1>
-
-          {/* 引导语：加粗主句 */}
-          <p
-            className="text-[18px] font-bold mb-2"
-            style={{
-              color: 'var(--color-text-primary)',
-              fontFamily: "Georgia, 'Noto Serif SC', serif",
-            }}
-          >
-            感谢缘分让我们相遇
-          </p>
-
-          {/* 引导语：辅助说明 */}
-          <p className="text-[15px] mb-4" style={{ color: 'var(--color-text-muted)' }}>
-            一切都是最好的安排
-          </p>
-
-          {/* 引用块：强调欢迎留言的意图 */}
-          <blockquote
-            className="border-l-[3px] pl-4 py-1 mb-4 text-[15px]"
-            style={{
-              borderColor: 'var(--color-accent)',
-              color: 'var(--color-text-secondary)',
-              fontStyle: 'italic',
-            }}
-          >
-            欢迎在评论区留言
-          </blockquote>
-
-          {/* 评论数统计 */}
+    <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      {/* 页面头部 */}
+      <header className="mb-16">
+        <h1
+          className="text-[32px] md:text-[40px] font-bold mb-4"
+          style={{
+            color: 'var(--color-text-primary)',
+            fontFamily: "Georgia, 'Noto Serif SC', serif",
+          }}
+        >
+          留言板
+        </h1>
+        <div className="flex items-center gap-4 text-[15px] text-[var(--color-text-muted)]">
+          <p>感谢缘分让我们相遇，一切都是最好的安排。</p>
           {count !== null && (
-            <p className="text-[14px] font-medium" style={{ color: 'var(--color-accent)' }}>
+            <span className="text-[var(--color-accent)] font-medium">
               {count} 评论
-            </p>
+            </span>
           )}
         </div>
+      </header>
+
+      {/* 装饰头图 */}
+      <div className="h-[200px] md:h-[300px] bg-[var(--color-bg-surface)] rounded-xl border border-[var(--color-border)] flex items-center justify-center mb-16 overflow-hidden">
+        <span className="text-[13px] text-[var(--color-text-hint)] uppercase tracking-widest opacity-30">
+          Message Board Header
+        </span>
       </div>
 
-      {/* ===== Artalk 评论区域 ===== */}
-      <div className="card p-[30px] md:p-[45px]">
+      <div className="prose max-w-none mb-16">
+        <blockquote
+          className="border-l-[3px] border-[var(--color-accent)] bg-[var(--color-bg-surface)] px-6 py-4 rounded-r-lg not-italic text-[16px] text-[var(--color-text-secondary)]"
+        >
+          欢迎在这里留下你的足迹。无论是建议、感悟还是简单的问候，我都会认真阅读并回复。
+        </blockquote>
+      </div>
+
+      {/* 评论区 */}
+      <div className="pt-10 border-t border-[var(--color-border)]">
         <ArtalkComments pageKey="/message" pageTitle="留言板" />
       </div>
     </div>

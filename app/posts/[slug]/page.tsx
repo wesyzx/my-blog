@@ -2,7 +2,7 @@
  * 文章详情页
  *
  * 仅展示博文本身：封面图、标题、日期、正文、评论区。
- * 不展示分类标签、相关文章推荐等附加内容。
+ * 已应用极简单列布局标准。
  */
 import { getPostBySlug, getAllPosts } from '@/lib/posts'
 import { MDXRemote } from 'next-mdx-remote/rsc'
@@ -54,11 +54,37 @@ export default async function PostPage({
   if (!post) notFound()
 
   return (
-    <article className="max-w-[750px] mx-auto">
-      <div className="card p-[30px] md:p-[45px]">
+    <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      <article>
+        {/* 文章头部 */}
+        <header className="mb-16">
+          <div className="mb-4">
+            <Link
+              href={`/?category=${post.category}`}
+              className="text-[13px] font-medium tracking-wider text-[var(--color-accent)] hover:underline opacity-80"
+            >
+              {post.category}
+            </Link>
+          </div>
+          <h1
+            className="text-[32px] md:text-[40px] font-bold mb-6 leading-[1.3]"
+            style={{
+              color: 'var(--color-text-primary)',
+              fontFamily: "Georgia, 'Noto Serif SC', serif",
+            }}
+          >
+            {post.title}
+          </h1>
+          <time
+            className="text-[14px] text-[var(--color-text-muted)]"
+          >
+            {formatDate(post.date)}
+          </time>
+        </header>
+
         {/* 封面图 */}
         {post.cover && (
-          <div className="relative w-full aspect-[2/1] rounded-[5px] overflow-hidden mb-[35px]">
+          <div className="relative w-full aspect-[2/1] rounded-xl overflow-hidden mb-16 shadow-sm border border-[var(--color-border)]">
             <Image
               src={post.cover}
               alt={post.title}
@@ -69,62 +95,38 @@ export default async function PostPage({
           </div>
         )}
 
-        {/* 文章头部：标题 + 日期 */}
-        <header className="mb-[35px] text-center">
-          <h1
-            className="text-[28px] md:text-[34px] font-bold mb-[12px] leading-[1.35]"
-            style={{
-              color: 'var(--color-text-primary)',
-              fontFamily: "Georgia, 'Noto Serif SC', serif",
-            }}
-          >
-            {post.title}
-          </h1>
-          <time
-            className="text-[13px]"
-            style={{ color: 'var(--color-text-muted)' }}
-          >
-            {formatDate(post.date)}
-          </time>
-        </header>
-
-        <hr className="divider" />
-
         {/* 文章正文 */}
         <div
           className="prose max-w-none
-            prose-headings:font-bold
-            prose-headings:tracking-[0.01em]
-            prose-p:text-[16px] prose-p:leading-[1.85] prose-p:tracking-[0.005em]
-            prose-a:no-underline prose-a:border-b prose-a:border-dotted prose-a:pb-[1px]
-            prose-a:transition-colors
-            prose-a:hover:border-solid
-            prose-img:rounded-[5px] prose-img:mx-auto
-            prose-code:px-[5px] prose-code:py-[1px] prose-code:rounded-[3px] prose-code:text-[14px] prose-code:before:content-none prose-code:after:content-none
-            prose-pre:rounded-[5px] prose-pre:shadow-sm
-            prose-blockquote:border-l-[3px] prose-blockquote:px-5 prose-blockquote:py-3 prose-blockquote:not-italic prose-blockquote:text-[15px]
-            prose-li:text-[16px] prose-li:leading-[1.75]
+            prose-headings:font-bold prose-headings:text-[var(--color-text-primary)]
+            prose-p:text-[16px] prose-p:leading-[1.85] prose-p:text-[var(--color-text-secondary)]
+            prose-a:text-[var(--color-accent)] prose-a:no-underline prose-a:border-b prose-a:border-dotted
+            prose-img:rounded-xl prose-img:mx-auto
+            prose-blockquote:border-l-[3px] prose-blockquote:border-[var(--color-accent)] prose-blockquote:bg-[var(--color-bg-surface)] prose-blockquote:px-6 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+            prose-li:text-[16px] prose-li:leading-[1.8]
           "
         >
           <MDXRemote source={post.content} />
         </div>
-      </div>
+      </article>
 
       {/* 评论区 */}
-      <div className="card p-[30px] md:p-[40px] mt-8">
+      <div className="mt-20 pt-10 border-t border-[var(--color-border)]">
+        <h2 className="text-[20px] font-bold mb-8" style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}>
+          评论
+        </h2>
         <ArtalkComments pageKey={`/posts/${post.slug}`} pageTitle={post.title} />
       </div>
 
       {/* 返回首页 */}
-      <div className="text-center mt-8">
+      <div className="mt-16 text-center">
         <Link
           href="/"
-          className="text-[14px] font-medium transition-colors inline-flex items-center gap-1"
-          style={{ color: 'var(--color-text-muted)' }}
+          className="text-[14px] font-medium text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
         >
           &larr; 返回首页
         </Link>
       </div>
-    </article>
+    </div>
   )
 }

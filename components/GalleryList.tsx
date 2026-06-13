@@ -3,8 +3,7 @@
 /**
  * 相册列表组件
  *
- * 直接以瀑布流布局展示所有相册图片，无需分类筛选。
- * 点击图片可打开 Lightbox 全屏浏览。
+ * 已应用极简单列布局标准。
  */
 import { useState, useMemo } from 'react'
 import PhotoAlbum from 'react-photo-album'
@@ -15,28 +14,11 @@ import 'yet-another-react-lightbox/styles.css'
 import 'react-photo-album/styles.css'
 import type { GalleryMeta } from '@/lib/gallery'
 
-/** 每页展示的照片数量 */
 const ITEMS_PER_PAGE = 24
 
-/**
- * 将相册数据转换为 react-photo-album 所需的照片格式
- * 使用预定义的宽高比形成 2竖+1横 或 4竖 的错落布局
- */
 function buildPhotos(albums: GalleryMeta[]) {
-  // 交替横竖比例的序列，形成有节奏的瀑布流
   const ratios = [1.5, 0.67, 0.67, 1.5, 0.75, 0.67, 0.67, 1.5]
-
-  const photos: Array<{
-    src: string
-    width: number
-    height: number
-    key: string
-    alt: string
-    title: string
-    albumTitle: string
-    albumSlug: string
-  }> = []
-
+  const photos: any[] = []
   let idx = 0
   for (const album of albums) {
     for (let i = 0; i < album.images.length; i++) {
@@ -54,7 +36,6 @@ function buildPhotos(albums: GalleryMeta[]) {
       idx++
     }
   }
-
   return photos
 }
 
@@ -62,9 +43,7 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
   const [page, setPage] = useState(1)
   const [lightboxIndex, setLightboxIndex] = useState(-1)
 
-  /** 所有照片（无分类筛选） */
   const allPhotos = useMemo(() => buildPhotos(albums), [albums])
-
   const totalPages = Math.max(1, Math.ceil(allPhotos.length / ITEMS_PER_PAGE))
   const safePage = Math.min(page, totalPages)
   const pagedPhotos = allPhotos.slice(
@@ -72,18 +51,17 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
     safePage * ITEMS_PER_PAGE
   )
 
-  /** Lightbox 幻灯片数据 */
   const lightboxSlides = useMemo(
     () => pagedPhotos.map((p) => ({ src: p.src, alt: p.alt, title: p.albumTitle })),
     [pagedPhotos]
   )
 
   return (
-    <div className="max-w-[1100px] mx-auto">
-      {/* 页面标题 */}
-      <div className="text-center mb-8">
+    <div className="max-w-[800px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      {/* 页面头部 */}
+      <header className="mb-16">
         <h1
-          className="text-[32px] font-bold mb-2"
+          className="text-[32px] md:text-[40px] font-bold mb-4"
           style={{
             color: 'var(--color-text-primary)',
             fontFamily: "Georgia, 'Noto Serif SC', serif",
@@ -91,15 +69,15 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
         >
           相册
         </h1>
-        <p className="text-[15px]" style={{ color: 'var(--color-text-muted)' }}>
-          随着快门的开启，时间被凝固下来，作为「此时此刻」的记录是不可重复的，也就成为永远。
+        <p className="text-[15px] text-[var(--color-text-muted)]">
+          随着快门的开启，时间被凝固下来，作为「此时此刻」的记录。
         </p>
-      </div>
+      </header>
 
       {/* 照片瀑布流布局 */}
       {pagedPhotos.length === 0 ? (
-        <div className="text-center py-20">
-          <p className="text-[14px]" style={{ color: 'var(--color-text-hint)' }}>
+        <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
+          <p className="text-[14px] text-[var(--color-text-hint)]">
             暂无照片
           </p>
         </div>
@@ -108,8 +86,8 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
           <PhotoAlbum
             layout="rows"
             photos={pagedPhotos}
-            targetRowHeight={380}
-            spacing={5}
+            targetRowHeight={320}
+            spacing={8}
             padding={0}
             rowConstraints={{ minPhotos: 2, maxPhotos: 4 }}
             onClick={({ index }) => setLightboxIndex(index)}
@@ -119,80 +97,37 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
 
       {/* 分页控件 */}
       {totalPages > 1 && (
-        <div
-          className="mt-10 flex items-center justify-center gap-1 text-[14px] font-medium"
-          style={{ color: 'var(--color-text-primary)' }}
-        >
-          {safePage > 1 ? (
-            <button
-              onClick={() => setPage(safePage - 1)}
-              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              上一页
-            </button>
-          ) : (
-            <span
-              className="px-3 h-9 flex items-center justify-center rounded-[3px]"
-              style={{ color: 'var(--color-text-hint)', cursor: 'not-allowed' }}
-            >
-              上一页
-            </span>
-          )}
+        <nav className="mt-20 pt-10 border-t border-[var(--color-border)] flex items-center justify-between text-[14px]">
+          <button
+            onClick={() => setPage(Math.max(1, safePage - 1))}
+            disabled={safePage === 1}
+            className={`text-[var(--color-accent)] hover:underline disabled:opacity-30 disabled:no-underline`}
+          >
+            ← 上一页
+          </button>
+          
+          <div className="text-[var(--color-text-muted)] tracking-widest font-serif">
+            {safePage} / {totalPages}
+          </div>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) =>
-            p === safePage ? (
-              <span
-                key={p}
-                className="w-9 h-9 flex items-center justify-center rounded-[3px] text-white"
-                style={{ backgroundColor: 'var(--color-accent)' }}
-              >
-                {p}
-              </span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => setPage(p)}
-                className="w-9 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
-                style={{ color: 'var(--color-text-secondary)' }}
-              >
-                {p}
-              </button>
-            )
-          )}
-
-          {safePage < totalPages ? (
-            <button
-              onClick={() => setPage(safePage + 1)}
-              className="px-3 h-9 flex items-center justify-center rounded-[3px] transition-colors hover:text-[var(--color-accent)] bg-transparent border-0 cursor-pointer"
-              style={{ color: 'var(--color-text-secondary)' }}
-            >
-              下一页
-            </button>
-          ) : (
-            <span
-              className="px-3 h-9 flex items-center justify-center rounded-[3px]"
-              style={{ color: 'var(--color-text-hint)', cursor: 'not-allowed' }}
-            >
-              下一页
-            </span>
-          )}
-        </div>
+          <button
+            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+            disabled={safePage === totalPages}
+            className={`text-[var(--color-accent)] hover:underline disabled:opacity-30 disabled:no-underline`}
+          >
+            下一页 →
+          </button>
+        </nav>
       )}
 
-      {/* 全屏灯箱（Lightbox） */}
+      {/* 全屏灯箱 */}
       <Lightbox
         open={lightboxIndex >= 0}
         index={lightboxIndex}
         close={() => setLightboxIndex(-1)}
         slides={lightboxSlides}
         plugins={[Fullscreen, Zoom]}
-        styles={{
-          container: {
-            backgroundColor: 'rgba(0, 0, 0, 0.92)',
-          },
-        }}
-        carousel={{ finite: false }}
+        styles={{ container: { backgroundColor: 'rgba(0, 0, 0, 0.94)' } }}
         controller={{ closeOnBackdropClick: true }}
       />
     </div>

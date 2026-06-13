@@ -17,9 +17,17 @@ const drawerItems = [
 
 export default function MorePage() {
   return (
-    <div className="max-w-[800px] mx-auto py-12 animate-fade-up">
-      <header className="mb-12">
-        <h1 className="text-[32px] font-medium mb-2 text-[var(--color-text-primary)]">抽屉</h1>
+    <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      <header className="mb-16">
+        <h1
+          className="text-[32px] md:text-[40px] font-bold mb-4 text-[var(--color-text-primary)]"
+          style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
+        >
+          抽屉
+        </h1>
+        <p className="text-[15px] text-[var(--color-text-muted)]">
+          数字抽屉，存放一些零碎的喜好与记录。
+        </p>
       </header>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -27,7 +35,7 @@ export default function MorePage() {
           <Link
             key={item.title}
             href={item.href}
-            className="group flex items-start gap-5 p-6 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-all duration-300 shadow-sm hover:shadow-md"
+            className="group flex items-start gap-5 p-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:border-[var(--color-accent)] transition-all duration-300 shadow-sm hover:shadow-md"
           >
             <div className="text-[32px] mt-1 group-hover:scale-110 transition-transform duration-300 grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100">
               {item.icon}

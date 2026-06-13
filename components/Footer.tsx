@@ -5,9 +5,9 @@
  *
  * 展示信息：
  * 1. 博客运行时间 + 自建访客统计
- * 2. 版权声明 + 敬平凡... 标语
+ * 2. 敬平凡... 标语 (居中)
  * 3. 技术栈标识（Next.js / Cloudflare / EdgeOne / 又拍云）
- * 4. ICP 备案号（置于最底部）
+ * 4. 版权声明与 ICP 备案号 (最底部，左右分布)
  */
 import Link from 'next/link'
 import RunningTime from './RunningTime'
@@ -23,7 +23,7 @@ export default function Footer() {
       }}
     >
       <div className="max-w-[1100px] mx-auto px-6 py-10">
-        <div className="flex flex-col items-center gap-8 text-center">
+        <div className="flex flex-col items-center gap-8">
           {/* 第一行：运行时间 + 浏览统计 */}
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[12px] opacity-80">
             <RunningTime />
@@ -31,17 +31,14 @@ export default function Footer() {
             <VisitorStats />
           </div>
 
-          {/* 第二行：版权 + 敬语标语 */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="text-[13px] font-medium text-[var(--color-text-primary)]">
-              © 2016–{new Date().getFullYear()} 莫赶
-            </div>
+          {/* 第二行：敬语标语 */}
+          <div className="text-center">
             <p className="text-[14px] text-[var(--color-text-secondary)] tracking-[0.1em] font-serif italic">
               敬平凡，敬放下，敬坚持，敬付出
             </p>
           </div>
 
-          {/* 第三行：技术标识（放置在备案号上方） */}
+          {/* 第三行：技术标识 */}
           <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
             <Link
               href="https://nextjs.org"
@@ -86,13 +83,13 @@ export default function Footer() {
             >
               <svg width="14" height="14" viewBox="0 0 128 128" fill="none">
                 <defs>
-                  <linearGradient id="eo-grad-footer" x1="0" y1="0" x2="1" y2="1">
+                  <linearGradient id="eo-grad-footer-v2" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#04B7FB"/>
                     <stop offset="100%" stopColor="#0078D4"/>
                   </linearGradient>
                 </defs>
-                <circle cx="64" cy="64" r="56" stroke="url(#eo-grad-footer)" strokeWidth="8" fill="none"/>
-                <path d="M64 24C41.9 24 24 41.9 24 64s17.9 40 40 40 40-17.9 40-40S86.1 24 64 24zm0 8c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm0 12c-11 0-20 9-20 20s9 20 20 20 20-9 20-20-9-20-20-20z" fill="url(#eo-grad-footer)"/>
+                <circle cx="64" cy="64" r="56" stroke="url(#eo-grad-footer-v2)" strokeWidth="8" fill="none"/>
+                <path d="M64 24C41.9 24 24 41.9 24 64s17.9 40 40 40 40-17.9 40-40S86.1 24 64 24zm0 8c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm0 12c-11 0-20 9-20 20s9 20 20 20 20-9 20-20-9-20-20-20z" fill="url(#eo-grad-footer-v2)"/>
               </svg>
               EdgeOne
             </Link>
@@ -109,29 +106,34 @@ export default function Footer() {
             >
               <svg width="14" height="14" viewBox="0 0 128 128" fill="none">
                 <defs>
-                  <linearGradient id="upy-grad-footer" x1="0" y1="0" x2="1" y2="1">
+                  <linearGradient id="upy-grad-footer-v2" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#1DB0F0"/>
                     <stop offset="100%" stopColor="#00C851"/>
                   </linearGradient>
                 </defs>
-                <circle cx="64" cy="64" r="58" stroke="url(#upy-grad-footer)" strokeWidth="8" fill="none"/>
-                <path d="M82 48c-3 6-12 8-18 2s-4-14 2-20M52 76c-4-6-12-8-18-2s-4 14 3 20" stroke="url(#upy-grad-footer)" strokeWidth="7" strokeLinecap="round"/>
+                <circle cx="64" cy="64" r="58" stroke="url(#upy-grad-footer-v2)" strokeWidth="8" fill="none"/>
+                <path d="M82 48c-3 6-12 8-18 2s-4-14 2-20M52 76c-4-6-12-8-18-2s-4 14 3 20" stroke="url(#upy-grad-footer-v2)" strokeWidth="7" strokeLinecap="round"/>
               </svg>
               又拍云
             </Link>
           </div>
 
-          {/* 第四行：备案号（置于最底部） */}
-          <div className="text-[12px] opacity-40 hover:opacity-100 transition-opacity">
-            <a
-              href="https://beian.miit.gov.cn/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-[var(--color-accent)] transition-colors"
-              style={{ color: 'var(--color-text-hint)' }}
-            >
-              浙ICP备16031853号-1
-            </a>
+          {/* 第四行：版权与备案号 (左右分布) */}
+          <div className="w-full pt-8 border-t border-[var(--color-border)] opacity-60 flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px]">
+            <div className="text-[var(--color-text-muted)] order-2 sm:order-1">
+              © 2016–{new Date().getFullYear()} <span className="font-medium text-[var(--color-text-primary)]">莫赶</span>
+            </div>
+            <div className="order-1 sm:order-2">
+              <a
+                href="https://beian.miit.gov.cn/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-[var(--color-accent)] transition-colors"
+                style={{ color: 'var(--color-text-hint)' }}
+              >
+                浙ICP备16031853号-1
+              </a>
+            </div>
           </div>
         </div>
       </div>

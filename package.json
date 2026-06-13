@@ -6,13 +6,14 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "tinacms dev -c \"next dev\"",
+    "build": "tinacms build && next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "@tinacms/cli": "^2.4.4",
     "gray-matter": "^4.0.3",
     "maplibre-gl": "^5.24.0",
     "next": "16.2.4",
@@ -21,6 +22,7 @@
     "react-dom": "19.2.4",
     "react-photo-album": "^3.6.0",
     "rss-parser": "^3.13.0",
+    "tinacms": "^3.9.1",
     "yet-another-react-lightbox": "^3.32.0"
   },
   "devDependencies": {

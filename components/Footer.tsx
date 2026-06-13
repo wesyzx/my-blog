@@ -82,8 +82,10 @@ export default function Footer() {
             Next.js
           </Link>
 
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+          <Link
+            href="https://www.cloudflare.com"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
             style={{
               color: 'var(--color-text-hint)',
               borderColor: 'var(--color-border)',
@@ -94,10 +96,12 @@ export default function Footer() {
               <path d="M40 64c0-13.3 10.7-24 24-24s24 10.7 24 24-10.7 24-24 24c-5.5 0-10.7-1.9-14.8-5l-4.7 5.8c5.4 4.3 12.3 6.9 19.5 6.9 17.7 0 32-14.3 32-32S105.7 32 88 32 56 46.3 56 64c0 2.1.2 4.2.6 6.2l-7.5 9.2C48.4 76.5 48 70.3 48 64c0-22.1 17.9-40 40-40s40 17.9 40 40-17.9 40-40 40c-8.7 0-16.7-2.8-23.2-7.5l-4.8 5.9c7.7 5.9 17.4 9.4 28 9.4 26.5 0 48-21.5 48-48S114.5 16 88 16 40 37.5 40 64z" fill="#FAAE44"/>
             </svg>
             Cloudflare
-          </span>
+          </Link>
 
-          <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border"
+          <Link
+            href="https://cloud.tencent.com/product/eo"
+            target="_blank"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
             style={{
               color: 'var(--color-text-hint)',
               borderColor: 'var(--color-border)',
@@ -114,7 +118,7 @@ export default function Footer() {
               <path d="M64 24C41.9 24 24 41.9 24 64s17.9 40 40 40 40-17.9 40-40S86.1 24 64 24zm0 8c17.7 0 32 14.3 32 32s-14.3 32-32 32-32-14.3-32-32 14.3-32 32-32zm0 12c-11 0-20 9-20 20s9 20 20 20 20-9 20-20-9-20-20-20z" fill="url(#eo-grad)"/>
             </svg>
             EdgeOne
-          </span>
+          </Link>
 
           <Link
             href="https://www.upyun.com/?utm_source=lianmeng&utm_medium=referral"

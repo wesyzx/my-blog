@@ -23,11 +23,11 @@ export const metadata: Metadata = {
     default: "莫赶",
     template: "%s | 莫赶",
   },
-  description: "为食而生，莫赶时间",
+  description: "敬平凡，敬放下，敬坚持，敬付出",
   // 社交媒体分享时的 OpenGraph 配置
   openGraph: {
     title: "莫赶",
-    description: "为食而生，莫赶时间",
+    description: "敬平凡，敬放下，敬坚持，敬付出",
     url: 'https://guanyan.me',
     siteName: "莫赶",
     locale: 'zh_CN',

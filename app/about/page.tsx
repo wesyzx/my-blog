@@ -32,7 +32,7 @@ export default function AboutPage() {
       <div className="flex justify-center mb-16">
         <div className="w-[120px] h-[120px] rounded-full overflow-hidden border border-[var(--color-border)] shadow-sm">
           <Image
-            src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
+            src="https://images.guanyan.me/%E7%BD%90%E5%A4%B4%E5%91%A8.png"
             alt="Can Chou"
             width={120}
             height={120}

@@ -99,7 +99,7 @@ export default function Footer() {
           </Link>
 
           <Link
-            href="https://cloud.tencent.com/product/eo"
+            href="https://www.tencentcloud.com/zh/products/teo"
             target="_blank"
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
             style={{

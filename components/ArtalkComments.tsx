@@ -21,7 +21,7 @@ const SITE = '莫赶'
 
 export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
   // 动态加载 CSS
   useEffect(() => {
@@ -35,9 +35,16 @@ export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsPro
     }
   }, [])
 
-  // 当脚本加载完成且组件挂载后初始化 Artalk
+  // 检查全局变量是否已存在 (处理 Next.js 客户端路由切换时 onLoad 不触发的问题)
   useEffect(() => {
-    if (isScriptLoaded && containerRef.current && (window as any).Artalk) {
+    if (typeof window !== 'undefined' && (window as any).Artalk) {
+      setIsReady(true)
+    }
+  }, [])
+
+  // 初始化 Artalk
+  useEffect(() => {
+    if (isReady && containerRef.current && (window as any).Artalk) {
       const artalk = (window as any).Artalk.init({
         el: containerRef.current,
         server: SERVER,
@@ -52,14 +59,14 @@ export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsPro
         artalk.destroy()
       }
     }
-  }, [pageKey, pageTitle, isScriptLoaded])
+  }, [pageKey, pageTitle, isReady])
 
   return (
     <>
       <Script 
         src={`${SERVER}/dist/Artalk.js`} 
         strategy="lazyOnload"
-        onLoad={() => setIsScriptLoaded(true)}
+        onLoad={() => setIsReady(true)}
       />
       <div
         ref={containerRef}

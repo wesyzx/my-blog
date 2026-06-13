@@ -51,7 +51,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: '博文', href: '/', hasDropdown: true, subItems: postMenuItems },
-  { label: '抽屉', href: '/more', hasDropdown: true, subItems: drawerMenuItems },
+  { label: '抽屉', href: '/more' },
   { label: '说说', href: '/say' },
   { label: '美食', href: '/food' },
   { label: '相册', href: '/gallery' },

@@ -19,12 +19,7 @@ export default function MorePage() {
   return (
     <div className="max-w-[800px] mx-auto py-12 animate-fade-up">
       <header className="mb-12">
-        <h1 className="text-[32px] font-medium mb-6 text-[var(--color-text-primary)]">抽屉</h1>
-        <div className="border-l-4 border-[var(--color-accent)] pl-4 py-2 bg-[var(--color-bg-surface)] rounded-r-[var(--radius-sm)]">
-          <p className="text-[15px] text-[var(--color-text-secondary)] italic">
-            嘿，伙计，你在找啥？
-          </p>
-        </div>
+        <h1 className="text-[32px] font-medium mb-2 text-[var(--color-text-primary)]">抽屉</h1>
       </header>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

@@ -59,18 +59,26 @@ function parseGPS(gps?: string, ref?: string): number {
 
 /**
  * 尝试从图片 URL 获取 EXIF 经纬度
+ * 适配又拍云的 !/meta 接口
  */
 async function fetchExifLocation(imageUrl: string) {
   if (!imageUrl.startsWith('http')) return { lng: 0, lat: 0 };
   try {
-    const res = await fetch(`${imageUrl}?_exif`, { next: { revalidate: 86400 } });
+    // 假设使用又拍云，通过 !/meta 获取图片元数据
+    const res = await fetch(`${imageUrl}!/meta`, { next: { revalidate: 86400 } });
     if (!res.ok) return { lng: 0, lat: 0 };
-    const exif = await res.json();
-    return {
-      lat: parseGPS(exif.GPSLatitude, exif.GPSLatitudeRef),
-      lng: parseGPS(exif.GPSLongitude, exif.GPSLongitudeRef),
-    };
-  } catch {
+    const meta = await res.json();
+    
+    // 如果包含 EXIF 并且有 GPS 信息
+    if (meta && meta.EXIF && meta.EXIF.GPSLatitude && meta.EXIF.GPSLongitude) {
+      return {
+        lat: parseGPS(meta.EXIF.GPSLatitude, meta.EXIF.GPSLatitudeRef),
+        lng: parseGPS(meta.EXIF.GPSLongitude, meta.EXIF.GPSLongitudeRef),
+      };
+    }
+    return { lng: 0, lat: 0 };
+  } catch (err) {
+    console.error('Error fetching EXIF for', imageUrl, err);
     return { lng: 0, lat: 0 };
   }
 }

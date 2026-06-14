@@ -9,11 +9,11 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'img.guanyan.me',
+        hostname: '**.guanyan.me',
       },
       {
-        protocol: 'https',
-        hostname: 'images.guanyan.me',
+        protocol: 'http',
+        hostname: '**.guanyan.me',
       },
       {
         protocol: 'https',

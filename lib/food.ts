@@ -145,7 +145,10 @@ export async function getAllFoodPosts(): Promise<FoodMeta[]> {
     if (!fs.existsSync(foodDirectory)) return []
 
     const fileNames = fs.readdirSync(foodDirectory)
-    const mdFiles = fileNames.filter((fileName) => fileName.endsWith('.md'))
+    const mdFiles = fileNames.filter((fileName) => {
+      const fullPath = path.join(foodDirectory, fileName);
+      return fileName.endsWith('.md') && fs.statSync(fullPath).isFile();
+    })
     
     const postsPromises = mdFiles.map(parseFoodMeta)
     const posts = (await Promise.all(postsPromises)).filter((p): p is FoodMeta => p !== null)
@@ -166,10 +169,16 @@ export async function getAllFoodPosts(): Promise<FoodMeta[]> {
  */
 export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> {
   try {
-    const meta = await parseFoodMeta(`${slug}.md`)
+    const fileName = `${slug}.md`;
+    const fullPath = path.join(foodDirectory, fileName)
+    
+    if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) {
+      return null;
+    }
+
+    const meta = await parseFoodMeta(fileName)
     if (!meta) return null;
 
-    const fullPath = path.join(foodDirectory, `${slug}.md`)
     const fileContents = fs.readFileSync(fullPath, 'utf8')
     const { content } = matter(fileContents)
 
@@ -177,7 +186,8 @@ export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> 
       ...meta,
       content,
     }
-  } catch {
+  } catch (err) {
+    console.error(`Error getting food post by slug ${slug}:`, err);
     return null
   }
 }

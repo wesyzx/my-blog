@@ -117,6 +117,7 @@ async function bundleData() {
   const gallery = [];
   if (fs.existsSync(galleryDir)) {
     const files = fs.readdirSync(galleryDir).filter(f => f.endsWith('.md'));
+    console.log(`    Found ${files.length} gallery files: ${files.join(', ')}`);
     for (const f of files) {
       const raw = fs.readFileSync(path.join(galleryDir, f), 'utf8');
       const { data, content } = matter(raw);

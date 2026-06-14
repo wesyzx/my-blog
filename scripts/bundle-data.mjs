@@ -39,6 +39,26 @@ async function fetchExifLocation(imageUrl) {
   return { lng: 0, lat: 0 };
 }
 
+async function fetchCoordsByAmap(address) {
+  const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
+  if (!key || !address) return { lng: 0, lat: 0 };
+
+  try {
+    const res = await fetch(
+      `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${key}`
+    );
+    const data = await res.json();
+
+    if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+      const [lng, lat] = data.geocodes[0].location.split(',').map(Number);
+      return { lng, lat };
+    }
+  } catch (err) {
+    console.error(`  [Amap] Failed for ${address}:`, err.message);
+  }
+  return { lng: 0, lat: 0 };
+}
+
 async function bundleData() {
   console.log('🚀 Bundling all content data for production...');
 
@@ -89,6 +109,15 @@ async function bundleData() {
             lat = loc.lat;
             break;
           }
+        }
+      }
+
+      // 2. Geocoding if still no coords
+      if ((lng === 0 || lat === 0) && data.location) {
+        const loc = await fetchCoordsByAmap(data.location);
+        if (loc.lng && loc.lat) {
+          lng = loc.lng;
+          lat = loc.lat;
         }
       }
 

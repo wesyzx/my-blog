@@ -101,6 +101,30 @@ async function fetchExifLocation(imageUrl: string) {
 }
 
 /**
+ * 使用高德地图 API 进行地理编码，将地址转为经纬度
+ */
+async function fetchCoordsByAmap(address: string) {
+  const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
+  if (!key || !address) return { lng: 0, lat: 0 };
+
+  try {
+    const res = await fetch(
+      `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${key}`,
+      { next: { revalidate: 86400 } }
+    );
+    const data = await res.json();
+
+    if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
+      const [lng, lat] = data.geocodes[0].location.split(',').map(Number);
+      return { lng, lat };
+    }
+  } catch (err) {
+    console.error('Error fetching coords from Amap:', err);
+  }
+  return { lng: 0, lat: 0 };
+}
+
+/**
  * 解析和合并单个美食文件的元数据
  */
 async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
@@ -121,18 +145,27 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
     lng = isNaN(lng) ? 0 : lng;
     lat = isNaN(lat) ? 0 : lat;
 
-    // 如果没有手动指定坐标，尝试从封面图或图集首张图片的又拍云 EXIF 中自动抓取
+    // 1. 如果没有手动指定坐标，尝试从图片 EXIF 中自动抓取
     if (lng === 0 || lat === 0) {
       const imagesToTry = [data.cover, ...(Array.isArray(data.images) ? data.images : [])]
         .filter((img): img is string => typeof img === 'string' && img.startsWith('http'));
         
-      for (const imgUrl of imagesToTry.slice(0, 2)) { // 最多尝试前2张图片，减少请求
+      for (const imgUrl of imagesToTry.slice(0, 2)) {
         const exifLoc = await fetchExifLocation(imgUrl);
         if (exifLoc.lng !== 0 && exifLoc.lat !== 0) {
           lng = exifLoc.lng;
           lat = exifLoc.lat;
           break;
         }
+      }
+    }
+
+    // 2. 如果图片也没有坐标，且有 location 信息，尝试高德地理编码
+    if ((lng === 0 || lat === 0) && data.location) {
+      const amapLoc = await fetchCoordsByAmap(data.location);
+      if (amapLoc.lng !== 0 && amapLoc.lat !== 0) {
+        lng = amapLoc.lng;
+        lat = amapLoc.lat;
       }
     }
 

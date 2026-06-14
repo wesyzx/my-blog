@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "dotenv -e .env.local -- tinacms dev -c \"next dev\"",
-    "prebuild": "node scripts/bundle-data.mjs",
+    "prebuild": "dotenv -e .env.local -- node scripts/bundle-data.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

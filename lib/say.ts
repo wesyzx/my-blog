@@ -23,24 +23,33 @@ export interface SayMeta {
  * 获取所有说说（按日期倒序）
  */
 export function getAllSays(): SayMeta[] {
-  if (!fs.existsSync(sayDirectory)) return []
+  try {
+    if (!fs.existsSync(sayDirectory)) return []
 
-  const fileNames = fs.readdirSync(sayDirectory)
+    const fileNames = fs.readdirSync(sayDirectory)
 
-  const says = fileNames
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => {
-      const slug = f.replace(/\.md$/, '')
-      const raw = fs.readFileSync(path.join(sayDirectory, f), 'utf8')
-      const { data, content } = matter(raw)
-      return {
-        slug,
-        date: data.date ? new Date(data.date).toISOString() : '',
-        content: content.trim(),
-        image: data.image || undefined,
-      }
-    })
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    const says = fileNames
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => {
+        const slug = f.replace(/\.md$/, '')
+        const raw = fs.readFileSync(path.join(sayDirectory, f), 'utf8')
+        const { data, content } = matter(raw)
+        return {
+          slug,
+          date: (() => {
+            if (!data.date) return '';
+            const d = new Date(data.date);
+            return isNaN(d.getTime()) ? '' : d.toISOString();
+          })(),
+          content: content.trim(),
+          image: data.image || undefined,
+        }
+      })
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
 
-  return says
+    return says
+  } catch (err) {
+    console.error('Error getting all says:', err)
+    return []
+  }
 }

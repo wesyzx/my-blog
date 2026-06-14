@@ -8,7 +8,7 @@ import { getAllPosts } from '@/lib/posts'
 
 const SITE_URL = 'https://guanyan.me'
 const SITE_TITLE = '莫赶'
-const SITE_DESCRIPTION = '为食而生，莫赶时间'
+const SITE_DESCRIPTION = '回忆已成，故事待叙，后会有期'
 
 export async function GET() {
   const posts = getAllPosts()

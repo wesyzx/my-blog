@@ -13,7 +13,9 @@ import ArtalkComments from '@/components/ArtalkComments'
 
 /** 格式化日期为中文形式：2026年5月11日 */
 function formatDate(dateStr: string) {
+  if (!dateStr) return '未知日期'
   const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '未知日期'
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 

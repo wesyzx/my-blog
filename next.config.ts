@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
     // 忽略又拍云 SDK 缺失类型定义导致的构建报错
     ignoreBuildErrors: true,
   },
+  output: 'standalone',
 }
 
 export default nextConfig

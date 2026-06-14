@@ -77,7 +77,10 @@ export default async function MediaPage() {
                   </div>
                 )}
                 <div className="text-[12px] text-[var(--color-text-hint)] mt-1 font-serif italic">
-                  {new Date(item.date).toLocaleDateString('zh-CN')}
+                  {(() => {
+                    const d = new Date(item.date);
+                    return isNaN(d.getTime()) ? '未知日期' : d.toLocaleDateString('zh-CN');
+                  })()}
                 </div>
               </div>
             </a>

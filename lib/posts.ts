@@ -34,39 +34,48 @@ export interface Post extends PostMeta {
  * 用于首页、分类筛选等列表场景
  */
 export function getAllPosts(): PostMeta[] {
-  if (!fs.existsSync(postsDirectory)) return []
+  try {
+    if (!fs.existsSync(postsDirectory)) return []
 
-  const fileNames = fs.readdirSync(postsDirectory)
+    const fileNames = fs.readdirSync(postsDirectory)
 
-  const posts = fileNames
-    .filter((fileName) => fileName.endsWith('.md')) // 仅处理 .md 文件（Obsidian 兼容）
-    .map((fileName) => {
-      const slug = fileName.replace(/\.md$/, '')
-      const fullPath = path.join(postsDirectory, fileName)
-      const fileContents = fs.readFileSync(fullPath, 'utf8')
+    const posts = fileNames
+      .filter((fileName) => fileName.endsWith('.md')) // 仅处理 .md 文件（Obsidian 兼容）
+      .map((fileName) => {
+        const slug = fileName.replace(/\.md$/, '')
+        const fullPath = path.join(postsDirectory, fileName)
+        const fileContents = fs.readFileSync(fullPath, 'utf8')
 
-      // gray-matter 将 Frontmatter 和正文分离
-      const { data } = matter(fileContents)
+        // gray-matter 将 Frontmatter 和正文分离
+        const { data } = matter(fileContents)
 
-      return {
-        slug,
-        title: data.title || '',
-        date: data.date ? new Date(data.date).toISOString() : '',
-        category: data.category || '未分类',
-        tags: Array.isArray(data.tags)
-          ? data.tags.map((tag: unknown) => String(tag))
-          : typeof data.tags === 'string'
-            ? data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
-            : [],
-        excerpt: data.excerpt || '',
-        cover: data.cover || '',
-        published: data.published !== false,
-      }
-    })
-    .filter((post) => post.published)
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
+        return {
+          slug,
+          title: data.title || '',
+          date: (() => {
+            if (!data.date) return '';
+            const d = new Date(data.date);
+            return isNaN(d.getTime()) ? '' : d.toISOString();
+          })(),
+          category: data.category || '未分类',
+          tags: Array.isArray(data.tags)
+            ? data.tags.map((tag: unknown) => String(tag))
+            : typeof data.tags === 'string'
+              ? data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
+              : [],
+          excerpt: data.excerpt || '',
+          cover: data.cover || '',
+          published: data.published !== false,
+        }
+      })
+      .filter((post) => post.published)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
 
-  return posts
+    return posts
+  } catch (err) {
+    console.error('Error getting all posts:', err)
+    return []
+  }
 }
 
 /**
@@ -82,7 +91,11 @@ export function getPostBySlug(slug: string): Post | null {
     return {
       slug,
       title: data.title || '',
-      date: data.date ? new Date(data.date).toISOString() : '',
+      date: (() => {
+      if (!data.date) return '';
+      const d = new Date(data.date);
+      return isNaN(d.getTime()) ? '' : d.toISOString();
+    })(),
       category: data.category || '未分类',
       tags: Array.isArray(data.tags)
         ? data.tags.map((tag: unknown) => String(tag))

@@ -1,10 +1,15 @@
-import { getMoreContentBySlug } from '@/lib/more';
+import { getMoreContentBySlug, getAllMoreSlugs } from '@/lib/more';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
 interface Props {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateStaticParams() {
+  const slugs = getAllMoreSlugs()
+  return slugs.map((slug) => ({ slug }))
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

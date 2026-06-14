@@ -34,7 +34,7 @@ export default function Footer() {
           {/* 第二行：敬语标语 */}
           <div className="text-center">
             <p className="text-[14px] text-[var(--color-text-secondary)] tracking-[0.1em] font-serif italic">
-              敬平凡，敬放下，敬坚持，敬付出
+              回忆已成，故事待叙，后会有期
             </p>
           </div>
 

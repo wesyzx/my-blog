@@ -36,3 +36,18 @@ export function getMoreContentBySlug(slug: string): MoreContent | null {
     return null
   }
 }
+
+/**
+ * 获取所有抽屉项的 slug 列表
+ */
+export function getAllMoreSlugs(): string[] {
+  try {
+    if (!fs.existsSync(moreDirectory)) return []
+    const fileNames = fs.readdirSync(moreDirectory)
+    return fileNames
+      .filter(f => f.endsWith('.md'))
+      .map(f => f.replace(/\.md$/, ''))
+  } catch {
+    return []
+  }
+}

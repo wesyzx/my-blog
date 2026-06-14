@@ -1,6 +1,11 @@
-import { getGalleryBySlug } from '@/lib/gallery'
+import { getGalleryBySlug, getAllGalleryItems } from '@/lib/gallery'
 import { notFound } from 'next/navigation'
 import GalleryDetail from '@/components/GalleryDetail'
+
+export async function generateStaticParams() {
+  const items = getAllGalleryItems()
+  return items.map((item) => ({ slug: item.slug }))
+}
 
 export async function generateMetadata({
   params,

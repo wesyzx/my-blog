@@ -16,13 +16,19 @@ export interface DoubanItem {
 
 export async function getDoubanInterests(userId: string): Promise<DoubanItem[]> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
+
     // 使用 Next.js 原生 fetch 以支持缓存 (revalidate)
     const res = await fetch(`https://www.douban.com/feed/people/${userId}/interests`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
-      next: { revalidate: 3600 } // 每小时重新验证一次
+      next: { revalidate: 3600 }, // 每小时重新验证一次
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       console.error(`Failed to fetch Douban RSS: ${res.status} ${res.statusText}`);

@@ -61,23 +61,41 @@ function parseGPS(gps?: string, ref?: string): number {
  * 尝试从图片 URL 获取 EXIF 经纬度
  * 适配又拍云的 !/meta 接口
  */
+/**
+ * 尝试从图片 URL 获取 EXIF 经纬度
+ * 适配又拍云的 !/meta 接口，增加超时处理
+ */
 async function fetchExifLocation(imageUrl: string) {
-  if (!imageUrl.startsWith('http')) return { lng: 0, lat: 0 };
+  if (!imageUrl || !imageUrl.startsWith('http')) return { lng: 0, lat: 0 };
+  
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒超时
+
     // 假设使用又拍云，通过 !/meta 获取图片元数据
-    const res = await fetch(`${imageUrl}!/meta`, { next: { revalidate: 86400 } });
+    const res = await fetch(`${imageUrl}!/meta`, { 
+      next: { revalidate: 86400 },
+      signal: controller.signal 
+    });
+    
+    clearTimeout(timeoutId);
+
     if (!res.ok) return { lng: 0, lat: 0 };
+    
     const meta = await res.json();
     
     // 如果包含 EXIF 并且有 GPS 信息
     if (meta && meta.EXIF && meta.EXIF.GPSLatitude && meta.EXIF.GPSLongitude) {
-      return {
-        lat: parseGPS(meta.EXIF.GPSLatitude, meta.EXIF.GPSLatitudeRef),
-        lng: parseGPS(meta.EXIF.GPSLongitude, meta.EXIF.GPSLongitudeRef),
+      const lat = parseGPS(meta.EXIF.GPSLatitude, meta.EXIF.GPSLatitudeRef);
+      const lng = parseGPS(meta.EXIF.GPSLongitude, meta.EXIF.GPSLongitudeRef);
+      return { 
+        lat: isNaN(lat) ? 0 : lat, 
+        lng: isNaN(lng) ? 0 : lng 
       };
     }
     return { lng: 0, lat: 0 };
   } catch (err) {
+    // 捕获超时或网络错误，不影响主流程
     console.error('Error fetching EXIF for', imageUrl, err);
     return { lng: 0, lat: 0 };
   }
@@ -97,15 +115,21 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
 
     if (data.published === false) return null;
 
-    let lng = Number(data.lng) || 0;
-    let lat = Number(data.lat) || 0;
+    let lng = Number(data.lng);
+    let lat = Number(data.lat);
+    
+    // 确保是有效的数字
+    lng = isNaN(lng) ? 0 : lng;
+    lat = isNaN(lat) ? 0 : lat;
 
     // 如果没有手动指定坐标，尝试从封面图或图集首张图片的又拍云 EXIF 中自动抓取
     if (lng === 0 || lat === 0) {
-      const imagesToTry = [data.cover, ...(Array.isArray(data.images) ? data.images : [])].filter(Boolean);
-      for (const imgUrl of imagesToTry.slice(0, 3)) { // 最多尝试前3张图片
+      const imagesToTry = [data.cover, ...(Array.isArray(data.images) ? data.images : [])]
+        .filter((img): img is string => typeof img === 'string' && img.startsWith('http'));
+        
+      for (const imgUrl of imagesToTry.slice(0, 2)) { // 最多尝试前2张图片，减少请求
         const exifLoc = await fetchExifLocation(imgUrl);
-        if (exifLoc.lng && exifLoc.lat) {
+        if (exifLoc.lng !== 0 && exifLoc.lat !== 0) {
           lng = exifLoc.lng;
           lat = exifLoc.lat;
           break;
@@ -113,7 +137,7 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
       }
     }
 
-    // 安全解析日期，防止无效日期导致 toISOString() 报错
+    // 安全解析日期
     let dateStr = '';
     if (data.date) {
       const d = new Date(data.date);
@@ -128,10 +152,9 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
       date: dateStr,
       location: data.location || '',
       address: data.address || '',
-      lng,
-      lat,
+      lng: isNaN(lng) ? 0 : lng,
+      lat: isNaN(lat) ? 0 : lat,
       cover: data.cover || '',
-      // 过滤掉空字符串或非字符串的图片链接
       images: Array.isArray(data.images) 
         ? data.images.filter((img: any) => typeof img === 'string' && img.length > 0) 
         : [],

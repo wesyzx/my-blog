@@ -8,9 +8,12 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { bundleData } from './data-bundle'
 
 /** 文章 Markdown 文件的存放目录 */
 const postsDirectory = path.join(process.cwd(), 'content/posts')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 /** 文章元数据（不含正文，用于列表页） */
 export interface PostMeta {
@@ -34,6 +37,10 @@ export interface Post extends PostMeta {
  * 用于首页、分类筛选等列表场景
  */
 export function getAllPosts(): PostMeta[] {
+  if (!isDev) {
+    return bundleData.posts;
+  }
+
   try {
     if (!fs.existsSync(postsDirectory)) return []
 
@@ -83,6 +90,10 @@ export function getAllPosts(): PostMeta[] {
  * @returns 文章对象，找不到则返回 null
  */
 export function getPostBySlug(slug: string): Post | null {
+  if (!isDev) {
+    return (bundleData.posts as Post[]).find(p => p.slug === slug) || null;
+  }
+
   try {
     const fullPath = path.join(postsDirectory, `${slug}.md`)
     const fileContents = fs.readFileSync(fullPath, 'utf8')

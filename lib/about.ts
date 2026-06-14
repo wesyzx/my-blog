@@ -7,14 +7,21 @@
  */
 import fs from 'fs'
 import path from 'path'
+import { bundleData } from './data-bundle'
 
 /** 关于页面的 Markdown 文件路径 */
 const aboutPath = path.join(process.cwd(), 'content/about.md')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 /**
  * 获取关于页面的原始 Markdown 内容
  */
 export function getAboutContent(): string {
+  if (!isDev) {
+    return bundleData.about;
+  }
+
   try {
     return fs.readFileSync(aboutPath, 'utf8')
   } catch {

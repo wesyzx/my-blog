@@ -8,9 +8,12 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { bundleData } from './data-bundle'
 
 /** 探店记录存放目录 */
 const foodDirectory = path.join(process.cwd(), 'content/food')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 /** 探店记录元数据 */
 export interface FoodMeta {
@@ -57,10 +60,6 @@ function parseGPS(gps?: string, ref?: string): number {
   return Number(dec.toFixed(6));
 }
 
-/**
- * 尝试从图片 URL 获取 EXIF 经纬度
- * 适配又拍云的 !/meta 接口
- */
 /**
  * 尝试从图片 URL 获取 EXIF 经纬度
  * 适配又拍云的 !/meta 接口，增加超时处理
@@ -155,6 +154,7 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
       lng: isNaN(lng) ? 0 : lng,
       lat: isNaN(lat) ? 0 : lat,
       cover: data.cover || '',
+      // 过滤掉空字符串或非字符串的图片链接
       images: Array.isArray(data.images) 
         ? data.images.filter((img: any) => typeof img === 'string' && img.length > 0) 
         : [],
@@ -172,6 +172,10 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
  * 获取所有探店记录（按日期倒序）
  */
 export async function getAllFoodPosts(): Promise<FoodMeta[]> {
+  if (!isDev) {
+    return bundleData.food;
+  }
+
   try {
     if (!fs.existsSync(foodDirectory)) return []
 
@@ -199,6 +203,10 @@ export async function getAllFoodPosts(): Promise<FoodMeta[]> {
  * 根据 slug 获取单篇探店详情
  */
 export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> {
+  if (!isDev) {
+    return (bundleData.food as FoodPost[]).find(p => p.slug === slug) || null;
+  }
+
   try {
     const fileName = `${slug}.md`;
     const fullPath = path.join(foodDirectory, fileName)

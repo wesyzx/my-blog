@@ -8,9 +8,12 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { bundleData } from './data-bundle'
 
 /** 相册文件存放目录 */
 const galleryDirectory = path.join(process.cwd(), 'content/gallery')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 /** 相册元数据 */
 export interface GalleryMeta {
@@ -33,6 +36,10 @@ export interface GalleryItem extends GalleryMeta {
  * 获取所有相册（按日期倒序）
  */
 export function getAllGalleryItems(): GalleryMeta[] {
+  if (!isDev) {
+    return bundleData.gallery;
+  }
+
   try {
     if (!fs.existsSync(galleryDirectory)) return []
 
@@ -93,6 +100,10 @@ export function getAllGalleryItems(): GalleryMeta[] {
  * 根据 slug 获取单个相册详情
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
+  if (!isDev) {
+    return (bundleData.gallery as GalleryItem[]).find(i => i.slug === slug) || null;
+  }
+
   try {
     const fullPath = path.join(galleryDirectory, `${slug}.md`)
     if (!fs.existsSync(fullPath) || !fs.statSync(fullPath).isFile()) return null;

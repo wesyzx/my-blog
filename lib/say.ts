@@ -7,9 +7,12 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { bundleData } from './data-bundle'
 
 /** 说说文件存放目录 */
 const sayDirectory = path.join(process.cwd(), 'content/say')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 /** 说说元数据 */
 export interface SayMeta {
@@ -23,6 +26,10 @@ export interface SayMeta {
  * 获取所有说说（按日期倒序）
  */
 export function getAllSays(): SayMeta[] {
+  if (!isDev) {
+    return bundleData.says;
+  }
+
   try {
     if (!fs.existsSync(sayDirectory)) return []
 

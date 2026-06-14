@@ -1,8 +1,11 @@
 import fs from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
+import { bundleData } from './data-bundle'
 
 const moreDirectory = path.join(process.cwd(), 'content/more')
+
+const isDev = process.env.NODE_ENV === 'development'
 
 export interface MoreContent {
   slug: string
@@ -17,6 +20,10 @@ export interface MoreContent {
  * @param slug 抽屉项标识，如 'goods', 'apps'
  */
 export function getMoreContentBySlug(slug: string): MoreContent | null {
+  if (!isDev) {
+    return (bundleData.more as MoreContent[]).find(m => m.slug === slug) || null;
+  }
+
   try {
     const fullPath = path.join(moreDirectory, `${slug}.md`)
     if (!fs.existsSync(fullPath)) return null
@@ -41,6 +48,10 @@ export function getMoreContentBySlug(slug: string): MoreContent | null {
  * 获取所有抽屉项的 slug 列表
  */
 export function getAllMoreSlugs(): string[] {
+  if (!isDev) {
+    return (bundleData.more as MoreContent[]).map(m => m.slug);
+  }
+
   try {
     if (!fs.existsSync(moreDirectory)) return []
     const fileNames = fs.readdirSync(moreDirectory)

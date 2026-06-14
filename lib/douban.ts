@@ -1,6 +1,9 @@
 import Parser from 'rss-parser';
+import { bundleData } from './data-bundle'
 
 const parser = new Parser();
+
+const isDev = process.env.NODE_ENV === 'development'
 
 export interface DoubanItem {
   id: string;
@@ -15,6 +18,10 @@ export interface DoubanItem {
 }
 
 export async function getDoubanInterests(userId: string): Promise<DoubanItem[]> {
+  if (!isDev) {
+    return bundleData.douban as DoubanItem[];
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
@@ -37,43 +44,49 @@ export async function getDoubanInterests(userId: string): Promise<DoubanItem[]> 
 
     const xml = await res.text();
     const feed = await parser.parseString(xml);
-    
-    return feed.items.map(item => {
-      // 1. 从 description 中提取封面图
+
+    return feed.items.map((item) => {
       const content = item.content || item.contentSnippet || '';
+      
+      // 提取封面图
       const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
       const cover = imgMatch ? imgMatch[1] : '';
 
-      // 2. 提取评分和短评
+      // 提取评分和短评
       const pMatches = [...(content.matchAll(/<p>(.*?)<\/p>/g) || [])];
       let rating = '';
       let comment = '';
       
-      pMatches.forEach(match => {
-        const text = match[1];
-        if (text.startsWith('推荐:')) rating = text.replace('推荐:', '').trim();
-        else if (text.startsWith('备注:')) comment = text.replace('备注:', '').trim();
-      });
+      if (pMatches.length >= 2) {
+        const text = pMatches[0][1];
+        if (text.includes('推荐: ')) {
+          const stars = text.split('推荐: ')[1];
+          rating = '★'.repeat(parseInt(stars) || 0) + '☆'.repeat(5 - (parseInt(stars) || 0));
+        }
+        comment = pMatches[pMatches.length - 1][1];
+      }
 
-      // 3. 确定类型
-      let type: DoubanItem['type'] = 'unknown';
-      if (item.link?.includes('book.douban.com')) type = 'book';
-      else if (item.link?.includes('movie.douban.com')) type = 'movie';
-      else if (item.link?.includes('music.douban.com')) type = 'music';
-      else if (item.link?.includes('game.douban.com')) type = 'game';
-
-      // 4. 提取动作和标题 (例如 "想看《阿飞正传》")
-      let action = '';
-      let title = item.title || '';
-      const titleMatch = item.title?.match(/^(.*?)《(.*?)》/);
-      if (titleMatch) {
-        action = titleMatch[1];
-        title = titleMatch[2];
+      // 识别动作（读过/看过/听过/玩过）
+      let action = '看过';
+      let type: DoubanItem['type'] = 'movie';
+      
+      if (item.title.includes('想读') || item.title.includes('在读') || item.title.includes('读过')) {
+        type = 'book';
+        action = item.title.slice(0, 2);
+      } else if (item.title.includes('想看') || item.title.includes('在看') || item.title.includes('看过')) {
+        type = 'movie';
+        action = item.title.slice(0, 2);
+      } else if (item.title.includes('想听') || item.title.includes('在听') || item.title.includes('听过')) {
+        type = 'music';
+        action = item.title.slice(0, 2);
+      } else if (item.title.includes('想玩') || item.title.includes('在玩') || item.title.includes('玩过')) {
+        type = 'game';
+        action = item.title.slice(0, 2);
       }
 
       return {
-        id: item.guid || item.link || Date.now().toString() + Math.random(),
-        title,
+        id: item.guid || item.link || Math.random().toString(),
+        title: item.title.split(action)[1]?.trim() || item.title,
         link: item.link || '',
         cover,
         rating,

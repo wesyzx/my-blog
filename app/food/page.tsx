@@ -50,7 +50,7 @@ export default async function FoodPage() {
           <span style={{ color: 'var(--color-accent)' }}>📸</span> 美食图集
         </h2>
 
-        {posts.length === 0 ? (
+        {!posts || posts.length === 0 ? (
           <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
             <p className="text-sm text-[var(--color-text-muted)]">
               还没有美食记录，快去探店吧 🍜

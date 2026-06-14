@@ -33,30 +33,57 @@ export interface GalleryItem extends GalleryMeta {
  * 获取所有相册（按日期倒序）
  */
 export function getAllGalleryItems(): GalleryMeta[] {
-  if (!fs.existsSync(galleryDirectory)) return []
+  try {
+    if (!fs.existsSync(galleryDirectory)) return []
 
-  const fileNames = fs.readdirSync(galleryDirectory)
-  const items = fileNames
-    .filter((f) => f.endsWith('.md'))
-    .map((f) => {
-      const slug = f.replace(/\.md$/, '')
-      const raw = fs.readFileSync(path.join(galleryDirectory, f), 'utf8')
-      const { data } = matter(raw)
-      return {
-        slug,
-        title: data.title || '',
-        date: data.date ? new Date(data.date).toISOString() : '',
-        category: data.category || '日常',
-        cover: data.cover || '',
-        images: Array.isArray(data.images) ? data.images : [],
-        excerpt: data.excerpt || '',
-        published: data.published !== false,
-      }
-    })
-    .filter((item) => item.published)
-    .sort((a, b) => (a.date < b.date ? 1 : -1))
+    const fileNames = fs.readdirSync(galleryDirectory)
+    const items = fileNames
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => {
+        try {
+          const slug = f.replace(/\.md$/, '')
+          const fullPath = path.join(galleryDirectory, f)
+          const raw = fs.readFileSync(fullPath, 'utf8')
+          const { data } = matter(raw)
+          
+          // 安全解析日期
+          let dateStr = '';
+          if (data.date) {
+            const d = new Date(data.date);
+            if (!isNaN(d.getTime())) {
+              dateStr = d.toISOString();
+            }
+          }
 
-  return items
+          return {
+            slug,
+            title: data.title || slug,
+            date: dateStr,
+            category: data.category || '日常',
+            cover: data.cover || '',
+            images: Array.isArray(data.images) 
+              ? data.images.filter((img: any) => typeof img === 'string' && img.length > 0) 
+              : [],
+            excerpt: data.excerpt || '',
+            published: data.published !== false,
+          }
+        } catch (e) {
+          console.error(`Error parsing gallery item ${f}:`, e);
+          return null;
+        }
+      })
+      .filter((item): item is GalleryMeta => item !== null && item.published)
+      .sort((a, b) => {
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return a.date < b.date ? 1 : -1;
+      })
+
+    return items
+  } catch (err) {
+    console.error('Error getting all gallery items:', err);
+    return [];
+  }
 }
 
 /**
@@ -64,20 +91,36 @@ export function getAllGalleryItems(): GalleryMeta[] {
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
   try {
-    const raw = fs.readFileSync(path.join(galleryDirectory, `${slug}.md`), 'utf8')
+    const fullPath = path.join(galleryDirectory, `${slug}.md`)
+    if (!fs.existsSync(fullPath)) return null;
+    
+    const raw = fs.readFileSync(fullPath, 'utf8')
     const { data, content } = matter(raw)
+    
+    // 安全解析日期
+    let dateStr = '';
+    if (data.date) {
+      const d = new Date(data.date);
+      if (!isNaN(d.getTime())) {
+        dateStr = d.toISOString();
+      }
+    }
+
     return {
       slug,
-      title: data.title || '',
-      date: data.date ? new Date(data.date).toISOString() : '',
+      title: data.title || slug,
+      date: dateStr,
       category: data.category || '日常',
       cover: data.cover || '',
-      images: Array.isArray(data.images) ? data.images : [],
+      images: Array.isArray(data.images) 
+        ? data.images.filter((img: any) => typeof img === 'string' && img.length > 0) 
+        : [],
       excerpt: data.excerpt || '',
       published: data.published !== false,
       content,
     }
-  } catch {
+  } catch (err) {
+    console.error(`Error getting gallery by slug ${slug}:`, err);
     return null
   }
 }

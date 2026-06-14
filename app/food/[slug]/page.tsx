@@ -6,13 +6,20 @@ import Link from 'next/link'
 import ArtalkComments from '@/components/ArtalkComments'
 
 function formatDate(dateStr: string) {
+  if (!dateStr) return '未知日期'
   const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return '未知日期'
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 export async function generateStaticParams() {
-  const posts = await getAllFoodPosts()
-  return posts.map((post) => ({ slug: post.slug }))
+  try {
+    const posts = await getAllFoodPosts()
+    return posts.map((post) => ({ slug: post.slug }))
+  } catch (err) {
+    console.error('Error generating static params for food:', err)
+    return []
+  }
 }
 
 export async function generateMetadata({
@@ -24,8 +31,8 @@ export async function generateMetadata({
   const post = await getFoodPostBySlug(slug)
   if (!post) return {}
   return {
-    title: `${post.title} - 美食地图`,
-    description: post.excerpt,
+    title: `${post.title || '美食'} - 美食地图`,
+    description: post.excerpt || '',
   }
 }
 
@@ -51,7 +58,7 @@ export default async function FoodPostPage({
           <div className="relative w-full aspect-[2/1] rounded-[6px] overflow-hidden mb-[35px]">
             <Image
               src={post.cover}
-              alt={post.title}
+              alt={post.title || '美食图片'}
               fill
               className="object-cover"
               priority
@@ -62,11 +69,13 @@ export default async function FoodPostPage({
         {/* 文章头部 */}
         <header className="mb-[35px] text-center">
           {/* 标签 */}
-          <div className="flex items-center justify-center gap-2 mb-[15px]">
-            {post.tags.map((tag) => (
-              <span key={tag} className="tag-pill">{tag}</span>
-            ))}
-          </div>
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex items-center justify-center gap-2 mb-[15px]">
+              {post.tags.map((tag) => (
+                <span key={tag} className="tag-pill">{tag}</span>
+              ))}
+            </div>
+          )}
 
           {/* 标题 */}
           <h1
@@ -76,7 +85,7 @@ export default async function FoodPostPage({
               fontFamily: "Georgia, 'Noto Serif SC', serif",
             }}
           >
-            {post.title}
+            {post.title || '未命名探店'}
           </h1>
 
           {/* 地点 & 日期 */}
@@ -84,11 +93,11 @@ export default async function FoodPostPage({
             className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            <span>📍 {post.location}</span>
-            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
+            {post.location && <span>📍 {post.location}</span>}
+            {post.location && post.date && <span style={{ color: 'var(--color-border-hover)' }}>/</span>}
             <time>{formatDate(post.date)}</time>
-            <span style={{ color: 'var(--color-border-hover)' }}>/</span>
-            <span>{post.address}</span>
+            {post.address && <span style={{ color: 'var(--color-border-hover)' }}>/</span>}
+            {post.address && <span>{post.address}</span>}
           </div>
         </header>
 

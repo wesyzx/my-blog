@@ -33,13 +33,26 @@ export interface FoodPost extends FoodMeta {
 }
 
 /** 
- * 将 EXIF 中的度分秒格式 (如 "30,16,14.65") 转换为十进制
+ * 将 EXIF 中的坐标格式转换为十进制
+ * 支持 "30,16,14.65" (DMS) 或 "30.271111" (Decimal)
  */
 function parseGPS(gps?: string, ref?: string): number {
   if (!gps) return 0;
-  const parts = gps.split(',').map(parseFloat);
-  if (parts.length !== 3) return 0;
-  let dec = parts[0] + parts[1] / 60 + parts[2] / 3600;
+  
+  // 处理常见的逗号或空格分隔
+  const parts = gps.split(/[\s,]+/).map(parseFloat).filter(n => !isNaN(n));
+  
+  let dec = 0;
+  if (parts.length === 3) {
+    // DMS 格式: [度, 分, 秒]
+    dec = parts[0] + parts[1] / 60 + parts[2] / 3600;
+  } else if (parts.length === 1) {
+    // 十进制格式
+    dec = parts[0];
+  } else {
+    return 0;
+  }
+  
   if (ref === 'S' || ref === 'W') dec = -dec;
   return Number(dec.toFixed(6));
 }
@@ -66,38 +79,61 @@ async function fetchExifLocation(imageUrl: string) {
  * 解析和合并单个美食文件的元数据
  */
 async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
-  const slug = fileName.replace(/\.md$/, '')
-  const fullPath = path.join(foodDirectory, fileName)
-  const fileContents = fs.readFileSync(fullPath, 'utf8')
-  const { data } = matter(fileContents)
+  try {
+    const slug = fileName.replace(/\.md$/, '')
+    const fullPath = path.join(foodDirectory, fileName)
+    
+    if (!fs.existsSync(fullPath)) return null;
+    const fileContents = fs.readFileSync(fullPath, 'utf8')
+    const { data } = matter(fileContents)
 
-  if (data.published === false) return null;
+    if (data.published === false) return null;
 
-  let lng = Number(data.lng) || 0;
-  let lat = Number(data.lat) || 0;
+    let lng = Number(data.lng) || 0;
+    let lat = Number(data.lat) || 0;
 
-  // 如果没有手动指定坐标，尝试从封面图的又拍云 EXIF 中自动抓取
-  if ((lng === 0 || lat === 0) && data.cover) {
-    const exifLoc = await fetchExifLocation(data.cover);
-    if (exifLoc.lng && exifLoc.lat) {
-      lng = exifLoc.lng;
-      lat = exifLoc.lat;
+    // 如果没有手动指定坐标，尝试从封面图或图集首张图片的又拍云 EXIF 中自动抓取
+    if (lng === 0 || lat === 0) {
+      const imagesToTry = [data.cover, ...(Array.isArray(data.images) ? data.images : [])].filter(Boolean);
+      for (const imgUrl of imagesToTry.slice(0, 3)) { // 最多尝试前3张图片
+        const exifLoc = await fetchExifLocation(imgUrl);
+        if (exifLoc.lng && exifLoc.lat) {
+          lng = exifLoc.lng;
+          lat = exifLoc.lat;
+          break;
+        }
+      }
     }
-  }
 
-  return {
-    slug,
-    title: data.title || '',
-    date: data.date ? new Date(data.date).toISOString() : '',
-    location: data.location || '',
-    address: data.address || '',
-    lng,
-    lat,
-    cover: data.cover || '',
-    images: Array.isArray(data.images) ? data.images : [],
-    tags: Array.isArray(data.tags) ? data.tags.map((t: unknown) => String(t)) : [],
-    excerpt: data.excerpt || '',
-    published: true,
+    // 安全解析日期，防止无效日期导致 toISOString() 报错
+    let dateStr = '';
+    if (data.date) {
+      const d = new Date(data.date);
+      if (!isNaN(d.getTime())) {
+        dateStr = d.toISOString();
+      }
+    }
+
+    return {
+      slug,
+      title: data.title || slug,
+      date: dateStr,
+      location: data.location || '',
+      address: data.address || '',
+      lng,
+      lat,
+      cover: data.cover || '',
+      // 过滤掉空字符串或非字符串的图片链接
+      images: Array.isArray(data.images) 
+        ? data.images.filter((img: any) => typeof img === 'string' && img.length > 0) 
+        : [],
+      tags: Array.isArray(data.tags) ? data.tags.map((t: unknown) => String(t)) : [],
+      excerpt: data.excerpt || '',
+      published: true,
+    }
+  } catch (err) {
+    console.error(`Error parsing food meta for ${fileName}:`, err);
+    return null;
   }
 }
 
@@ -105,15 +141,24 @@ async function parseFoodMeta(fileName: string): Promise<FoodMeta | null> {
  * 获取所有探店记录（按日期倒序）
  */
 export async function getAllFoodPosts(): Promise<FoodMeta[]> {
-  if (!fs.existsSync(foodDirectory)) return []
+  try {
+    if (!fs.existsSync(foodDirectory)) return []
 
-  const fileNames = fs.readdirSync(foodDirectory)
-  const mdFiles = fileNames.filter((fileName) => fileName.endsWith('.md'))
-  
-  const postsPromises = mdFiles.map(parseFoodMeta)
-  const posts = (await Promise.all(postsPromises)).filter((p): p is FoodMeta => p !== null)
+    const fileNames = fs.readdirSync(foodDirectory)
+    const mdFiles = fileNames.filter((fileName) => fileName.endsWith('.md'))
+    
+    const postsPromises = mdFiles.map(parseFoodMeta)
+    const posts = (await Promise.all(postsPromises)).filter((p): p is FoodMeta => p !== null)
 
-  return posts.sort((a, b) => (a.date < b.date ? 1 : -1))
+    return posts.sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return a.date < b.date ? 1 : -1;
+    })
+  } catch (err) {
+    console.error('Error getting all food posts:', err);
+    return [];
+  }
 }
 
 /**

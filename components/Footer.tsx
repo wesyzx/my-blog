@@ -6,7 +6,7 @@
  * 展示信息：
  * 1. 博客运行时间 + 自建访客统计
  * 2. 敬平凡... 标语 (居中)
- * 3. 技术栈标识（Next.js / Cloudflare / EdgeOne / 又拍云）
+ * 3. 技术栈标识（Next.js / EdgeOne / 又拍云）
  * 4. 版权声明与 ICP 备案号 (最底部，左右分布)
  */
 import Link from 'next/link'
@@ -54,22 +54,6 @@ export default function Footer() {
                 <path d="M106.317 112.014L49.167 38.4H38.4v51.2h10.767V58.531l49.556 63.615 7.594-10.132z" fill="var(--color-bg-surface)"/>
               </svg>
               Next.js
-            </Link>
-
-            <Link
-              href="https://www.cloudflare.com"
-              target="_blank"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
-              style={{
-                color: 'var(--color-text-hint)',
-                borderColor: 'var(--color-border)',
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 128 128" fill="none">
-                <path d="M64 16C37.5 16 16 37.5 16 64s21.5 48 48 48 48-21.5 48-48S90.5 16 64 16zm23.5 71.5l-6.5 4-13-16-13 16-6.5-4 19.5-24 19.5 24z" fill="#F6821F"/>
-                <path d="M40 64c0-13.3 10.7-24 24-24s24 10.7 24 24-10.7 24-24 24c-5.5 0-10.7-1.9-14.8-5l-4.7 5.8c5.4 4.3 12.3 6.9 19.5 6.9 17.7 0 32-14.3 32-32S105.7 32 88 32 56 46.3 56 64c0 2.1.2 4.2.6 6.2l-7.5 9.2C48.4 76.5 48 70.3 48 64c0-22.1 17.9-40 40-40s40 17.9 40 40-17.9 40-40 40c-8.7 0-16.7-2.8-23.2-7.5l-4.8 5.9c7.7 5.9 17.4 9.4 28 9.4 26.5 0 48-21.5 48-48S114.5 16 88 16 40 37.5 40 64z" fill="#FAAE44"/>
-              </svg>
-              Cloudflare
             </Link>
 
             <Link

@@ -50,7 +50,7 @@ export default async function Home({
           className="text-[32px] md:text-[40px] font-bold mb-8 text-[var(--color-text-primary)]"
           style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
         >
-          {currentCategory || "莫赶 / 博文"}
+          {currentCategory || "博文"}
         </h1>
         
         {/* 分类切换栏 */}

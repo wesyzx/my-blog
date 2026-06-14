@@ -1,61 +1,16 @@
 'use client'
 
 /**
- * 相册列表组件
- *
- * 已应用极简单列布局标准。
+ * 相册列表组件 - 封面列表模式
+ * 
+ * 展示所有相册的封面图、标题和日期。
+ * 点击封面进入相册详情页。
  */
-import { useState, useMemo } from 'react'
-import PhotoAlbum from 'react-photo-album'
-import Lightbox from 'yet-another-react-lightbox'
-import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
-import Zoom from 'yet-another-react-lightbox/plugins/zoom'
-import 'yet-another-react-lightbox/styles.css'
-import 'react-photo-album/styles.css'
+import Link from 'next/link'
+import Image from 'next/image'
 import type { GalleryMeta } from '@/lib/gallery'
 
-const ITEMS_PER_PAGE = 24
-
-function buildPhotos(albums: GalleryMeta[]) {
-  const ratios = [1.5, 0.67, 0.67, 1.5, 0.75, 0.67, 0.67, 1.5]
-  const photos: any[] = []
-  let idx = 0
-  for (const album of albums) {
-    for (let i = 0; i < album.images.length; i++) {
-      const ratio = ratios[idx % ratios.length]
-      photos.push({
-        src: album.images[i],
-        width: 1200,
-        height: Math.round(1200 / ratio),
-        key: `${album.slug}-${i}`,
-        alt: `${album.title} - ${i + 1}`,
-        title: album.title,
-        albumTitle: album.title,
-        albumSlug: album.slug,
-      })
-      idx++
-    }
-  }
-  return photos
-}
-
 export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
-  const [page, setPage] = useState(1)
-  const [lightboxIndex, setLightboxIndex] = useState(-1)
-
-  const allPhotos = useMemo(() => buildPhotos(albums), [albums])
-  const totalPages = Math.max(1, Math.ceil(allPhotos.length / ITEMS_PER_PAGE))
-  const safePage = Math.min(page, totalPages)
-  const pagedPhotos = allPhotos.slice(
-    (safePage - 1) * ITEMS_PER_PAGE,
-    safePage * ITEMS_PER_PAGE
-  )
-
-  const lightboxSlides = useMemo(
-    () => pagedPhotos.map((p) => ({ src: p.src, alt: p.alt, title: p.albumTitle })),
-    [pagedPhotos]
-  )
-
   return (
     <div className="max-w-[1100px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
       {/* 页面头部 */}
@@ -74,62 +29,66 @@ export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
         </p>
       </header>
 
-      {/* 照片瀑布流布局 */}
-      {pagedPhotos.length === 0 ? (
+      {/* 相册封面网格 */}
+      {!albums || albums.length === 0 ? (
         <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
           <p className="text-[14px] text-[var(--color-text-hint)]">
-            暂无照片
+            还没有相册，快去创作吧 📸
           </p>
         </div>
       ) : (
-        <div className="gallery-grid">
-          <PhotoAlbum
-            layout="rows"
-            photos={pagedPhotos}
-            targetRowHeight={320}
-            spacing={8}
-            padding={0}
-            rowConstraints={{ minPhotos: 2, maxPhotos: 4 }}
-            onClick={({ index }) => setLightboxIndex(index)}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
+          {albums.map((album) => (
+            <Link 
+              key={album.slug} 
+              href={`/gallery/${album.slug}`}
+              className="group flex flex-col"
+            >
+              {/* 封面图容器 */}
+              <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-sm group-hover:shadow-md transition-all duration-500">
+                {album.cover ? (
+                  <Image
+                    src={album.cover}
+                    alt={album.title}
+                    fill
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-[var(--color-text-hint)] text-[13px]">
+                    No Cover
+                  </div>
+                )}
+                
+                {/* 悬浮遮罩 - 展示照片数量 */}
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <span className="bg-white/90 backdrop-blur-sm text-black text-[12px] font-medium px-4 py-1.5 rounded-full">
+                    {album.images.length} 张照片
+                  </span>
+                </div>
+              </div>
+
+              {/* 相册信息 */}
+              <div className="mt-5">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="tag-category">{album.category}</span>
+                  <span className="text-[12px] text-[var(--color-text-hint)] font-serif italic">
+                    {album.date ? new Date(album.date).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) : '未知日期'}
+                  </span>
+                </div>
+                <h2 className="text-[18px] md:text-[20px] font-bold text-[var(--color-text-primary)] group-hover:text-[var(--color-accent)] transition-colors line-clamp-1" style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}>
+                  {album.title}
+                </h2>
+                {album.excerpt && (
+                  <p className="mt-2 text-[14px] text-[var(--color-text-muted)] line-clamp-2 leading-relaxed">
+                    {album.excerpt}
+                  </p>
+                )}
+              </div>
+            </Link>
+          ))}
         </div>
       )}
-
-      {/* 分页控件 */}
-      {totalPages > 1 && (
-        <nav className="mt-20 pt-10 border-t border-[var(--color-border)] flex items-center justify-between text-[14px]">
-          <button
-            onClick={() => setPage(Math.max(1, safePage - 1))}
-            disabled={safePage === 1}
-            className={`text-[var(--color-accent)] hover:underline disabled:opacity-30 disabled:no-underline`}
-          >
-            ← 上一页
-          </button>
-          
-          <div className="text-[var(--color-text-muted)] tracking-widest font-serif">
-            {safePage} / {totalPages}
-          </div>
-
-          <button
-            onClick={() => setPage(Math.min(totalPages, safePage + 1))}
-            disabled={safePage === totalPages}
-            className={`text-[var(--color-accent)] hover:underline disabled:opacity-30 disabled:no-underline`}
-          >
-            下一页 →
-          </button>
-        </nav>
-      )}
-
-      {/* 全屏灯箱 */}
-      <Lightbox
-        open={lightboxIndex >= 0}
-        index={lightboxIndex}
-        close={() => setLightboxIndex(-1)}
-        slides={lightboxSlides}
-        plugins={[Fullscreen, Zoom]}
-        styles={{ container: { backgroundColor: 'rgba(0, 0, 0, 0.94)' } }}
-        controller={{ closeOnBackdropClick: true }}
-      />
     </div>
   )
 }

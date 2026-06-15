@@ -50,7 +50,7 @@ export default async function Home({
           className="text-[32px] md:text-[40px] font-bold mb-8 text-[var(--color-text-primary)]"
           style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
         >
-          {currentCategory || "博文"}
+          博文
         </h1>
         
         {/* 分类切换栏 */}
@@ -88,8 +88,8 @@ export default async function Home({
       {/* ===== 文章列表区 ===== */}
       <section className="space-y-4">
         {pagedPosts.length > 0 ? (
-          pagedPosts.map((post) => (
-            <PostCard key={post.slug} post={post} />
+          pagedPosts.map((post, index) => (
+            <PostCard key={`${post.slug}-${index}`} post={post} />
           ))
         ) : (
           <div className="py-20 text-center text-[var(--color-text-muted)]">

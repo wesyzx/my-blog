@@ -20,7 +20,7 @@
  * 六、实用工具类（分隔线、滚动条、选中色）
  */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Noto+Serif+SC:wght@400;500;700&display=swap');
-@import url('https://unpkg.com/misans@4.0.0/lib/misans.css');
+@import url("https://font.sec.miui.com/font/css?family=MiSans:400,450:Chinese_Simplify,Latin&display=swap");
 
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
@@ -50,10 +50,10 @@
   --color-border-hover: rgba(0, 0, 0, 0.15);
 
   /* 字体栈 */
-  --font-zh: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-display: "Playfair Display", "Georgia", serif;
-  --font-body-en: "Lora", "Georgia", serif;
-  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-zh: "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-display: "Playfair Display", "MiSans", "Georgia", serif;
+  --font-body-en: "Lora", "MiSans", "Georgia", serif;
+  --font-ui: "MiSans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* 间距与圆角 */
   --radius-sm: 4px;
@@ -62,6 +62,11 @@
   --radius-xl: 16px;
   
   --transition-normal: 0.2s ease;
+}
+
+/* 字体美化 */
+*:not([class*="icon"]):not(i) {
+  font-family: "MiSans", var(--font-zh) !important;
 }
 
 /* Dark Mode 适配 */

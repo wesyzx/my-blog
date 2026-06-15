@@ -92,6 +92,8 @@ async function fetchCoordsByAmap(address) {
 
 async function bundleData() {
   console.log('🚀 Bundling all content data from Notion...');
+  console.log('  [Debug] NOTION_TOKEN exists:', !!process.env.NOTION_TOKEN);
+  console.log('  [Debug] Environment keys:', Object.keys(process.env).filter(k => k.startsWith('NOTION_')));
 
   if (!process.env.NOTION_TOKEN) {
     console.error('❌ NOTION_TOKEN is missing in .env.local');

@@ -14,8 +14,8 @@ function formatDateFull(dateStr: string) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-export default function SayPage() {
-  const says = getAllSays()
+export default async function SayPage() {
+  const says = await getAllSays()
 
   return (
     <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
@@ -25,7 +25,7 @@ export default function SayPage() {
           className="text-[32px] md:text-[40px] font-bold mb-4"
           style={{
             color: 'var(--color-text-primary)',
-            fontFamily: "Georgia, 'Noto Serif SC', serif",
+            fontFamily: "var(--font-zh)",
           }}
         >
           说说
@@ -38,7 +38,7 @@ export default function SayPage() {
       {says.length === 0 ? (
         <div className="py-20 text-center border border-dashed border-[var(--color-border)] rounded-xl">
           <p className="text-[var(--color-text-hint)] text-[15px]">
-            还没有说说，在 Obsidian 的 content/say/ 目录下新建一条吧
+            还没有说说，去 Memos 发布第一条吧！
           </p>
         </div>
       ) : (
@@ -73,15 +73,23 @@ export default function SayPage() {
                 {say.content}
               </div>
 
-              {/* 配图 */}
-              {say.image && (
-                <div className="mb-6 rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)]">
-                  <img
-                    src={say.image}
-                    alt=""
-                    className="w-full h-auto"
-                    loading="lazy"
-                  />
+              {/* 配图 - 支持多图显示 */}
+              {say.images && say.images.length > 0 && (
+                <div className={`mb-6 grid gap-2 ${
+                  say.images.length === 1 ? 'grid-cols-1' : 
+                  say.images.length === 2 ? 'grid-cols-2' : 
+                  'grid-cols-2 md:grid-cols-3'
+                }`}>
+                  {say.images.map((img, idx) => (
+                    <div key={idx} className="rounded-xl overflow-hidden shadow-sm border border-[var(--color-border)] aspect-square md:aspect-auto">
+                      <img
+                        src={img}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
 

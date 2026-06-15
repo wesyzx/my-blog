@@ -6,7 +6,8 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "dotenv -e .env.local -- tinacms dev -c \"next dev\"",
+    "predev": "dotenv -e .env.local -- node scripts/bundle-data.mjs",
+    "dev": "dotenv -e .env.local -- next dev",
     "prebuild": "dotenv -e .env.local -- node scripts/bundle-data.mjs",
     "build": "next build",
     "start": "next start",

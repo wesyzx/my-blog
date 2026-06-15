@@ -1,200 +1,198 @@
+import { Client } from '@notionhq/client';
+import { NotionToMarkdown } from 'notion-to-md';
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import dotenv from 'dotenv';
 import Parser from 'rss-parser';
 
+dotenv.config({ path: '.env.local' });
+
 const parser = new Parser();
+const notion = new Client({ auth: process.env.NOTION_TOKEN });
+const n2m = new NotionToMarkdown({ notionClient: notion });
 
-const CONTENT_DIR = path.join(process.cwd(), 'content');
+// Map to the underlying Data Source IDs, because the new SDK removed databases.query!
+const POSTS_DS_ID = '6bff5b12-623c-4404-9e80-66c4b77f82eb';
+const FOOD_DS_ID = '3806b772-5d3c-8046-88b8-000b3b624968';
+const GALLERY_DS_ID = '64bd6b1e-26f0-4994-9c11-1232e3590807';
+const MORE_DS_ID = '70208dcf-6091-4e54-af59-cf0b21ada509';
+const ABOUT_PAGE_ID = process.env.NOTION_PAGE_ID_ABOUT || '3806b772-5d3c-800a-ad82-f36e01605957';
 
-async function parseGPS(gps, ref) {
-  if (!gps) return 0;
-  const parts = gps.split(/[\s,]+/).map(parseFloat).filter(n => !isNaN(n));
-  let dec = 0;
-  if (parts.length === 3) {
-    dec = parts[0] + parts[1] / 60 + parts[2] / 3600;
-  } else if (parts.length === 1) {
-    dec = parts[0];
-  } else {
-    return 0;
-  }
-  if (ref === 'S' || ref === 'W') dec = -dec;
-  return Number(dec.toFixed(6));
-}
+const getTitle = (prop) => prop?.title?.[0]?.plain_text || '';
+const getRichText = (prop) => prop?.rich_text?.[0]?.plain_text || '';
+const getDate = (prop) => prop?.date?.start || '';
+const getCheckbox = (prop) => prop?.checkbox === true;
+const getUrl = (prop) => prop?.url || '';
+const getNumber = (prop) => prop?.number || 0;
+const getSelect = (prop) => prop?.select?.name || '';
+const getMultiSelect = (prop) => prop?.multi_select?.map(s => s.name) || [];
 
-async function fetchExifLocation(imageUrl) {
-  if (!imageUrl || !imageUrl.startsWith('http')) return { lng: 0, lat: 0 };
+async function getPageMarkdown(pageId) {
   try {
-    const res = await fetch(`${imageUrl}!/meta`);
-    if (!res.ok) return { lng: 0, lat: 0 };
-    const meta = await res.json();
-    if (meta && meta.EXIF && meta.EXIF.GPSLatitude && meta.EXIF.GPSLongitude) {
-      const lat = await parseGPS(meta.EXIF.GPSLatitude, meta.EXIF.GPSLatitudeRef);
-      const lng = await parseGPS(meta.EXIF.GPSLongitude, meta.EXIF.GPSLongitudeRef);
-      return { lat, lng };
-    }
-  } catch (err) {
-    console.error(`  [EXIF] Failed for ${imageUrl}:`, err.message);
+    const mdblocks = await n2m.pageToMarkdown(pageId);
+    const mdString = n2m.toMarkdownString(mdblocks);
+    return mdString.parent || '';
+  } catch (e) {
+    console.error(`Failed to get markdown for ${pageId}`, e.message);
+    return '';
   }
-  return { lng: 0, lat: 0 };
-}
-
-async function fetchCoordsByAmap(address) {
-  const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
-  if (!key || !address) return { lng: 0, lat: 0 };
-
-  try {
-    const res = await fetch(
-      `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${key}`
-    );
-    const data = await res.json();
-
-    if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-      const [lng, lat] = data.geocodes[0].location.split(',').map(Number);
-      return { lng, lat };
-    }
-  } catch (err) {
-    console.error(`  [Amap] Failed for ${address}:`, err.message);
-  }
-  return { lng: 0, lat: 0 };
 }
 
 async function bundleData() {
-  console.log('🚀 Bundling all content data for production...');
+  console.log('🚀 Bundling all content data from Notion...');
+
+  if (!process.env.NOTION_TOKEN) {
+    console.error('❌ NOTION_TOKEN is missing in .env.local');
+    process.exit(1);
+  }
 
   // 1. Posts
   console.log('  - Processing Posts...');
-  const postsDir = path.join(CONTENT_DIR, 'posts');
-  const posts = [];
-  if (fs.existsSync(postsDir)) {
-    const files = fs.readdirSync(postsDir).filter(f => f.endsWith('.md'));
-    for (const f of files) {
-      const raw = fs.readFileSync(path.join(postsDir, f), 'utf8');
-      const { data, content } = matter(raw);
-      if (data.published === false) continue;
-      posts.push({
-        slug: f.replace(/\.md$/, ''),
-        title: data.title || '',
-        date: data.date ? new Date(data.date).toISOString() : '',
-        category: data.category || '未分类',
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        excerpt: data.excerpt || '',
-        cover: data.cover || '',
-        published: true,
-        content
-      });
-    }
-  }
-  posts.sort((a, b) => (a.date < b.date ? 1 : -1));
-
-  // 2. Food (with EXIF)
-  console.log('  - Processing Food (including EXIF)...');
-  const foodDir = path.join(CONTENT_DIR, 'food');
-  const food = [];
-  if (fs.existsSync(foodDir)) {
-    const files = fs.readdirSync(foodDir).filter(f => f.endsWith('.md'));
-    for (const f of files) {
-      const raw = fs.readFileSync(path.join(foodDir, f), 'utf8');
-      const { data, content } = matter(raw);
-      if (data.published === false) continue;
+  let posts = [];
+  try {
+    const postsRes = await notion.dataSources.query({ data_source_id: POSTS_DS_ID });
+    for (const page of postsRes.results) {
+      const p = page.properties;
+      if (getCheckbox(p.Published) === false && p.Published) continue;
       
-      let lng = Number(data.lng) || 0;
-      let lat = Number(data.lat) || 0;
-      if (lng === 0 || lat === 0) {
-        const images = [data.cover, ...(Array.isArray(data.images) ? data.images : [])].filter(Boolean);
-        for (const img of images.slice(0, 2)) {
-          const loc = await fetchExifLocation(img);
-          if (loc.lng && loc.lat) {
-            lng = loc.lng;
-            lat = loc.lat;
-            break;
-          }
-        }
-      }
+      const slug = getRichText(p.Slug) || getTitle(p.Name);
+      if (!slug) continue;
 
-      // 2. Geocoding if still no coords
-      if ((lng === 0 || lat === 0) && data.location) {
-        const loc = await fetchCoordsByAmap(data.location);
-        if (loc.lng && loc.lat) {
-          lng = loc.lng;
-          lat = loc.lat;
-        }
-      }
-
-      food.push({
-        slug: f.replace(/\.md$/, ''),
-        title: data.title || '',
-        date: data.date ? new Date(data.date).toISOString() : '',
-        location: data.location || '',
-        address: data.address || '',
-        lng,
-        lat,
-        cover: data.cover || '',
-        images: Array.isArray(data.images) ? data.images : [],
-        tags: Array.isArray(data.tags) ? data.tags : [],
-        excerpt: data.excerpt || '',
+      const content = await getPageMarkdown(page.id);
+      posts.push({
+        slug,
+        title: getTitle(p.Name),
+        date: getDate(p.Date),
+        category: getSelect(p.Category) || getRichText(p.Category) || '未分类',
+        tags: getMultiSelect(p.Tags),
+        excerpt: getRichText(p.Excerpt) || '',
+        cover: getUrl(p.Cover),
         published: true,
         content
       });
     }
+    posts.sort((a, b) => (a.date < b.date ? 1 : -1));
+  } catch (e) {
+    console.error('Failed to fetch posts:', e.message);
   }
-  food.sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  // 2. Food
+  console.log('  - Processing Food...');
+  let food = [];
+  try {
+    const foodRes = await notion.dataSources.query({ data_source_id: FOOD_DS_ID });
+    for (const page of foodRes.results) {
+      const p = page.properties;
+      if (getCheckbox(p.Published) === false && p.Published) continue;
+      
+      const title = getTitle(p.Name) || getTitle(p['名称']) || getTitle(p['data ']);
+      const slug = getRichText(p.Slug) || getRichText(p.slug) || title;
+      if (!slug) continue;
+
+      const content = await getPageMarkdown(page.id);
+      food.push({
+        slug,
+        title,
+        date: getDate(p.Date),
+        location: getRichText(p.Location),
+        address: getRichText(p.Address),
+        lng: getNumber(p.Lng),
+        lat: getNumber(p.Lat),
+        cover: getUrl(p.Cover),
+        images: [],
+        tags: [],
+        excerpt: '',
+        published: true,
+        content
+      });
+    }
+    food.sort((a, b) => (a.date < b.date ? 1 : -1));
+  } catch (e) {
+    console.error('Failed to fetch food:', e.message);
+  }
 
   // 3. Gallery
   console.log('  - Processing Gallery...');
-  const galleryDir = path.join(CONTENT_DIR, 'gallery');
-  const gallery = [];
-  if (fs.existsSync(galleryDir)) {
-    const files = fs.readdirSync(galleryDir).filter(f => f.endsWith('.md'));
-    console.log(`    Found ${files.length} gallery files: ${files.join(', ')}`);
-    for (const f of files) {
-      const raw = fs.readFileSync(path.join(galleryDir, f), 'utf8');
-      const { data, content } = matter(raw);
-      if (data.published === false) continue;
+  let gallery = [];
+  try {
+    const galleryRes = await notion.dataSources.query({ data_source_id: GALLERY_DS_ID });
+    for (const page of galleryRes.results) {
+      const p = page.properties;
+      if (getCheckbox(p.Published) === false && p.Published) continue;
+      
+      const title = getTitle(p.Name);
+      const slug = getRichText(p.Slug) || getRichText(p.slug) || title;
+      if (!slug) continue;
+
+      const content = await getPageMarkdown(page.id);
+      
+      const imageRegex = /!\[.*?\]\((.*?)\)/g;
+      const images = [];
+      let match;
+      while ((match = imageRegex.exec(content)) !== null) {
+        images.push(match[1]);
+      }
+
       gallery.push({
-        slug: f.replace(/\.md$/, ''),
-        title: data.title || '',
-        date: data.date ? new Date(data.date).toISOString() : '',
-        category: data.category || '日常',
-        cover: data.cover || '',
-        images: Array.isArray(data.images) ? data.images : [],
-        excerpt: data.excerpt || '',
+        slug,
+        title,
+        date: getDate(p.Date),
+        category: getSelect(p.Category) || getRichText(p.Category) || '日常',
+        cover: getUrl(p.Cover),
+        images: images,
+        excerpt: getRichText(p.Excerpt) || '',
         published: true,
         content
       });
     }
+    gallery.sort((a, b) => (a.date < b.date ? 1 : -1));
+  } catch (e) {
+    console.error('Failed to fetch gallery:', e.message);
   }
-  gallery.sort((a, b) => (a.date < b.date ? 1 : -1));
 
   // 4. More
   console.log('  - Processing More content...');
-  const moreDir = path.join(CONTENT_DIR, 'more');
-  const more = [];
-  if (fs.existsSync(moreDir)) {
-    const files = fs.readdirSync(moreDir).filter(f => f.endsWith('.md'));
-    for (const f of files) {
-      const raw = fs.readFileSync(path.join(moreDir, f), 'utf8');
-      const { data, content } = matter(raw);
+  let more = [];
+  try {
+    const moreRes = await notion.dataSources.query({ data_source_id: MORE_DS_ID });
+    for (const page of moreRes.results) {
+      const p = page.properties;
+      const title = getTitle(p.Name);
+      const slug = getRichText(p.Slug) || getRichText(p.slug) || title;
+      if (!slug) continue;
+
+      const content = await getPageMarkdown(page.id);
       more.push({
-        slug: f.replace(/\.md$/, ''),
-        title: data.title || '',
-        desc: data.desc || '',
-        icon: data.icon || '',
+        slug,
+        title,
+        desc: getRichText(p.Desc),
+        icon: getRichText(p.Icon),
         content
       });
     }
+  } catch (e) {
+    console.error('Failed to fetch more:', e.message);
   }
 
-  // 6. About
+  // 5. About
   console.log('  - Processing About page...');
   let about = '';
-  const aboutFile = path.join(CONTENT_DIR, 'about.md');
-  if (fs.existsSync(aboutFile)) {
-    about = fs.readFileSync(aboutFile, 'utf8');
+  try {
+    const md = await getPageMarkdown(ABOUT_PAGE_ID);
+    if (md) about = md;
+  } catch (e) {
+    console.error('Failed to fetch about from Notion:', e.message);
+  }
+  if (!about) {
+    console.log('    Falling back to local about.md...');
+    const aboutFile = path.join(process.cwd(), 'content/about.md');
+    if (fs.existsSync(aboutFile)) {
+      about = fs.readFileSync(aboutFile, 'utf8');
+    }
   }
 
-  // 7. Douban
-  console.log('  - Fetching Douban Interests (Pre-bundle)...');
+  // 6. Douban
+  console.log('  - Fetching Douban Interests...');
   const DOUBAN_ID = 'ahshq';
   let douban = [];
   try {
@@ -265,13 +263,13 @@ async function bundleData() {
 
   const output = `/**
  * This file is auto-generated by scripts/bundle-data.mjs
- * DO NOT EDIT MANUALLY
+ * Fetched from Notion API. DO NOT EDIT MANUALLY.
  */
 export const bundleData = ${JSON.stringify(bundle, null, 2)};
 `;
 
   fs.writeFileSync(path.join(process.cwd(), 'lib/data-bundle.ts'), output);
-  console.log('✅ Data bundle generated successfully in lib/data-bundle.ts');
+  console.log('✅ Data bundle generated successfully from Notion!');
 }
 
 bundleData().catch(err => {

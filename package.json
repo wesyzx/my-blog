@@ -8,7 +8,7 @@
   "scripts": {
     "predev": "dotenv -e .env.local -- node scripts/bundle-data.mjs",
     "dev": "dotenv -e .env.local -- next dev",
-    "prebuild": "dotenv -e .env.local -- node scripts/bundle-data.mjs",
+    "prebuild": "node scripts/bundle-data.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

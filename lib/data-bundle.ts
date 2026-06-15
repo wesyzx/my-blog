@@ -11,14 +11,31 @@ export const bundleData = {
       "date": "2026-06-12T15:02:46.343Z",
       "location": "海曙区鼓楼",
       "address": "",
-      "lng": 39,
-      "lat": 0,
+      "lng": 121.54613,
+      "lat": 29.875311,
       "cover": "https://images.guanyan.me/IMG_7764.JPG",
       "images": [
         "https://images.guanyan.me/IMG_7764.JPG"
       ],
       "tags": [],
       "excerpt": "好吃",
+      "published": true,
+      "content": "\n"
+    },
+    {
+      "slug": "kashi",
+      "title": "kashi",
+      "date": "2026-06-08T14:48:44.926Z",
+      "location": "",
+      "address": "",
+      "lng": 0,
+      "lat": 0,
+      "cover": "https://images.guanyan.me/IMG_6606.HEIC",
+      "images": [
+        "https://images.guanyan.me/IMG_6606.HEIC"
+      ],
+      "tags": [],
+      "excerpt": "",
       "published": true,
       "content": "\n"
     }
@@ -78,5 +95,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **莫赶**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。莫赶时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-14T13:41:12.083Z"
+  "updatedAt": "2026-06-14T15:00:39.159Z"
 };

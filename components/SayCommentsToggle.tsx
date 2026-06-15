@@ -30,20 +30,13 @@ export default function SayCommentsToggle({ pageKey, pageTitle }: SayCommentsTog
     const params = new URLSearchParams({
       site_name: SITE,
       page_key: pageKey,
-      limit: '1',
-      flat_mode: 'true',
     })
-    // 通过 Artalk 评论接口获取评论总数（stats API 不可靠，改用 comments 接口）
-    fetch(`${SERVER}/api/v2/comments?${params.toString()}`)
+    // 使用 stats 接口获取页面评论数，更高效可靠
+    fetch(`${SERVER}/api/v2/stats/page_comment?${params.toString()}`)
       .then((res) => res.json())
       .then((data: any) => {
-        // 兼容多种返回格式：{ count: N } / { total: N } / { data: { total: N } } / { data: [...] }
-        const t =
-          typeof data?.count === 'number' ? data.count :
-          typeof data?.total === 'number' ? data.total :
-          typeof data?.data?.total === 'number' ? data.data.total :
-          Array.isArray(data?.data) ? data.data.length :
-          null
+        // Artalk stats API 返回格式通常为 { data: { "/key": count } }
+        const t = data?.data?.[pageKey]
         if (typeof t === 'number') setCount(t)
       })
       .catch(() => {})

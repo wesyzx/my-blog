@@ -45,6 +45,8 @@ export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsPro
   // 初始化 Artalk
   useEffect(() => {
     if (isReady && containerRef.current && (window as any).Artalk) {
+      const getTheme = () => document.documentElement.getAttribute('data-theme') === 'dark'
+      
       const artalk = (window as any).Artalk.init({
         el: containerRef.current,
         server: SERVER,
@@ -53,10 +55,18 @@ export default function ArtalkComments({ pageKey, pageTitle }: ArtalkCommentsPro
         pageTitle,
         requiredMeta: ['nick', 'mail'],
         flatMode: true,
+        darkMode: getTheme(),
       })
+
+      // 监听主题变化
+      const observer = new MutationObserver(() => {
+        artalk.setDarkMode(getTheme())
+      })
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
 
       return () => {
         artalk.destroy()
+        observer.disconnect()
       }
     }
   }, [pageKey, pageTitle, isReady])

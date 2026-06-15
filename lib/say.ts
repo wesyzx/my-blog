@@ -20,50 +20,47 @@ export interface SayMeta {
   images?: string[] // 支持多图
 }
 
-/**
- * 获取所有说说（从 Memos API 或 bundleData）
- */
 export async function getAllSays(): Promise<SayMeta[]> {
-  // 如果是非开发环境且有 bundleData，优先使用（为了静态生成和性能）
-  // 但对于 Memos，我们通常希望它是实时的，所以这里根据需求决定
-  // 这里我们优先尝试从 API 获取，失败则回退到 bundle
-
   try {
-    const response = await fetch(`${MEMOS_API_URL}?pageSize=20&filter=visibilities%20in%20['PUBLIC']`, {
+    // 简化请求，去掉可能导致编码问题的 filter
+    const response = await fetch(`${MEMOS_API_URL}?pageSize=20`, {
       headers: {
         'Authorization': `Bearer ${MEMOS_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      next: { revalidate: 60 } // 每分钟重新验证一次
+      cache: 'no-store' // 测试阶段禁用缓存，确保看到最新数据
     })
 
     if (!response.ok) {
-      throw new Error(`Memos API error: ${response.statusText}`)
+      const errorText = await response.text()
+      throw new Error(`Memos API error: ${response.status} ${errorText}`)
     }
 
     const data = await response.json()
+    // 检查数据结构是否符合预期
     const memos = data.memos || []
 
-    return memos.map((memo: any) => {
-      // 提取图片资源
-      const images = memo.resources
-        ?.filter((res: any) => res.type.startsWith('image/'))
-        .map((res: any) => {
-          // 如果 Memos 部署在子路径或需要完整 URL，请调整
-          return `https://memos.guanyan.me/o/r/${res.id}/${res.filename}`
-        }) || []
+    return memos
+      .filter((memo: any) => memo.state === 'NORMAL') // 只显示正常状态的说说
+      .map((memo: any) => {
+        // 提取图片资源
+        const images = memo.resources
+          ?.filter((res: any) => res.type.startsWith('image/'))
+          .map((res: any) => {
+            return `https://memos.guanyan.me/o/r/${res.id}/${res.filename}`
+          }) || []
 
-      return {
-        slug: memo.name.split('/').pop() || memo.uid,
-        date: memo.createTime,
-        content: memo.content,
-        image: images[0], // 兼容旧版单图显示
-        images: images,
-      }
-    })
+        return {
+          slug: memo.name.split('/').pop() || memo.uid,
+          date: memo.createTime,
+          content: memo.content,
+          image: images[0],
+          images: images,
+        }
+      })
   } catch (err) {
-    console.error('Error fetching memos:', err)
-    return isDev ? [] : (bundleData.says as SayMeta[] || [])
+    console.error('Failed to fetch memos from API:', err)
+    // 如果 API 失败，尝试回退到本地打包数据（如果有的话）
+    return (bundleData.says as SayMeta[] || [])
   }
 }
-

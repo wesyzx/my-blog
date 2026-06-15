@@ -17,7 +17,8 @@ export interface MoreContent {
  * @param slug 抽屉项标识，如 'goods', 'apps'
  */
 export function getMoreContentBySlug(slug: string): MoreContent | null {
-  return (bundleData.more as MoreContent[]).find(m => m.slug === slug) || null;
+  const decodedSlug = decodeURIComponent(slug);
+  return (bundleData.more as MoreContent[]).find(m => m.slug === decodedSlug) || null;
 }
 
 /**

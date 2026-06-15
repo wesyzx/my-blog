@@ -23,12 +23,19 @@ export interface GalleryItem extends GalleryMeta {
  * 获取所有相册（按日期倒序）
  */
 export function getAllGalleryItems(): GalleryMeta[] {
-  return bundleData.gallery as GalleryMeta[];
+  return (bundleData.gallery as GalleryMeta[]).map(item => {
+    const images = item.images && item.images.length > 0 ? item.images : (item.cover ? [item.cover] : []);
+    return { ...item, images };
+  });
 }
 
 /**
  * 根据 slug 获取单个相册详情
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
-  return (bundleData.gallery as GalleryItem[]).find(i => i.slug === slug) || null;
+  const decodedSlug = decodeURIComponent(slug);
+  const item = (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug);
+  if (!item) return null;
+  const images = item.images && item.images.length > 0 ? item.images : (item.cover ? [item.cover] : []);
+  return { ...item, images };
 }

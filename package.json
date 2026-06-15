@@ -16,7 +16,6 @@
   "dependencies": {
     "@notionhq/client": "^5.22.0",
     "@tailwindcss/typography": "^0.5.19",
-    "@tinacms/cli": "^2.4.4",
     "dotenv": "^17.4.2",
     "gray-matter": "^4.0.3",
     "maplibre-gl": "^5.24.0",
@@ -27,7 +26,6 @@
     "react-dom": "19.2.4",
     "react-photo-album": "^3.6.0",
     "rss-parser": "^3.13.0",
-    "tinacms": "^3.9.1",
     "upyun": "^3.4.6",
     "yet-another-react-lightbox": "^3.32.0"
   },

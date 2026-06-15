@@ -16,6 +16,17 @@ export const bundleData = {
       "content": "\n从obsidian转移至notion\n\n"
     },
     {
+      "slug": "技术",
+      "title": "可以啊",
+      "date": "2026-06-08",
+      "category": "技术",
+      "tags": [],
+      "excerpt": "",
+      "cover": "",
+      "published": true,
+      "content": "\n我可以\n\n"
+    },
+    {
       "slug": "生活",
       "title": "你好，世界！",
       "date": "2026-05-11",
@@ -76,8 +87,8 @@ export const bundleData = {
   ],
   "gallery": [
     {
-      "slug": "mont",
-      "title": "mont",
+      "slug": "豆浆",
+      "title": "豆浆",
       "date": "2026-06-08",
       "category": "日常",
       "cover": "https://images.guanyan.me/IMG_7764.JPG",
@@ -196,5 +207,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **莫赶**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。莫赶时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-15T15:18:23.262Z"
+  "updatedAt": "2026-06-15T16:51:17.078Z"
 };

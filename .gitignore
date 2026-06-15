@@ -98,6 +98,4 @@ dmypy.json
 *.tmp
 *~
 
-# TinaCMS
-node_modules
-.tina
+

@@ -45,7 +45,8 @@ export function getAllPosts(): PostMeta[] {
  * @returns 文章对象，找不到则返回 null
  */
 export function getPostBySlug(slug: string): Post | null {
-  return (bundleData.posts as Post[]).find(p => p.slug === slug) || null;
+  const decodedSlug = decodeURIComponent(slug);
+  return (bundleData.posts as Post[]).find(p => p.slug === decodedSlug) || null;
 }
 
 /**

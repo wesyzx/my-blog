@@ -34,5 +34,6 @@ export async function getAllFoodPosts(): Promise<FoodMeta[]> {
  * 根据 slug 获取单篇探店详情
  */
 export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> {
-  return (bundleData.food as FoodPost[]).find(p => p.slug === slug) || null;
+  const decodedSlug = decodeURIComponent(slug);
+  return (bundleData.food as FoodPost[]).find(p => p.slug === decodedSlug) || null;
 }

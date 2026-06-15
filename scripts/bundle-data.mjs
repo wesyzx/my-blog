@@ -166,26 +166,7 @@ async function bundleData() {
   }
   gallery.sort((a, b) => (a.date < b.date ? 1 : -1));
 
-  // 4. Say
-  console.log('  - Processing Says...');
-  const sayDir = path.join(CONTENT_DIR, 'say');
-  const says = [];
-  if (fs.existsSync(sayDir)) {
-    const files = fs.readdirSync(sayDir).filter(f => f.endsWith('.md'));
-    for (const f of files) {
-      const raw = fs.readFileSync(path.join(sayDir, f), 'utf8');
-      const { data, content } = matter(raw);
-      says.push({
-        slug: f.replace(/\.md$/, ''),
-        date: data.date ? new Date(data.date).toISOString() : '',
-        content: content.trim(),
-        image: data.image || undefined
-      });
-    }
-  }
-  says.sort((a, b) => (a.date < b.date ? 1 : -1));
-
-  // 5. More
+  // 4. More
   console.log('  - Processing More content...');
   const moreDir = path.join(CONTENT_DIR, 'more');
   const more = [];
@@ -276,7 +257,6 @@ async function bundleData() {
     posts,
     food,
     gallery,
-    says,
     more,
     about,
     douban,

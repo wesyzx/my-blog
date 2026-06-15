@@ -61,6 +61,6 @@ export async function getAllSays(): Promise<SayMeta[]> {
   } catch (err) {
     console.error('Failed to fetch memos from API:', err)
     // 如果 API 失败，尝试回退到本地打包数据（如果有的话）
-    return (bundleData.says as SayMeta[] || [])
+    return ((bundleData as any).says as SayMeta[] || [])
   }
 }

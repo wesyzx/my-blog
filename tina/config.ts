@@ -82,30 +82,6 @@ export default defineConfig({
         ],
       },
       {
-        name: "say",
-        label: "说说",
-        path: "content/say",
-        fields: [
-          {
-            type: "datetime",
-            name: "date",
-            label: "日期",
-            required: true,
-          },
-          {
-            type: "image",
-            name: "image",
-            label: "图片",
-          },
-          {
-            type: "rich-text",
-            name: "body",
-            label: "内容",
-            isBody: true,
-          },
-        ],
-      },
-      {
         name: "food",
         label: "美食",
         path: "content/food",

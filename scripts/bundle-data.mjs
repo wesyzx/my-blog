@@ -70,6 +70,23 @@ async function fetchExifLocation(imageUrl) {
   return { lng: 0, lat: 0 };
 }
 
+async function fetchImageMeta(imageUrl) {
+  if (!imageUrl || !imageUrl.startsWith('http')) return { width: 1200, height: 800 };
+  if (!imageUrl.includes('guanyan.me')) return { width: 1200, height: 800 };
+  try {
+    const res = await fetch(`${imageUrl}!/meta`);
+    if (res.ok) {
+      const meta = await res.json();
+      if (meta.width && meta.height) {
+        return { width: meta.width, height: meta.height };
+      }
+    }
+  } catch (err) {
+    console.error(`  [Meta] Failed for ${imageUrl}:`, err.message);
+  }
+  return { width: 1200, height: 800 };
+}
+
 async function fetchCoordsByAmap(address) {
   const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
   if (!key || !address) return { lng: 0, lat: 0 };
@@ -137,7 +154,7 @@ async function bundleData() {
     const foodRes = await notion.dataSources.query({ data_source_id: FOOD_DS_ID });
     for (const page of foodRes.results) {
       const p = page.properties;
-      if (getCheckbox(p.Published) === false && p.Published) continue;
+      if (p.Published !== undefined && getCheckbox(p.Published) === false) continue;
       
       const title = getTitle(p.Name) || getTitle(p['名称']) || getTitle(p['data ']);
       const slug = getRichText(p.Slug) || getRichText(p.slug) || title;
@@ -171,19 +188,34 @@ async function bundleData() {
         }
       }
 
+      // 3. 提取正文中的图片作为图集
+      const imageRegex = /!\[.*?\]\((.*?)\)/g;
+      const images = [];
+      let match;
+      while ((match = imageRegex.exec(content)) !== null) {
+        images.push(match[1]);
+      }
+      if (images.length === 0 && getUrl(p.Cover)) {
+        images.push(getUrl(p.Cover));
+      }
+
+      // 兼容中文/英文的属性名称
+      const tags = getMultiSelect(p.Tags) || getMultiSelect(p['标签']) || [];
+      const excerpt = getRichText(p.Excerpt) || getRichText(p['摘要']) || '';
+
       food.push({
         slug,
         title,
         date: getDate(p.Date),
-        location: getRichText(p.Location),
-        address: getRichText(p.Address),
+        location: getRichText(p.Location) || '',
+        address: getRichText(p.Address) || '',
         lng,
         lat,
-        cover: getUrl(p.Cover),
-        images: [],
-        tags: [],
-        excerpt: '',
-        published: true,
+        cover: getUrl(p.Cover) || '',
+        images,
+        tags,
+        excerpt,
+        published: p.Published === undefined ? true : getCheckbox(p.Published),
         content
       });
     }
@@ -211,7 +243,15 @@ async function bundleData() {
       const images = [];
       let match;
       while ((match = imageRegex.exec(content)) !== null) {
-        images.push(match[1]);
+        const src = match[1];
+        const meta = await fetchImageMeta(src);
+        images.push({ src, width: meta.width, height: meta.height });
+      }
+
+      if (images.length === 0 && getUrl(p.Cover)) {
+        const coverUrl = getUrl(p.Cover);
+        const meta = await fetchImageMeta(coverUrl);
+        images.push({ src: coverUrl, width: meta.width, height: meta.height });
       }
 
       gallery.push({
@@ -222,7 +262,7 @@ async function bundleData() {
         cover: getUrl(p.Cover),
         images: images,
         excerpt: getRichText(p.Excerpt) || '',
-        published: true,
+        published: getCheckbox(p.Published) !== false,
         content
       });
     }

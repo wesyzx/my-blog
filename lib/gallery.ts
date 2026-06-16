@@ -10,7 +10,7 @@ export interface GalleryMeta {
   date: string
   category: string // 旅游 / 美食 / 日常 / 摄影
   cover: string
-  images: string[]
+  images: { src: string; width: number; height: number }[]
   excerpt: string
   published: boolean
 }
@@ -23,10 +23,7 @@ export interface GalleryItem extends GalleryMeta {
  * 获取所有相册（按日期倒序）
  */
 export function getAllGalleryItems(): GalleryMeta[] {
-  return (bundleData.gallery as GalleryMeta[]).map(item => {
-    const images = item.images && item.images.length > 0 ? item.images : (item.cover ? [item.cover] : []);
-    return { ...item, images };
-  });
+  return bundleData.gallery as GalleryMeta[];
 }
 
 /**
@@ -34,8 +31,5 @@ export function getAllGalleryItems(): GalleryMeta[] {
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
   const decodedSlug = decodeURIComponent(slug);
-  const item = (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug);
-  if (!item) return null;
-  const images = item.images && item.images.length > 0 ? item.images : (item.cover ? [item.cover] : []);
-  return { ...item, images };
+  return (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug) || null;
 }

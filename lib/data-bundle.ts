@@ -93,11 +93,32 @@ export const bundleData = {
       "category": "日常",
       "cover": "https://images.guanyan.me/IMG_7764.JPG",
       "images": [
-        "https://images.guanyan.me/IMG_7764.JPG"
+        {
+          "src": "https://images.guanyan.me/IMG_7764.JPG",
+          "width": 1080,
+          "height": 1920
+        }
       ],
       "excerpt": "",
       "published": true,
       "content": "\n \n\n\n![IMG_7764.JPG](https://images.guanyan.me/IMG_7764.JPG)\n\n"
+    },
+    {
+      "slug": "kafei",
+      "title": "kafei",
+      "date": "2026-06-02",
+      "category": "日常",
+      "cover": "https://img.215320.xyz/2026/05/fa7d85a90137299c295a3cdbe9790395.png",
+      "images": [
+        {
+          "src": "https://img.215320.xyz/2026/05/fa7d85a90137299c295a3cdbe9790395.png",
+          "width": 1200,
+          "height": 800
+        }
+      ],
+      "excerpt": "",
+      "published": true,
+      "content": "\n \n\n"
     }
   ],
   "more": [
@@ -209,5 +230,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **莫赶**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。莫赶时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-15T17:26:22.988Z"
+  "updatedAt": "2026-06-16T00:59:50.510Z"
 };

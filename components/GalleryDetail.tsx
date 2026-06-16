@@ -15,11 +15,10 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
 
   const photos = useMemo(
     () => {
-      const ratios = [1.5, 0.67, 0.67, 1.5, 0.75, 0.67, 0.67, 1.5]
-      return album.images.map((src, i) => ({
-        src,
-        width: 1200,
-        height: Math.round(1200 / ratios[i % ratios.length]),
+      return album.images.map((img, i) => ({
+        src: img.src,
+        width: img.width || 1200,
+        height: img.height || 800,
         key: `${album.slug}-${i}`,
         alt: `${album.title} - ${i + 1}`,
         title: album.title,

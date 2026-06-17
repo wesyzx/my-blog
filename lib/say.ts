@@ -22,13 +22,13 @@ export interface SayMeta {
 
 export async function getAllSays(): Promise<SayMeta[]> {
   try {
-    // 简化请求，去掉可能导致编码问题的 filter
+    // 简化请求，配置 ISR 缓存（每 60 秒后台刷新一次），大幅加快博客的说说页面加载速度
     const response = await fetch(`${MEMOS_API_URL}?pageSize=20`, {
       headers: {
         'Authorization': `Bearer ${MEMOS_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      cache: 'no-store' // 测试阶段禁用缓存，确保看到最新数据
+      next: { revalidate: 60 }
     })
 
     if (!response.ok) {

@@ -86,13 +86,13 @@ export default async function Home({
       </header>
 
       {/* ===== 文章列表区 ===== */}
-      <section className="space-y-4">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-8">
         {pagedPosts.length > 0 ? (
           pagedPosts.map((post, index) => (
             <PostCard key={`${post.slug}-${index}`} post={post} />
           ))
         ) : (
-          <div className="py-20 text-center text-[var(--color-text-muted)]">
+          <div className="py-20 text-center text-[var(--color-text-muted)] col-span-full">
             暂无相关文章
           </div>
         )}

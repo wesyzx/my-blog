@@ -1,10 +1,14 @@
 /**
  * 文章卡片组件 - 卡片式预览图风格
  *
- * 参考 veryjack.com Boxed 风格设计：
- * - 顶部显示文章封面预览图（带悬停缩放效果）
- * - 底部展示分类、标题、日期和摘要
- * - 悬停时卡片整体微移并提升阴影
+ * 像素级参考 veryjack.com 的 Boxed 卡片设计：
+ * - 顶部为 2:1 比例封面预览图（带 hover 缩放效果）
+ * - 底部 card-content 结构：
+ *   1. 上方 Meta：📂 分类名称
+ *   2. 标题：粗体，限制最大 2 行
+ *   3. 下方 Meta：日期 / 标签（斜杠 / 分割）
+ *   4. 底部有一条微小的装饰性分割线
+ * - 移除摘要（Excerpt），保持高度整齐与排版呼吸感
  */
 import Link from "next/link";
 import { PostMeta } from "@/lib/posts";
@@ -20,7 +24,7 @@ function formatDate(dateStr: string) {
 
 export default function PostCard({ post }: { post: PostMeta }) {
   return (
-    <article className="group flex flex-col bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-sm hover:shadow-md hover:border-[var(--color-border-hover)] hover:-translate-y-1 transition-all duration-300 h-full">
+    <article className="group flex flex-col bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-hover)] hover:-translate-y-1 transition-all duration-300 h-full">
       {/* 封面预览图 */}
       <Link href={"/posts/" + post.slug} className="block aspect-[2/1] overflow-hidden bg-[var(--color-bg-surface)] relative">
         {post.cover ? (
@@ -38,42 +42,51 @@ export default function PostCard({ post }: { post: PostMeta }) {
         )}
       </Link>
 
-      {/* 卡片文字内容 */}
+      {/* 卡片内容区 */}
       <div className="p-6 flex flex-col flex-1">
-        {/* 分类标签 */}
-        <div className="mb-3">
+        {/* 上部 Meta：分类 */}
+        <div className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-accent)] mb-2.5">
+          <svg className="w-3.5 h-3.5 opacity-80" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.4 1.2H0.6C0.3 1.2 0 1.5 0 1.9V5C0 5.3 0.3 5.6 0.6 5.6H1.2V13.1C1.2 13.4 1.5 13.7 1.8 13.7H13.2C13.5 13.7 13.8 13.4 13.8 13.1V5.6H14.4C14.7 5.6 15 5.3 15 5V1.9C15 1.5 14.7 1.2 14.4 1.2ZM12.5 12.5H2.5V5.6H12.5V12.5ZM13.8 4.4H1.2V2.5H13.8V4.4Z" fill="currentColor"/>
+          </svg>
           <Link
             href={`/?category=${post.category}`}
-            className="text-[11px] font-bold uppercase tracking-wider text-[var(--color-accent)] bg-[var(--color-accent-light)] px-2.5 py-1 rounded-md"
+            className="hover:underline"
           >
             {post.category}
           </Link>
         </div>
 
         {/* 标题 */}
-        <h2 className="text-[18px] md:text-[20px] font-bold leading-snug mb-3">
+        <h2 className="text-[17px] md:text-[18px] font-bold leading-snug mb-3">
           <Link
             href={"/posts/" + post.slug}
-            className="text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors duration-300"
+            className="text-[var(--color-text-primary)] hover:text-[var(--color-accent)] transition-colors duration-300 line-clamp-2"
           >
             {post.title}
           </Link>
         </h2>
 
-        {/* 摘要 */}
-        {post.excerpt && (
-          <p className="text-[14px] leading-relaxed text-[var(--color-text-secondary)] line-clamp-3 mb-4">
-            {post.excerpt}
-          </p>
-        )}
-
-        {/* 底部日期与阅读更多 */}
-        <div className="mt-auto pt-4 border-t border-[var(--color-border)] flex items-center justify-between text-[12px] text-[var(--color-text-muted)]">
+        {/* 下部 Meta：日期 / 标签 */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[var(--color-text-muted)] font-serif italic mt-auto">
           <time>{formatDate(post.date)}</time>
-          <span className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300 text-[var(--color-accent)] font-medium">
-            阅读全文 →
-          </span>
+          {post.tags && post.tags.length > 0 && (
+            <>
+              <span className="text-[var(--color-border-hover)]">/</span>
+              <span className="space-x-1.5">
+                {post.tags.map((tag, i) => (
+                  <span key={tag} className="hover:text-[var(--color-accent)] transition-colors duration-200">
+                    #{tag}
+                    {i < post.tags.length - 1 && <span className="text-[var(--color-border-hover)] ml-1.5">,</span>}
+                  </span>
+                ))}
+              </span>
+            </>
+          )}
         </div>
+
+        {/* 底部装饰线 */}
+        <div className="h-[1px] w-6 bg-[var(--color-border)] mt-5 group-hover:w-12 group-hover:bg-[var(--color-accent)] transition-all duration-300"></div>
       </div>
     </article>
   );

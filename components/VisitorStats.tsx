@@ -10,7 +10,7 @@ import { useState, useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 
 const SERVER = 'https://artalk.guanyan.me'
-const SITE = '轨道之外'
+const SITE = '莫赶'
 
 export default function VisitorStats() {
   const pathname = usePathname()

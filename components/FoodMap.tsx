@@ -63,17 +63,22 @@ export default function FoodMap({ posts }: FoodMapProps) {
     map.on('load', () => {
       validPosts.forEach((post) => {
         const el = document.createElement('div')
-        // 以蓝色圆点本身作为定位的父容器
+        // 父容器只负责定位（大小与圆点相同），不设置 border-radius 避免 WebKit/Safari 剪裁绝对定位的子文字标签
         el.style.width = '12px'
         el.style.height = '12px'
-        el.style.borderRadius = '50%'
-        el.style.backgroundColor = '#98c1d9'
-        el.style.boxShadow = '0 0 0 5px rgba(152,193,217,0.18), 0 0 0 11px rgba(152,193,217,0.07)'
-        el.style.cursor = 'pointer'
         el.style.position = 'relative'
-
-        // 文字标签绝对定位在圆点下方，完美居中且有固定间距，避免随地图缩放而产生视觉偏移
+        el.style.cursor = 'pointer'
+ 
         el.innerHTML = `
+          <!-- 蓝色定位圆点 -->
+          <div style="
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #98c1d9;
+            box-shadow: 0 0 0 5px rgba(152,193,217,0.18), 0 0 0 11px rgba(152,193,217,0.07);
+          "></div>
+          <!-- 文字标签绝对定位在圆点下方，完美居中且有固定间距，避免随地图缩放而产生视觉偏移 -->
           <div style="
             position: absolute;
             left: 50%;
@@ -92,7 +97,7 @@ export default function FoodMap({ posts }: FoodMapProps) {
             box-shadow: 0 1px 6px rgba(41,50,65,0.08);
           ">${post.location}</div>
         `
-
+ 
         // 锚点使用 'center' 精准钉住圆点中心
         const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([post.lng, post.lat])

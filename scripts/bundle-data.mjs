@@ -27,6 +27,14 @@ const getNumber = (prop) => prop?.number || 0;
 const getSelect = (prop) => prop?.select?.name || '';
 const getMultiSelect = (prop) => prop?.multi_select?.map(s => s.name) || [];
 
+const getPropertyByName = (p, names) => {
+  if (!p) return null;
+  for (const name of names) {
+    if (p[name] !== undefined) return p[name];
+  }
+  return null;
+};
+
 async function getPageMarkdown(pageId) {
   try {
     const mdblocks = await n2m.pageToMarkdown(pageId);
@@ -87,6 +95,47 @@ async function fetchImageMeta(imageUrl) {
   return { width: 1200, height: 800 };
 }
 
+const PI = 3.1415926535897932384626;
+const a = 6378245.0;
+const ee = 0.00669342162296594323;
+
+function transformLat(x, y) {
+  let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+  ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+  ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+  return ret;
+}
+
+function transformLng(x, y) {
+  let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+  ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+  ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+  return ret;
+}
+
+function outOfChina(lng, lat) {
+  return (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271);
+}
+
+function gcj02towgs84(lng, lat) {
+  if (outOfChina(lng, lat)) {
+    return [lng, lat];
+  }
+  let dlat = transformLat(lng - 105.0, lat - 35.0);
+  let dlng = transformLng(lng - 105.0, lat - 35.0);
+  let radlat = lat / 180.0 * PI;
+  let magic = Math.sin(radlat);
+  magic = 1.0 - ee * magic * magic;
+  let sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * PI);
+  let mglat = lat + dlat;
+  let mglng = lng + dlng;
+  return [lng * 2 - mglng, lat * 2 - mglat];
+}
+
 async function fetchCoordsByAmap(address) {
   const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
   if (!key || !address) return { lng: 0, lat: 0 };
@@ -98,7 +147,8 @@ async function fetchCoordsByAmap(address) {
     const data = await res.json();
 
     if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-      const [lng, lat] = data.geocodes[0].location.split(',').map(Number);
+      const [gcjLng, gcjLat] = data.geocodes[0].location.split(',').map(Number);
+      const [lng, lat] = gcj02towgs84(gcjLng, gcjLat);
       return { lng, lat };
     }
   } catch (err) {
@@ -154,20 +204,26 @@ async function bundleData() {
     const foodRes = await notion.dataSources.query({ data_source_id: FOOD_DS_ID });
     for (const page of foodRes.results) {
       const p = page.properties;
-      if (p.Published !== undefined && getCheckbox(p.Published) === false) continue;
       
-      const title = getTitle(p.Name) || getTitle(p['名称']) || getTitle(p['data ']);
-      const slug = getRichText(p.Slug) || getRichText(p.slug) || title;
+      const publishedProp = getPropertyByName(p, ['Published', 'published', '发布', '是否发布']);
+      if (publishedProp !== null && getCheckbox(publishedProp) === false) continue;
+      
+      const title = getTitle(getPropertyByName(p, ['Name', '名称', 'data ']));
+      const slug = getRichText(getPropertyByName(p, ['Slug', 'slug'])) || title;
       if (!slug) continue;
 
       const content = await getPageMarkdown(page.id);
 
-      let lng = getNumber(p.Lng);
-      let lat = getNumber(p.Lat);
+      let lng = getNumber(getPropertyByName(p, ['Lng', 'lng', '经度']));
+      let lat = getNumber(getPropertyByName(p, ['Lat', 'lat', '纬度']));
+
+      const coverUrl = getUrl(getPropertyByName(p, ['Cover', 'cover', '封面', '封面图']));
+      const locText = getRichText(getPropertyByName(p, ['Location', 'location', '地点', '商户名称']));
+      const addrText = getRichText(getPropertyByName(p, ['Address', 'address', '地址']));
+      const dateText = getDate(getPropertyByName(p, ['Date', 'date', '日期']));
 
       // 1. 如果 Notion 里没填经纬度，尝试从封面图 EXIF 抓取
       if (lng === 0 || lat === 0) {
-        const coverUrl = getUrl(p.Cover);
         if (coverUrl) {
           console.log(`    [EXIF] Trying to fetch location for ${title}...`);
           const loc = await fetchExifLocation(coverUrl);
@@ -178,10 +234,11 @@ async function bundleData() {
         }
       }
 
-      // 2. 如果还是没坐标，尝试根据 Location 字段通过高德地图转坐标
-      if ((lng === 0 || lat === 0) && getRichText(p.Location)) {
-        console.log(`    [Amap] Geocoding location for ${title}: ${getRichText(p.Location)}`);
-        const loc = await fetchCoordsByAmap(getRichText(p.Location));
+      // 2. 如果还是没坐标，尝试根据 Location 或 Address 字段通过高德地图转坐标
+      const geocodeText = locText || addrText;
+      if ((lng === 0 || lat === 0) && geocodeText) {
+        console.log(`    [Amap] Geocoding location for ${title}: ${geocodeText}`);
+        const loc = await fetchCoordsByAmap(geocodeText);
         if (loc.lng && loc.lat) {
           lng = loc.lng;
           lat = loc.lat;
@@ -195,27 +252,39 @@ async function bundleData() {
       while ((match = imageRegex.exec(content)) !== null) {
         images.push(match[1]);
       }
-      if (images.length === 0 && getUrl(p.Cover)) {
-        images.push(getUrl(p.Cover));
+      if (images.length === 0 && coverUrl) {
+        images.push(coverUrl);
       }
 
-      // 兼容中文/英文的属性名称
-      const tags = getMultiSelect(p.Tags) || getMultiSelect(p['标签']) || [];
-      const excerpt = getRichText(p.Excerpt) || getRichText(p['摘要']) || '';
+      // 兼容 Notion 字段 Tags 可以是 multi_select 或 rich_text 类型
+      const tagsProp = getPropertyByName(p, ['Tags', 'tags', '标签']);
+      let tags = [];
+      if (tagsProp) {
+        if (tagsProp.type === 'multi_select') {
+          tags = getMultiSelect(tagsProp);
+        } else if (tagsProp.type === 'rich_text') {
+          const text = getRichText(tagsProp);
+          if (text) {
+            tags = text.split(/[\s,，;；]+/).filter(Boolean);
+          }
+        }
+      }
+
+      const excerpt = getRichText(getPropertyByName(p, ['Excerpt', 'excerpt', '摘要'])) || '';
 
       food.push({
         slug,
         title,
-        date: getDate(p.Date),
-        location: getRichText(p.Location) || '',
-        address: getRichText(p.Address) || '',
+        date: dateText,
+        location: locText || title, // 如果地点为空，默认使用名称（用于地图气泡旁的精简标记）
+        address: addrText || locText || '', // 如果详细地址为空，使用地点或空字符
         lng,
         lat,
-        cover: getUrl(p.Cover) || '',
+        cover: coverUrl || '',
         images,
         tags,
         excerpt,
-        published: p.Published === undefined ? true : getCheckbox(p.Published),
+        published: publishedProp === null ? true : getCheckbox(publishedProp),
         content
       });
     }

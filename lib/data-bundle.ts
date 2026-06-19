@@ -6,6 +6,17 @@ export const bundleData = {
   "posts": [
     {
       "slug": "技术",
+      "title": "可以的",
+      "date": "2026-06-18",
+      "category": "技术",
+      "tags": [],
+      "excerpt": "",
+      "cover": "",
+      "published": true,
+      "content": "\n测试\n\n"
+    },
+    {
+      "slug": "技术",
       "title": "采用notion",
       "date": "2026-06-15",
       "category": "技术",
@@ -40,10 +51,25 @@ export const bundleData = {
   ],
   "food": [
     {
+      "slug": "kaoji",
+      "title": "厂堂街烤鸡",
+      "date": "2026-06-18",
+      "location": "厂堂街烤鸡",
+      "address": "海曙区厂堂街烤鸡",
+      "lng": 121.54746656643783,
+      "lat": 29.878032898533363,
+      "cover": "",
+      "images": [],
+      "tags": [],
+      "excerpt": "",
+      "published": true,
+      "content": ""
+    },
+    {
       "slug": "123",
       "title": "123",
       "date": "2026-06-12",
-      "location": "",
+      "location": "123",
       "address": "",
       "lng": 0,
       "lat": 0,
@@ -58,7 +84,7 @@ export const bundleData = {
       "slug": "kashi",
       "title": "kashi",
       "date": "2026-06-08",
-      "location": "",
+      "location": "kashi",
       "address": "",
       "lng": 0,
       "lat": 0,
@@ -68,21 +94,6 @@ export const bundleData = {
       "excerpt": "",
       "published": true,
       "content": "\n \n\n"
-    },
-    {
-      "slug": "Test Page in Data Source",
-      "title": "Test Page in Data Source",
-      "date": "",
-      "location": "",
-      "address": "",
-      "lng": 0,
-      "lat": 0,
-      "cover": "",
-      "images": [],
-      "tags": [],
-      "excerpt": "",
-      "published": true,
-      "content": ""
     }
   ],
   "gallery": [
@@ -148,7 +159,7 @@ export const bundleData = {
       "title": "友情链接",
       "desc": "经常串门的朋友们",
       "icon": "🤝",
-      "content": "\n欢迎交换友链！\n\n- [轨道之外](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
+      "content": "\n欢迎交换友链！\n\n- [莫赶](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
     },
     {
       "slug": "apps",
@@ -218,7 +229,7 @@ export const bundleData = {
       "title": "友情链接",
       "desc": "",
       "icon": "",
-      "content": "\n欢迎交换友链！\n\n- [轨道之外](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
+      "content": "\n欢迎交换友链！\n\n- [莫赶](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
     },
     {
       "slug": "应用",
@@ -230,5 +241,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-16T01:10:05.031Z"
+  "updatedAt": "2026-06-19T14:23:21.871Z"
 };

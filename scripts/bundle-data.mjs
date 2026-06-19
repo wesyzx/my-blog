@@ -95,6 +95,47 @@ async function fetchImageMeta(imageUrl) {
   return { width: 1200, height: 800 };
 }
 
+const PI = 3.1415926535897932384626;
+const a = 6378245.0;
+const ee = 0.00669342162296594323;
+
+function transformLat(x, y) {
+  let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+  ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+  ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+  return ret;
+}
+
+function transformLng(x, y) {
+  let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+  ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+  ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+  return ret;
+}
+
+function outOfChina(lng, lat) {
+  return (lng < 72.004 || lng > 137.8347 || lat < 0.8293 || lat > 55.8271);
+}
+
+function gcj02towgs84(lng, lat) {
+  if (outOfChina(lng, lat)) {
+    return [lng, lat];
+  }
+  let dlat = transformLat(lng - 105.0, lat - 35.0);
+  let dlng = transformLng(lng - 105.0, lat - 35.0);
+  let radlat = lat / 180.0 * PI;
+  let magic = Math.sin(radlat);
+  magic = 1.0 - ee * magic * magic;
+  let sqrtmagic = Math.sqrt(magic);
+  dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * PI);
+  dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * PI);
+  let mglat = lat + dlat;
+  let mglng = lng + dlng;
+  return [lng * 2 - mglng, lat * 2 - mglat];
+}
+
 async function fetchCoordsByAmap(address) {
   const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
   if (!key) {
@@ -117,7 +158,8 @@ async function fetchCoordsByAmap(address) {
     const data = await res.json();
 
     if (data.status === '1' && data.geocodes && data.geocodes.length > 0) {
-      const [lng, lat] = data.geocodes[0].location.split(',').map(Number);
+      const [gcjLng, gcjLat] = data.geocodes[0].location.split(',').map(Number);
+      const [lng, lat] = gcj02towgs84(gcjLng, gcjLat);
       return { lng, lat };
     }
   } catch (err) {

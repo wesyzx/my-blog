@@ -55,9 +55,9 @@ export const bundleData = {
       "title": "厂堂街烤鸡",
       "date": "2026-06-18",
       "location": "厂堂街烤鸡",
-      "address": "海曙区厂堂街79号(鼓楼地铁站A口步行360米)",
-      "lng": 121.55188,
-      "lat": 29.876049,
+      "address": "海曙区厂堂街79号",
+      "lng": 121.54772614835929,
+      "lat": 29.878635374795106,
       "cover": "https://images.guanyan.me/20260619230307188.webp",
       "images": [
         "https://images.guanyan.me/20260619230307188.webp"
@@ -66,36 +66,6 @@ export const bundleData = {
       "excerpt": "",
       "published": true,
       "content": ""
-    },
-    {
-      "slug": "123",
-      "title": "123",
-      "date": "2026-06-12",
-      "location": "123",
-      "address": "",
-      "lng": 0,
-      "lat": 0,
-      "cover": "",
-      "images": [],
-      "tags": [],
-      "excerpt": "",
-      "published": true,
-      "content": "\n \n\n"
-    },
-    {
-      "slug": "kashi",
-      "title": "kashi",
-      "date": "2026-06-08",
-      "location": "kashi",
-      "address": "",
-      "lng": 0,
-      "lat": 0,
-      "cover": "",
-      "images": [],
-      "tags": [],
-      "excerpt": "",
-      "published": true,
-      "content": "\n \n\n"
     }
   ],
   "gallery": [
@@ -243,5 +213,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-19T15:17:46.521Z"
+  "updatedAt": "2026-06-19T15:33:23.562Z"
 };

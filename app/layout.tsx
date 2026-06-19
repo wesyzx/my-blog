@@ -18,18 +18,18 @@ import './globals.css'
  * 这里的配置会作为默认值应用到所有页面
  */
 export const metadata: Metadata = {
-  // 标题模板：子页面设置 "关于" 时，最终显示为 "关于 | 莫赶"
+  // 标题模板：子页面设置 "关于" 时，最终显示为 "关于 | 轨道之外"
   title: {
-    default: "莫赶",
-    template: "%s | 莫赶",
+    default: "轨道之外",
+    template: "%s | 轨道之外",
   },
   description: "回忆已成，故事待叙，后会有期",
   // 社交媒体分享时的 OpenGraph 配置
   openGraph: {
-    title: "莫赶",
+    title: "轨道之外",
     description: "回忆已成，故事待叙，后会有期",
     url: 'https://guanyan.me',
-    siteName: "莫赶",
+    siteName: "轨道之外",
     locale: 'zh_CN',
     type: 'website',
   },
@@ -48,7 +48,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <head>
         {/* RSS 自动发现：让 RSS 阅读器可以找到订阅地址 */}
-        <link rel="alternate" type="application/rss+xml" title="莫赶 RSS" href="/rss.xml" />
+        <link rel="alternate" type="application/rss+xml" title="轨道之外 RSS" href="/rss.xml" />
         {/*
           关键脚本：防闪烁主题检测
           在 React 加载之前运行，从本地存储读取用户的主题偏好（深色/浅色）

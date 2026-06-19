@@ -24,7 +24,7 @@ export default function AboutPage() {
           关于
         </h1>
         <p className="text-[15px] text-[var(--color-text-muted)]">
-          莫赶时间，慢慢记录，用心感受。
+          轨道之外时间，慢慢记录，用心感受。
         </p>
       </header>
 

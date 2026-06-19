@@ -108,7 +108,7 @@ export default function Header() {
                 fontFamily: 'var(--font-ui)',
               }}
             >
-              莫赶
+              轨道之外
             </span>
             <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
           </Link>

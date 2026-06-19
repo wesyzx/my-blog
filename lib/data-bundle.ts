@@ -148,7 +148,7 @@ export const bundleData = {
       "title": "友情链接",
       "desc": "经常串门的朋友们",
       "icon": "🤝",
-      "content": "\n欢迎交换友链！\n\n- [莫赶](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
+      "content": "\n欢迎交换友链！\n\n- [轨道之外](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
     },
     {
       "slug": "apps",
@@ -218,7 +218,7 @@ export const bundleData = {
       "title": "友情链接",
       "desc": "",
       "icon": "",
-      "content": "\n欢迎交换友链！\n\n- [莫赶](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
+      "content": "\n欢迎交换友链！\n\n- [轨道之外](https://bugan.com) - 我的个人博客\n- [Google](https://google.com) - 搜索引擎\n\n"
     },
     {
       "slug": "应用",
@@ -228,7 +228,7 @@ export const bundleData = {
       "content": "\n这里记录我常用的软件和工具。\n\n## 桌面端\n- macOS\n- VS Code\n- Obsidian\n\n## 移动端\n- WeChat\n- Telegram\n\n"
     }
   ],
-  "about": "\n你好，欢迎来到 **莫赶**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。莫赶时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
+  "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
   "updatedAt": "2026-06-16T01:10:05.031Z"
 };

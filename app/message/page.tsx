@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react'
 import ArtalkComments from '@/components/ArtalkComments'
 
 const SERVER = process.env.NEXT_PUBLIC_ARTALK_SERVER || 'https://artalk.guanyan.me'
-const SITE = '莫赶'
+const SITE = '轨道之外'
 
 export default function MessagePage() {
   const [count, setCount] = useState<number | null>(null)

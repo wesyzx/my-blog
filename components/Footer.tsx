@@ -105,7 +105,7 @@ export default function Footer() {
           {/* 第四行：版权与备案号 (左右分布) */}
           <div className="w-full pt-8 border-t border-[var(--color-border)] opacity-60 flex flex-col sm:flex-row items-center justify-between gap-4 text-[12px]">
             <div className="text-[var(--color-text-muted)] order-2 sm:order-1">
-              © 2016–{new Date().getFullYear()} <span className="font-medium text-[var(--color-text-primary)]">莫赶</span>
+              © 2016–{new Date().getFullYear()} <span className="font-medium text-[var(--color-text-primary)]">轨道之外</span>
             </div>
             <div className="order-1 sm:order-2">
               <a

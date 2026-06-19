@@ -98,19 +98,11 @@ export default function Header() {
         }}
       >
         <div className="max-w-[1100px] mx-auto px-6 h-[52px] flex items-center justify-between">
-          {/* Logo - 红点 + 站名 */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: 'var(--color-accent)' }}></div>
-            <span
-              className="text-[24px] font-bold tracking-tight"
-              style={{
-                color: 'var(--color-text-primary)',
-                fontFamily: 'var(--font-ui)',
-              }}
-            >
+          {/* Logo - 站名 */}
+          <Link href="/" className="flex items-center group">
+            <span className="text-[24px] blog-logo">
               轨道之外
             </span>
-            <span className="subtitle-en ml-1 hidden sm:inline-block">/ The Unhurried</span>
           </Link>
 
           {/* 桌面端导航 */}

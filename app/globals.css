@@ -115,6 +115,20 @@ a:hover {
 
 /* ===== 三、全局组件样式 ===== */
 
+/* 博客 Logo 专属字体设计 */
+.blog-logo {
+  font-family: "Noto Serif SC", Georgia, serif !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em;
+  color: var(--color-text-primary) !important;
+  transition: letter-spacing 0.4s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease;
+}
+
+.group:hover .blog-logo {
+  letter-spacing: 0.16em;
+  color: var(--color-accent) !important;
+}
+
 /* 卡片样式 */
 .card {
   background: var(--color-bg-card);

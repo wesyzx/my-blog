@@ -124,7 +124,10 @@ export default function FoodMap({ posts }: FoodMapProps) {
         markersRef.current.push(marker)
       })
 
-      if (validPosts.length > 0) {
+      if (validPosts.length === 1) {
+        map.setCenter([validPosts[0].lng, validPosts[0].lat])
+        map.setZoom(15)
+      } else if (validPosts.length > 1) {
         const bounds = new maplibregl.LngLatBounds()
         validPosts.forEach((p) => bounds.extend([p.lng, p.lat]))
         map.fitBounds(bounds, { padding: 80, maxZoom: 15 })

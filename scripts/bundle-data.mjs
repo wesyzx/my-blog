@@ -103,9 +103,16 @@ async function fetchCoordsByAmap(address) {
   }
   if (!address) return { lng: 0, lat: 0 };
 
+  // 过滤掉地址中的中英文括号及括号内的提示文字（如 “(近中山广场)”、“（鼓楼地铁站A口步行360米）”）
+  // 这些提示词常会严重干扰高德地图的文本地理编码解析器，导致其返回不准确的粗略坐标（例如地铁站中心）
+  const cleanAddress = address
+    .replace(/\(.*?\)/g, '')
+    .replace(/（.*?）/g, '')
+    .trim();
+
   try {
     const res = await fetch(
-      `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(address)}&key=${key}`
+      `https://restapi.amap.com/v3/geocode/geo?address=${encodeURIComponent(cleanAddress)}&key=${key}`
     );
     const data = await res.json();
 
@@ -114,7 +121,7 @@ async function fetchCoordsByAmap(address) {
       return { lng, lat };
     }
   } catch (err) {
-    console.error(`  [Amap] Failed for ${address}:`, err.message);
+    console.error(`  [Amap] Failed for ${address} (cleaned: ${cleanAddress}):`, err.message);
   }
   return { lng: 0, lat: 0 };
 }

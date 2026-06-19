@@ -138,7 +138,11 @@ function gcj02towgs84(lng, lat) {
 
 async function fetchCoordsByAmap(address) {
   const key = process.env.AMAP_KEY || process.env.NEXT_PUBLIC_AMAP_KEY;
-  if (!key || !address) return { lng: 0, lat: 0 };
+  if (!key) {
+    console.warn('  [Amap] ⚠️ Warning: AMAP_KEY / NEXT_PUBLIC_AMAP_KEY is missing. Geocoding will be skipped!');
+    return { lng: 0, lat: 0 };
+  }
+  if (!address) return { lng: 0, lat: 0 };
 
   try {
     const res = await fetch(

@@ -63,44 +63,44 @@ export default function FoodMap({ posts }: FoodMapProps) {
     map.on('load', () => {
       validPosts.forEach((post) => {
         const el = document.createElement('div')
+        // 以蓝色圆点本身作为定位的父容器
+        el.style.width = '12px'
+        el.style.height = '12px'
+        el.style.borderRadius = '50%'
+        el.style.backgroundColor = '#98c1d9'
+        el.style.boxShadow = '0 0 0 5px rgba(152,193,217,0.18), 0 0 0 11px rgba(152,193,217,0.07)'
+        el.style.cursor = 'pointer'
+        el.style.position = 'relative'
+
+        // 文字标签绝对定位在圆点下方，完美居中且有固定间距，避免随地图缩放而产生视觉偏移
         el.innerHTML = `
           <div style="
-            display:flex;
-            flex-direction:column;
-            align-items:center;
-            cursor:pointer;
-            transform:translate(-50%,-100%);
-          ">
-            <div style="
-              width:12px;height:12px;
-              border-radius:50%;
-              background:#98c1d9;
-              box-shadow:0 0 0 5px rgba(152,193,217,0.18), 0 0 0 11px rgba(152,193,217,0.07);
-            "></div>
-            <div style="
-              margin-top:8px;
-              padding:4px 12px;
-              border-radius:999px;
-              background:rgba(255,255,255,0.85);
-              backdrop-filter:blur(8px);
-              -webkit-backdrop-filter:blur(8px);
-              color:#475671;
-              font-size:12px;
-              font-weight:500;
-              letter-spacing:0.02em;
-              white-space:nowrap;
-              box-shadow:0 1px 6px rgba(41,50,65,0.08);
-            ">${post.location}</div>
-          </div>
+            position: absolute;
+            left: 50%;
+            top: 20px;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #475671;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            box-shadow: 0 1px 6px rgba(41,50,65,0.08);
+          ">${post.location}</div>
         `
 
-        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+        // 锚点使用 'center' 精准钉住圆点中心
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
           .setLngLat([post.lng, post.lat])
           .addTo(map)
 
         el.addEventListener('click', () => {
           const popup = new maplibregl.Popup({
-            offset: [0, -16],
+            offset: [0, -10], // 圆点半径为 6px，向上偏移 10px 可以使气泡刚好悬浮在圆点之上
             closeButton: false,
             className: 'food-map-popup',
           }).setHTML(`

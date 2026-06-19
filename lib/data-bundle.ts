@@ -55,9 +55,9 @@ export const bundleData = {
       "title": "厂堂街烤鸡",
       "date": "2026-06-18",
       "location": "厂堂街烤鸡",
-      "address": "海曙区厂堂街烤鸡",
-      "lng": 121.54746656643783,
-      "lat": 29.878032898533363,
+      "address": "海曙区厂堂街79号(鼓楼地铁站A口步行360米)",
+      "lng": 121.546376,
+      "lat": 29.874706,
       "cover": "",
       "images": [],
       "tags": [],
@@ -241,5 +241,5 @@ export const bundleData = {
   ],
   "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
   "douban": [],
-  "updatedAt": "2026-06-19T14:48:49.745Z"
+  "updatedAt": "2026-06-19T14:58:39.289Z"
 };

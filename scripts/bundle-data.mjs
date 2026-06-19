@@ -161,9 +161,13 @@ async function fetchCoordsByAmap(address) {
       const [gcjLng, gcjLat] = data.geocodes[0].location.split(',').map(Number);
       const [lng, lat] = gcj02towgs84(gcjLng, gcjLat);
       return { lng, lat };
+    } else if (data.status === '0') {
+      console.error(`  [Amap] Geocoding API returned error status 0 for "${cleanAddress}":`, data.info);
+    } else {
+      console.warn(`  [Amap] No geocode results found for "${cleanAddress}". Raw response:`, JSON.stringify(data));
     }
   } catch (err) {
-    console.error(`  [Amap] Failed for ${address} (cleaned: ${cleanAddress}):`, err.message);
+    console.error(`  [Amap] Fetch exception for ${address} (cleaned: ${cleanAddress}):`, err.message);
   }
   return { lng: 0, lat: 0 };
 }
@@ -176,6 +180,30 @@ async function bundleData() {
   if (!process.env.NOTION_TOKEN) {
     console.error('❌ NOTION_TOKEN is missing in .env.local');
     process.exit(1);
+  }
+
+  // Load existing coordinates from data-bundle.ts as a fallback to avoid rate limits or geocoding failures on CI/CD
+  let existingCoords = new Map();
+  try {
+    const dataBundlePath = path.join(process.cwd(), 'lib/data-bundle.ts');
+    if (fs.existsSync(dataBundlePath)) {
+      const content = fs.readFileSync(dataBundlePath, 'utf8');
+      const jsonStart = content.indexOf('export const bundleData = ');
+      if (jsonStart !== -1) {
+        const jsonStr = content.substring(jsonStart + 'export const bundleData = '.length).trim().replace(/;$/, '');
+        const prevData = JSON.parse(jsonStr);
+        if (prevData && prevData.food) {
+          prevData.food.forEach(item => {
+            if (item.slug && item.lng && item.lat) {
+              existingCoords.set(item.slug, { lng: item.lng, lat: item.lat });
+            }
+          });
+        }
+      }
+    }
+    console.log(`  [Fallback] Loaded ${existingCoords.size} existing food coordinates from data-bundle.ts`);
+  } catch (err) {
+    console.warn('  [Fallback] Failed to parse existing data-bundle.ts:', err.message);
   }
 
   // 1. Posts
@@ -248,11 +276,21 @@ async function bundleData() {
       // 2. 如果还是没坐标，尝试根据 Location 或 Address 字段通过高德地图转坐标
       const geocodeText = locText || addrText;
       if ((lng === 0 || lat === 0) && geocodeText) {
-        console.log(`    [Amap] Geocoding location for ${title}: ${geocodeText}`);
-        const loc = await fetchCoordsByAmap(geocodeText);
-        if (loc.lng && loc.lat) {
-          lng = loc.lng;
-          lat = loc.lat;
+        // 先检查是否有历史缓存的坐标，防止部署环境 API 调用限制导致定位丢失
+        const cached = existingCoords.get(slug);
+        if (cached && cached.lng && cached.lat) {
+          console.log(`    [Fallback] Using cached coordinates for ${title}: ${cached.lng}, ${cached.lat}`);
+          lng = cached.lng;
+          lat = cached.lat;
+        } else {
+          console.log(`    [Amap] Geocoding location for ${title}: ${geocodeText}`);
+          const loc = await fetchCoordsByAmap(geocodeText);
+          if (loc.lng && loc.lat) {
+            lng = loc.lng;
+            lat = loc.lat;
+          }
+          // 在连续查询之间添加 1.2 秒的延迟，防止触发高德免费 Key 的 1 QPS 限制
+          await new Promise(resolve => setTimeout(resolve, 1200));
         }
       }
 

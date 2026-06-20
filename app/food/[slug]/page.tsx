@@ -93,11 +93,20 @@ export default async function FoodPostPage({
             className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 text-[13px] font-medium"
             style={{ color: 'var(--color-text-muted)' }}
           >
-            {post.location && <span>📍 {post.location}</span>}
-            {post.location && post.date && <span style={{ color: 'var(--color-border-hover)' }}>/</span>}
+            {post.location && post.location !== post.title && (
+              <>
+                <span>📍 {post.location}</span>
+                {post.date && <span style={{ color: 'var(--color-border-hover)' }}>/</span>}
+              </>
+            )}
             <time>{formatDate(post.date)}</time>
             {post.address && <span style={{ color: 'var(--color-border-hover)' }}>/</span>}
-            {post.address && <span>{post.address}</span>}
+            {post.address && (
+              <span>
+                {post.location === post.title ? '📍 ' : ''}
+                {post.address}
+              </span>
+            )}
           </div>
         </header>
 

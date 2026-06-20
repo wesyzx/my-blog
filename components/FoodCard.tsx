@@ -35,13 +35,22 @@ export default function FoodCard({ post }: { post: FoodMeta }) {
       {/* 底部渐变遮罩 + 文字 */}
       <div className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <h3 className="text-white text-[15px] font-bold leading-snug line-clamp-1">
-          {post.title}
-        </h3>
-        <p className="text-white/80 text-[12px] mt-1 flex items-center gap-1">
-          <span>📍</span>
-          <span>{post.location}</span>
-        </p>
+        {post.location === post.title ? (
+          <h3 className="text-white text-[15px] font-bold leading-snug line-clamp-1 flex items-center gap-1">
+            <span className="shrink-0">📍</span>
+            <span>{post.title}</span>
+          </h3>
+        ) : (
+          <>
+            <h3 className="text-white text-[15px] font-bold leading-snug line-clamp-1">
+              {post.title}
+            </h3>
+            <p className="text-white/80 text-[12px] mt-1 flex items-center gap-1">
+              <span className="shrink-0">📍</span>
+              <span>{post.location}</span>
+            </p>
+          </>
+        )}
       </div>
 
       {/* 图片数量角标 */}

@@ -9,6 +9,7 @@
 import { getAllPosts, getAllCategories } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
 import Link from "next/link";
+import AuthorCard from "@/components/AuthorCard";
 
 const POSTS_PER_PAGE = 10;
 
@@ -42,90 +43,101 @@ export default async function Home({
   }
 
   return (
-    <div className="max-w-[720px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
-      
-      {/* ===== 头部：标题与分类 ===== */}
-      <header className="mb-16">
-        <h1 
-          className="text-[32px] md:text-[40px] font-bold mb-8 text-[var(--color-text-primary)]"
-          style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
-        >
-          博文
-        </h1>
-        
-        {/* 分类切换栏 */}
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href="/"
-            className={`text-[13px] px-3 py-1 rounded-md transition-colors ${
-              !currentCategory
-                ? 'bg-[var(--color-accent)] text-white'
-                : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] bg-[var(--color-bg-surface)]'
-            }`}
-          >
-            全部
-          </Link>
-          {categories.map((cat) => {
-            const active = currentCategory === cat;
-            if (cat === '全部') return null;
-            return (
+    <div className="max-w-[1080px] mx-auto px-6 py-12 md:py-20 animate-fade-up">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
+        {/* 左侧：文章列表和分类 */}
+        <div className="min-w-0">
+          {/* ===== 头部：标题与分类 ===== */}
+          <header className="mb-16">
+            <h1 
+              className="text-[32px] md:text-[40px] font-bold mb-8 text-[var(--color-text-primary)]"
+              style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
+            >
+              博文
+            </h1>
+            
+            {/* 分类切换栏 */}
+            <div className="flex flex-wrap items-center gap-2">
               <Link
-                key={cat}
-                href={`/?category=${cat}`}
+                href="/"
                 className={`text-[13px] px-3 py-1 rounded-md transition-colors ${
-                  active
+                  !currentCategory
                     ? 'bg-[var(--color-accent)] text-white'
                     : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] bg-[var(--color-bg-surface)]'
                 }`}
               >
-                {cat}
+                全部
               </Link>
-            );
-          })}
+              {categories.map((cat) => {
+                const active = currentCategory === cat;
+                if (cat === '全部') return null;
+                return (
+                  <Link
+                    key={cat}
+                    href={`/?category=${cat}`}
+                    className={`text-[13px] px-3 py-1 rounded-md transition-colors ${
+                      active
+                        ? 'bg-[var(--color-accent)] text-white'
+                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] bg-[var(--color-bg-surface)]'
+                    }`}
+                  >
+                    {cat}
+                  </Link>
+                );
+              })}
+            </div>
+          </header>
+
+          {/* ===== 文章列表区 ===== */}
+          <section className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {pagedPosts.length > 0 ? (
+              pagedPosts.map((post, index) => (
+                <PostCard key={`${post.slug}-${index}`} post={post} />
+              ))
+            ) : (
+              <div className="py-20 text-center text-[var(--color-text-muted)] col-span-full">
+                暂无相关文章
+              </div>
+            )}
+          </section>
+
+          {/* ===== 分页 ===== */}
+          {totalPages > 1 && (
+            <nav className="mt-20 pt-10 border-t border-[var(--color-border)] flex items-center justify-between text-[14px]">
+              <div>
+                {safePage > 1 ? (
+                  <Link href={pageHref(safePage - 1)} className="text-[var(--color-accent)] hover:underline">
+                    ← 上一页
+                  </Link>
+                ) : (
+                  <span className="text-[var(--color-text-hint)] opacity-50 cursor-not-allowed">← 上一页</span>
+                )}
+              </div>
+              
+              <div className="text-[var(--color-text-muted)] tracking-widest font-serif">
+                {safePage} / {totalPages}
+              </div>
+
+              <div>
+                {safePage < totalPages ? (
+                  <Link href={pageHref(safePage + 1)} className="text-[var(--color-accent)] hover:underline">
+                    下一页 →
+                  </Link>
+                ) : (
+                  <span className="text-[var(--color-text-hint)] opacity-50 cursor-not-allowed">下一页 →</span>
+                )}
+              </div>
+            </nav>
+          )}
         </div>
-      </header>
 
-      {/* ===== 文章列表区 ===== */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-        {pagedPosts.length > 0 ? (
-          pagedPosts.map((post, index) => (
-            <PostCard key={`${post.slug}-${index}`} post={post} />
-          ))
-        ) : (
-          <div className="py-20 text-center text-[var(--color-text-muted)] col-span-full">
-            暂无相关文章
+        {/* 右侧：侧边栏 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-[80px]">
+            <AuthorCard />
           </div>
-        )}
-      </section>
-
-      {/* ===== 分页 ===== */}
-      {totalPages > 1 && (
-        <nav className="mt-20 pt-10 border-t border-[var(--color-border)] flex items-center justify-between text-[14px]">
-          <div>
-            {safePage > 1 ? (
-              <Link href={pageHref(safePage - 1)} className="text-[var(--color-accent)] hover:underline">
-                ← 上一页
-              </Link>
-            ) : (
-              <span className="text-[var(--color-text-hint)] opacity-50 cursor-not-allowed">← 上一页</span>
-            )}
-          </div>
-          
-          <div className="text-[var(--color-text-muted)] tracking-widest font-serif">
-            {safePage} / {totalPages}
-          </div>
-
-          <div>
-            {safePage < totalPages ? (
-              <Link href={pageHref(safePage + 1)} className="text-[var(--color-accent)] hover:underline">
-                下一页 →
-              </Link>
-            ) : (
-              <span className="text-[var(--color-text-hint)] opacity-50 cursor-not-allowed">下一页 →</span>
-            )}
-          </div>
-        </nav>
-      )}
+        </aside>
+      </div>
     </div>
   );
 }

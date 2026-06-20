@@ -24,9 +24,9 @@ function formatDate(dateStr: string) {
 
 export default function PostCard({ post }: { post: PostMeta }) {
   return (
-    <article className="group flex flex-col bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-hover)] hover:-translate-y-1 transition-all duration-300 h-full">
+    <article className="group flex flex-col md:flex-row bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:border-[var(--color-border-hover)] hover:-translate-y-0.5 transition-all duration-300 h-full">
       {/* 封面预览图 */}
-      <Link href={"/posts/" + post.slug} className="block aspect-[2/1] overflow-hidden bg-[var(--color-bg-surface)] relative">
+      <Link href={"/posts/" + post.slug} className="block w-full md:w-[38%] shrink-0 aspect-[2/1] md:aspect-auto overflow-hidden bg-[var(--color-bg-surface)] relative">
         {post.cover ? (
           <img
             src={post.cover}
@@ -43,7 +43,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
       </Link>
 
       {/* 卡片内容区 */}
-      <div className="p-6 flex flex-col flex-1">
+      <div className="p-6 flex flex-col flex-1 min-w-0">
         {/* 上部 Meta：分类 */}
         <div className="flex items-center gap-1.5 text-[12px] font-medium text-[var(--color-accent)] mb-2.5">
           <svg className="w-3.5 h-3.5 opacity-80" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">

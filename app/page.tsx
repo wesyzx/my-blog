@@ -47,15 +47,8 @@ export default async function Home({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
         {/* 左侧：文章列表和分类 */}
         <div className="min-w-0">
-          {/* ===== 头部：标题与分类 ===== */}
-          <header className="mb-16">
-            <h1 
-              className="text-[32px] md:text-[40px] font-bold mb-8 text-[var(--color-text-primary)]"
-              style={{ fontFamily: "Georgia, 'Noto Serif SC', serif" }}
-            >
-              博文
-            </h1>
-            
+          {/* ===== 头部：分类 ===== */}
+          <header className="mb-8">
             {/* 分类切换栏 */}
             <div className="flex flex-wrap items-center gap-2">
               <Link
@@ -89,7 +82,7 @@ export default async function Home({
           </header>
 
           {/* ===== 文章列表区 ===== */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <section className="grid grid-cols-1 gap-8">
             {pagedPosts.length > 0 ? (
               pagedPosts.map((post, index) => (
                 <PostCard key={`${post.slug}-${index}`} post={post} />

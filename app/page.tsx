@@ -6,7 +6,7 @@
  * - 移除置顶大图，所有文章统一列表展示
  * - 限制容器宽度优化阅读体验
  */
-import { getAllPosts, getAllCategories } from "@/lib/posts";
+import { getAllPosts } from "@/lib/posts";
 import PostCard from "@/components/PostCard";
 import Link from "next/link";
 import AuthorCard from "@/components/AuthorCard";
@@ -23,7 +23,6 @@ export default async function Home({
   const currentPage = Math.max(1, parseInt(params.page ?? "1", 10) || 1);
 
   const allPosts = getAllPosts();
-  const categories = getAllCategories();
 
   const filtered = currentCategory
     ? allPosts.filter((p) => p.category === currentCategory)
@@ -47,40 +46,6 @@ export default async function Home({
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12">
         {/* 左侧：文章列表和分类 */}
         <div className="min-w-0">
-          {/* ===== 头部：分类 ===== */}
-          <header className="mb-8">
-            {/* 分类切换栏 */}
-            <div className="flex flex-wrap items-center gap-2">
-              <Link
-                href="/"
-                className={`text-[13px] px-3 py-1 rounded-md transition-colors ${
-                  !currentCategory
-                    ? 'bg-[var(--color-accent)] text-white'
-                    : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] bg-[var(--color-bg-surface)]'
-                }`}
-              >
-                全部
-              </Link>
-              {categories.map((cat) => {
-                const active = currentCategory === cat;
-                if (cat === '全部') return null;
-                return (
-                  <Link
-                    key={cat}
-                    href={`/?category=${cat}`}
-                    className={`text-[13px] px-3 py-1 rounded-md transition-colors ${
-                      active
-                        ? 'bg-[var(--color-accent)] text-white'
-                        : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] bg-[var(--color-bg-surface)]'
-                    }`}
-                  >
-                    {cat}
-                  </Link>
-                );
-              })}
-            </div>
-          </header>
-
           {/* ===== 文章列表区 ===== */}
           <section className="grid grid-cols-1 gap-8">
             {pagedPosts.length > 0 ? (

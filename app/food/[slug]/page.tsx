@@ -55,7 +55,7 @@ export default async function FoodPostPage({
       <div className="card p-[30px] md:p-[45px]">
         {/* 封面图 */}
         {post.cover && (
-          <div className="relative w-full aspect-[2/1] rounded-[6px] overflow-hidden mb-[35px]">
+          <div className="relative w-full aspect-[16/9] rounded-[6px] overflow-hidden mb-[35px]">
             <Image
               src={post.cover}
               alt={post.title || '美食图片'}

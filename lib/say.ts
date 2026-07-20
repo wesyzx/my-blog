@@ -43,17 +43,35 @@ export async function getAllSays(): Promise<SayMeta[]> {
     return memos
       .filter((memo: any) => memo.state === 'NORMAL') // 只显示正常状态的说说
       .map((memo: any) => {
-        // 提取图片资源
-        const images = memo.resources
-          ?.filter((res: any) => res.type.startsWith('image/'))
+        // 提取图片资源 (兼容 Memos v0.22+ / v1 及旧版 API)
+        const resourceImages = memo.resources
+          ?.filter((res: any) => (res.type ? res.type.startsWith('image/') : true))
           .map((res: any) => {
-            return `https://memos.guanyan.me/o/r/${res.id}/${res.filename}`
+            if (res.externalLink) return res.externalLink
+            if (res.name) {
+              return `https://memos.guanyan.me/file/${res.name}/${res.filename || ''}`
+            }
+            const resId = res.id || (res.name ? res.name.replace(/^resources\//, '') : '')
+            return `https://memos.guanyan.me/o/r/${resId}/${res.filename || ''}`
           }) || []
 
+        // 提取正文中的 Markdown 图片
+        const mdImageRegex = /!\[.*?\]\((.*?)\)/g
+        const contentImages: string[] = []
+        let match: RegExpExecArray | null
+        while ((match = mdImageRegex.exec(memo.content || '')) !== null) {
+          contentImages.push(match[1])
+        }
+
+        // 清理正文中的 Markdown 图片语法，避免以纯文本形式留在页面中
+        const cleanContent = (memo.content || '').replace(/!\[.*?\]\((.*?)\)/g, '').trim()
+
+        const images = Array.from(new Set([...resourceImages, ...contentImages]))
+
         return {
-          slug: memo.name.split('/').pop() || memo.uid,
-          date: memo.createTime,
-          content: memo.content,
+          slug: memo.name ? memo.name.split('/').pop() : (memo.uid || memo.id),
+          date: memo.createTime || memo.displayTime,
+          content: cleanContent,
           image: images[0],
           images: images,
         }

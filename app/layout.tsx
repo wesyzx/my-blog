@@ -1,0 +1,88 @@
+/**
+ * 根布局组件 —— 博客的 HTML 骨架
+ *
+ * 所有页面都包裹在此布局中：
+ *   <html> → <head>（主题防闪烁脚本） → <body>
+ *     → <Header /> → <main>{children}</main> → <Footer />
+ *
+ * 全局 SEO 元数据在此配置（标题、描述、OpenGraph），
+ * 子页面可通过 generateMetadata 覆盖。
+ */
+import type { Metadata } from 'next'
+import Header from '@/components/Header'
+import Footer from '@/components/Footer'
+import './globals.css'
+
+/**
+ * 全局 SEO 元数据配置
+ * 这里的配置会作为默认值应用到所有页面
+ */
+export const metadata: Metadata = {
+  metadataBase: new URL('https://guanyan.me'),
+  // 标题模板：子页面设置 "关于" 时，最终显示为 "关于 | 轨道之外"
+  title: {
+    default: "轨道之外",
+    template: "%s | 轨道之外",
+  },
+  description: "回忆已成，故事待叙，后会有期",
+  alternates: { canonical: '/' },
+  // 社交媒体分享时的 OpenGraph 配置
+  openGraph: {
+    title: "轨道之外",
+    description: "回忆已成，故事待叙，后会有期",
+    url: 'https://guanyan.me',
+    siteName: "轨道之外",
+    locale: 'zh_CN',
+    type: 'website',
+  },
+}
+
+/**
+ * 根布局组件 (Root Layout)
+ * 所有页面组件（children）都会被包裹在这个组件内部
+ */
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
+      <head>
+        {/* RSS 自动发现：让 RSS 阅读器可以找到订阅地址 */}
+        <link rel="alternate" type="application/rss+xml" title="轨道之外 RSS" href="/rss.xml" />
+        {/*
+          关键脚本：防闪烁主题检测
+          在 React 加载之前运行，从本地存储读取用户的主题偏好（深色/浅色）
+          并立即应用 data-theme 属性，防止页面加载时出现颜色瞬间跳变。
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                  }
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="antialiased">
+        {/* 顶部导航栏 */}
+        <Header />
+
+        {/* 主内容区域：控制页面背景色和最大宽度 */}
+        <main className="min-h-screen px-5 md:px-8" style={{ backgroundColor: 'var(--color-bg-page)' }}>
+          {children}
+        </main>
+
+        {/* 底部版权信息栏 */}
+        <Footer />
+      </body>
+    </html>
+  )
+}

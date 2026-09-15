@@ -10,7 +10,6 @@ const groups: Array<{ label: string; items: Array<{ label: string; href: string;
     items: [
       { label: '博文', href: '/', icon: 'post' },
       { label: '说说', href: '/say', icon: 'say' },
-      { label: '关于', href: '/about', icon: 'about' },
     ],
   },
   {
@@ -24,7 +23,6 @@ const groups: Array<{ label: string; items: Array<{ label: string; href: string;
     label: '交流',
     items: [
       { label: '留言', href: '/message', icon: 'message' },
-      { label: 'RSS', href: '/rss.xml', icon: 'rss' },
     ],
   },
 ]
@@ -35,20 +33,42 @@ export default function SiteSidebar() {
     ? pathname === '/' || pathname.startsWith('/posts/')
     : pathname.startsWith(href)
 
+  const isAboutActive = isActive('/about')
+
   return (
     <aside className="site-sidebar" aria-label="侧边导航">
       <nav>
         {groups.map((group) => (
           <section className="sidebar-group" key={group.label}>
             <p>{group.label}</p>
-            {group.items.map((item) => (
-              <Link key={item.href} href={item.href} className={isActive(item.href) ? 'active' : ''}>
-                <Icon name={item.icon} />
-                <span>{item.label}</span>
-              </Link>
-            ))}
+            {group.items.map((item) => {
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={active ? 'active' : ''}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon name={item.icon} />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
           </section>
         ))}
+
+        {/* 独立一级导航：关于 */}
+        <section className="sidebar-group sidebar-standalone">
+          <Link
+            href="/about"
+            className={isAboutActive ? 'active' : ''}
+            aria-current={isAboutActive ? 'page' : undefined}
+          >
+            <Icon name="about" />
+            <span>关于</span>
+          </Link>
+        </section>
       </nav>
       <p className="sidebar-verse">明日巴陵道，<br />秋山又几重。</p>
     </aside>

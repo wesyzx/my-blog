@@ -2,10 +2,9 @@ import Image from 'next/image'
 import { getAllSays } from '@/lib/say'
 import SayCommentsToggle from '@/components/SayCommentsToggle'
 import SafeMarkdown from '@/components/SafeMarkdown'
-import Icon from '@/components/Icon'
 
 export const metadata = { title: '说说', description: '零碎的思考、瞬间的感悟，以及生活的日常。' }
-const AUTHOR_AVATAR = '/home-memory.png'
+const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
 
 function formatDate(dateStr: string) {
   const date = new Date(dateStr)
@@ -14,15 +13,59 @@ function formatDate(dateStr: string) {
 
 export default async function SayPage() {
   const says = await getAllSays()
-  return <div className="page-shell narrow animate-fade-up">
-    <header className="page-header"><div className="page-header-row"><span className="page-icon"><Icon name="say" /></span><h1 className="page-title">说说</h1></div><p className="page-lead">零碎的思考、瞬间的感悟，以及生活的日常。</p></header>
-    {says.length === 0 ? <div className="empty-state">暂时没有可显示的说说。</div> : <div className="say-timeline">
-      {says.map((say) => <article key={say.slug} className="say-item">
-        <div className="say-author"><Image src={AUTHOR_AVATAR} alt="Can Chou" width={42} height={42} /><div><strong>Can Chou</strong><time>{formatDate(say.date)}</time></div></div>
-        <SafeMarkdown source={say.content} />
-        {say.images && say.images.length > 0 && <div className={`say-images count-${Math.min(say.images.length, 3)}`}>{say.images.map((src, index) => <a href={src} target="_blank" rel="noopener noreferrer" key={src}><Image src={src} alt={`说说配图 ${index + 1}`} width={720} height={720} sizes="(max-width: 760px) 50vw, 240px" /></a>)}</div>}
-        <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`说说 ${formatDate(say.date)}`} />
-      </article>)}
-    </div>}
-  </div>
+  return (
+    <div className="page-shell narrow animate-fade-up">
+      <header className="page-header">
+        <div className="page-header-meta editorial-meta">FRAGMENTS / 随笔微语</div>
+        <h1 className="page-title">说说</h1>
+        <p className="page-lead">零碎的思考、瞬间的感悟，以及生活的日常。</p>
+      </header>
+
+      {says.length === 0 ? (
+        <div className="empty-state">暂时没有可显示的说说。</div>
+      ) : (
+        <div className="say-timeline">
+          {says.map((say) => (
+            <article key={say.slug} className="say-item">
+              <div className="say-author">
+                <Image
+                  src={AUTHOR_AVATAR}
+                  alt="Can Chou"
+                  width={40}
+                  height={40}
+                  className="say-avatar"
+                />
+                <div className="say-author-info">
+                  <strong>Can Chou</strong>
+                  <time dateTime={say.date}>{formatDate(say.date)}</time>
+                </div>
+              </div>
+
+              <div className="say-content">
+                <SafeMarkdown source={say.content} />
+              </div>
+
+              {say.images && say.images.length > 0 && (
+                <div className={`say-images count-${Math.min(say.images.length, 3)}`}>
+                  {say.images.map((src, index) => (
+                    <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
+                      <Image
+                        src={src}
+                        alt={`说说配图 ${index + 1}`}
+                        width={720}
+                        height={720}
+                        sizes="(max-width: 760px) 50vw, 240px"
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`说说 ${formatDate(say.date)}`} />
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }

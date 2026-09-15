@@ -15,6 +15,6 @@ export default async function Footer() {
   ]
   return <footer className="site-footer"><div className="site-footer-inner">
     <div className="footer-stats"><RunningTime /><VisitorStats pageKeys={pageKeys} /></div>
-    <div className="footer-meta"><span>© 2016–{new Date().getFullYear()} 轨道之外</span><span className="footer-links"><Link href="https://nextjs.org" target="_blank">Next.js</Link><span>·</span><span>EdgeOne</span><span>·</span><Link href="https://beian.miit.gov.cn/" target="_blank">浙ICP备16031853号-1</Link></span></div>
+    <div className="footer-meta"><span>© 2016–{new Date().getFullYear()} 轨道之外</span><span className="footer-links"><Link href="https://nextjs.org" target="_blank" rel="noopener noreferrer">Next.js</Link><span aria-hidden="true">·</span><Link href="https://edgeone.ai" target="_blank" rel="noopener noreferrer">EdgeOne</Link><span aria-hidden="true">·</span><Link href="https://www.cloudflare.com" target="_blank" rel="noopener noreferrer">Cloudflare</Link><span aria-hidden="true">·</span><Link href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">浙ICP备16031853号-1</Link></span></div>
   </div></footer>
 }

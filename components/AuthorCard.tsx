@@ -5,13 +5,13 @@ export default function AuthorCard() {
   return (
     <div className="card p-6 flex flex-col items-center text-center">
       {/* 头像 */}
-      <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[var(--color-border)] shadow-sm hover:scale-105 transition-transform duration-500 ease-out mb-4">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden border border-[var(--color-border)] shadow-sm hover:scale-105 transition-transform duration-500 ease-out mb-4 aspect-square">
         <Image
-          src="/home-memory.png"
+          src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png"
           alt="Can Chou"
           fill
           sizes="80px"
-          className="object-cover"
+          className="object-cover rounded-full"
           priority
         />
       </div>

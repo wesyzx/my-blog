@@ -5,13 +5,27 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Icon from './Icon'
 
-const navItems = [
-  { label: '博文', href: '/', icon: 'post' as const },
-  { label: '说说', href: '/say', icon: 'say' as const },
-  { label: '美食', href: '/food', icon: 'food' as const },
-  { label: '相册', href: '/gallery', icon: 'gallery' as const },
-  { label: '留言', href: '/message', icon: 'message' as const },
-  { label: '关于', href: '/about', icon: 'about' as const },
+const mobileGroups = [
+  {
+    label: '抽屉',
+    items: [
+      { label: '博文', href: '/', icon: 'post' as const },
+      { label: '说说', href: '/say', icon: 'say' as const },
+    ],
+  },
+  {
+    label: '途中',
+    items: [
+      { label: '美食', href: '/food', icon: 'food' as const },
+      { label: '相册', href: '/gallery', icon: 'gallery' as const },
+    ],
+  },
+  {
+    label: '交流',
+    items: [
+      { label: '留言', href: '/message', icon: 'message' as const },
+    ],
+  },
 ]
 
 export default function Header() {
@@ -48,8 +62,9 @@ export default function Header() {
         </Link>
 
         <nav className="desktop-nav desktop-section-nav" aria-label="栏目导航">
-          <Link href="/" className={pathname === '/' || pathname.startsWith('/posts/') || pathname === '/say' || pathname === '/about' ? 'active' : ''}>📦 抽屉</Link>
-          <Link href="/gallery" className={pathname.startsWith('/gallery') || pathname.startsWith('/food') ? 'active' : ''}>🏖 途中</Link>
+          <Link href="/" className={pathname === '/' || pathname.startsWith('/posts/') || pathname === '/say' ? 'active' : ''}>抽屉</Link>
+          <Link href="/gallery" className={pathname.startsWith('/gallery') || pathname.startsWith('/food') ? 'active' : ''}>途中</Link>
+          <Link href="/about" className={pathname === '/about' ? 'active' : ''}>关于</Link>
           <button type="button" className="icon-button" onClick={toggleTheme} aria-label={isDark ? '切换浅色模式' : '切换深色模式'}>
             <Icon name={isDark ? 'sun' : 'moon'} />
           </button>
@@ -63,11 +78,35 @@ export default function Header() {
       {menuOpen && (
         <div id="mobile-navigation" className="mobile-nav">
           <nav aria-label="移动端导航">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)} className={isActive(item.href) ? 'active' : ''}>
-                <span className="mobile-nav-icon"><Icon name={item.icon} /></span><span>{item.label}</span>
-              </Link>
+            {mobileGroups.map((group) => (
+              <div key={group.label} className="mobile-nav-group">
+                <p className="mobile-group-label">{group.label}</p>
+                {group.items.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={isActive(item.href) ? 'active' : ''}
+                    aria-current={isActive(item.href) ? 'page' : undefined}
+                  >
+                    <span className="mobile-nav-icon"><Icon name={item.icon} /></span>
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
             ))}
+
+            <div className="mobile-nav-group mobile-nav-standalone">
+              <Link
+                href="/about"
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/about') ? 'active' : ''}
+                aria-current={isActive('/about') ? 'page' : undefined}
+              >
+                <span className="mobile-nav-icon"><Icon name="about" /></span>
+                <span>关于</span>
+              </Link>
+            </div>
           </nav>
           <button type="button" className="mobile-theme-button" onClick={toggleTheme}><Icon name={isDark ? 'sun' : 'moon'} />{isDark ? '使用浅色模式' : '使用深色模式'}</button>
         </div>

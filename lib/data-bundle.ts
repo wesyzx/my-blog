@@ -114,6 +114,6 @@ export const bundleData = {
       ]
     }
   ],
-  "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n\n***\n\n## 联系我\n\n* ✉ Email: [wesyzx@gmail.com](mailto:wesyzx@gmail.com)\n* ◆ GitHub: github.com/wesyzx\n* 𝕏 Twitter: [@wesyzx](https://x.com/wesyzx)\n",
-  "updatedAt": "2026-09-14T07:17:04.923Z"
+  "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n",
+  "updatedAt": "2026-09-15T13:53:32.054Z"
 };

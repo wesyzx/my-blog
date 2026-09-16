@@ -1,5 +1,5 @@
 {
-  "name": "guanyan-workouts",
+  "name": "workouts",
   "main": "src/index.js",
   "compatibility_date": "2026-09-16",
   "compatibility_flags": ["nodejs_compat"],
@@ -19,15 +19,15 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "guanyan-workouts",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_name": "workouts",
+      "database_id": "75ba3f96-4992-4dbb-b3c8-ceb6cca9316a",
       "migrations_dir": "migrations"
     }
   ],
   "r2_buckets": [
     {
       "binding": "SNAPSHOTS",
-      "bucket_name": "guanyan-workouts-snapshots"
+      "bucket_name": "workouts-snapshots"
     }
   ],
   "vars": {

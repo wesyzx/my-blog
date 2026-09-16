@@ -13,7 +13,7 @@
   -> 博客 WORKOUTS_API_URL
 ```
 
-Cron 每 6 小时运行一次。未配置 `SOURCE_URL` 时，Cron 仍会从 D1 重建 R2 快照；可以先通过受保护的导入接口写入测试数据。
+Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14:17、20:17）。未配置 `SOURCE_URL` 时，Cron 仅从 D1 重建 R2 快照，不会自动获取运动平台数据。
 
 ## API
 
@@ -26,14 +26,18 @@ Cron 每 6 小时运行一次。未配置 `SOURCE_URL` 时，Cron 仍会从 D1 �
 
 ## 首次部署
 
-默认通过已连接的 Cloudflare MCP 创建 Worker、D1、R2、Cron 和 secrets。`wrangler.jsonc` 保留为基础设施声明与人工复核依据，其中的全零 `database_id` 需要在创建 D1 后替换为真实资源 ID。
+通过 Cloudflare MCP 或控制台管理部署，不需要在本地安装 Wrangler。`wrangler.jsonc` 保留为基础设施声明与人工复核依据，已记录真实 D1 ID。
+
+当前资源：Worker `workouts`、D1 `workouts`、R2 `workouts-snapshots`。D1 绑定名为 `DB`，R2 绑定名为 `SNAPSHOTS`。旧的空桶 `guanyan-workouts-snapshots` 未参与当前服务，待确认后清理。
+
+已部署公开快照、健康检查、Cron 和基础运行变量。尚未设置 `SOURCE_URL`、来源授权或 `INGEST_TOKEN`；内部写接口保持关闭，公开数据为空。`PUBLIC_ORIGIN` 保留实际博客域名 `https://guanyan.me`，它不是资源名称。
 
 Cloudflare MCP 的连接令牌至少需要当前账户的 `D1 Write`、`Workers R2 Storage Write` 与 `Workers Scripts Write` 权限；只读连接可以发现资源，但无法完成首次部署。
 
 部署成功后，将公开地址写入博客部署环境：
 
 ```text
-WORKOUTS_API_URL=https://<worker-domain>/v1/workouts.json
+WORKOUTS_API_URL=https://workouts.wesyzx.workers.dev/v1/workouts.json
 ```
 
 ## 本地验证

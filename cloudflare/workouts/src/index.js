@@ -160,9 +160,9 @@ const worker = {
       const url = new URL(request.url)
 
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: publicHeaders(env) })
-      if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/v1/workouts.json') return serveSnapshot(request, env)
-      if (request.method === 'GET' && url.pathname === '/health') return health(env)
-      if (request.method === 'POST' && url.pathname === '/internal/ingest') return ingest(request, env)
+      if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/v1/workouts.json') return await serveSnapshot(request, env)
+      if (request.method === 'GET' && url.pathname === '/health') return await health(env)
+      if (request.method === 'POST' && url.pathname === '/internal/ingest') return await ingest(request, env)
       if (request.method === 'POST' && url.pathname === '/internal/sync') {
         if (!await authorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 })
         try {
@@ -185,10 +185,13 @@ const worker = {
   },
 
   async scheduled(_controller, env, ctx) {
-    ctx.waitUntil(syncSource(env).catch((error) => console.error(JSON.stringify({
-      message: 'Scheduled workout sync failed',
-      error: error instanceof Error ? error.message : String(error),
-    }))))
+    ctx.waitUntil(syncSource(env).catch((error) => {
+      console.error(JSON.stringify({
+        message: 'Scheduled workout sync failed',
+        error: error instanceof Error ? error.message : String(error),
+      }))
+      throw error
+    }))
   },
 }
 

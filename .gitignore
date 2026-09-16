@@ -16,6 +16,8 @@ out/
 # Environment variables
 .env.local
 .env.*
+.dev.vars
+.wrangler/
 
 # IDE files
 .vscode/
@@ -97,5 +99,4 @@ dmypy.json
 # Temporary files
 *.tmp
 *~
-
 

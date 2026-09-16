@@ -1,0 +1,10 @@
+{
+  "name": "@guanyan/workouts-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check src/index.js && node --check src/domain.js && node --check src/storage.js",
+    "test": "node --test"
+  }
+}

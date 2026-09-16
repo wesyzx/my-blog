@@ -1,0 +1,5 @@
+INGEST_TOKEN=replace-with-a-long-random-token
+
+# Configure these after choosing the activity provider or adapter.
+# SOURCE_URL=https://example.com/export/workouts
+# SOURCE_BEARER_TOKEN=replace-with-provider-token

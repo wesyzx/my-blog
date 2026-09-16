@@ -2,8 +2,9 @@ import Image from 'next/image'
 import { getAllSays } from '@/lib/say'
 import SayCommentsToggle from '@/components/SayCommentsToggle'
 import SafeMarkdown from '@/components/SafeMarkdown'
+import { createPageMetadata } from '@/lib/metadata'
 
-export const metadata = { title: '说说', description: '零碎的思考、瞬间的感悟，以及生活的日常。' }
+export const metadata = createPageMetadata({ title: '说说', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
 const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
 
 function formatDate(dateStr: string) {
@@ -26,7 +27,7 @@ export default async function SayPage() {
       ) : (
         <div className="say-timeline">
           {says.map((say) => (
-            <article key={say.slug} className="say-item">
+            <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="say-item">
               <div className="say-author">
                 <Image
                   src={AUTHOR_AVATAR}

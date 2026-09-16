@@ -6,9 +6,9 @@ import path from 'path'
 
 dotenv.config({ path: '.env.local' })
 
-const POSTS_DS_ID = '6bff5b12-623c-4404-9e80-66c4b77f82eb'
-const FOOD_DS_ID = '3806b772-5d3c-8046-88b8-000b3b624968'
-const GALLERY_DS_ID = '64bd6b1e-26f0-4994-9c11-1232e3590807'
+const POSTS_DS_ID = process.env.NOTION_DB_POSTS || '6bff5b12-623c-4404-9e80-66c4b77f82eb'
+const FOOD_DS_ID = process.env.NOTION_DB_FOOD || '3806b772-5d3c-8046-88b8-000b3b624968'
+const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-1232e3590807'
 const ABOUT_PAGE_ID = process.env.NOTION_PAGE_ID_ABOUT || '3806b772-5d3c-800a-ad82-f36e01605957'
 const OUTPUT_PATH = path.join(process.cwd(), 'lib/data-bundle.ts')
 

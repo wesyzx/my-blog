@@ -6,9 +6,15 @@ import Icon, { type IconName } from './Icon'
 
 const groups: Array<{ label: string; items: Array<{ label: string; href: string; icon: IconName }> }> = [
   {
+    label: '首页',
+    items: [
+      { label: '近况', href: '/', icon: 'orbit' },
+    ],
+  },
+  {
     label: '抽屉',
     items: [
-      { label: '博文', href: '/', icon: 'post' },
+      { label: '博文', href: '/posts', icon: 'post' },
       { label: '说说', href: '/say', icon: 'say' },
     ],
   },
@@ -17,6 +23,7 @@ const groups: Array<{ label: string; items: Array<{ label: string; href: string;
     items: [
       { label: '美食', href: '/food', icon: 'food' },
       { label: '相册', href: '/gallery', icon: 'gallery' },
+      { label: '运动', href: '/workouts', icon: 'activity' },
     ],
   },
   {
@@ -29,9 +36,7 @@ const groups: Array<{ label: string; items: Array<{ label: string; href: string;
 
 export default function SiteSidebar() {
   const pathname = usePathname()
-  const isActive = (href: string) => href === '/'
-    ? pathname === '/' || pathname.startsWith('/posts/')
-    : pathname.startsWith(href)
+  const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
 
   const isAboutActive = isActive('/about')
 

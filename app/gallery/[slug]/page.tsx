@@ -1,6 +1,7 @@
 import { getGalleryBySlug, getAllGalleryItems } from '@/lib/gallery'
 import { notFound } from 'next/navigation'
 import GalleryDetail from '@/components/GalleryDetail'
+import { createPageMetadata } from '@/lib/metadata'
 
 export async function generateStaticParams() {
   const items = getAllGalleryItems()
@@ -15,7 +16,12 @@ export async function generateMetadata({
   const { slug } = await params
   const item = getGalleryBySlug(slug)
   if (!item) return {}
-  return { title: `${item.title} - 相册` }
+  return createPageMetadata({
+    title: `${item.title} - 相册`,
+    description: item.excerpt || `${item.title}相册`,
+    path: `/gallery/${encodeURIComponent(item.slug)}`,
+    images: item.cover ? [item.cover] : item.images.slice(0, 1).map((image) => image.src),
+  })
 }
 
 export default async function GalleryDetailPage({

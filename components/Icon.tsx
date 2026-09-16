@@ -4,7 +4,7 @@ export type IconName =
   | 'orbit' | 'post' | 'say' | 'food' | 'gallery' | 'message' | 'about'
   | 'sun' | 'moon' | 'menu' | 'close' | 'rss' | 'github' | 'mail' | 'x'
   | 'location' | 'calendar' | 'comment' | 'eye' | 'arrow-left' | 'arrow-right'
-  | 'chevron-down' | 'image' | 'map'
+  | 'chevron-down' | 'image' | 'map' | 'activity'
 
 const paths: Record<IconName, ReactNode> = {
   orbit: <><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-28 12 12)"/><circle cx="19.2" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></>,
@@ -31,6 +31,7 @@ const paths: Record<IconName, ReactNode> = {
   'chevron-down': <path d="m7 9 5 5 5-5"/>,
   image: <><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 5-5 3 3 2-2 4 4"/></>,
   map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></>,
+  activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
 }
 
 type IconProps = SVGProps<SVGSVGElement> & { name: IconName }

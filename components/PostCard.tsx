@@ -39,7 +39,7 @@ export default function PostCard({ post, index }: { post: PostMeta; index?: numb
 
           <div className="post-row-meta">
             <Link
-              href={`/?category=${encodeURIComponent(post.category)}`}
+              href={`/posts?category=${encodeURIComponent(post.category)}`}
               className="post-category"
             >
               {post.category}

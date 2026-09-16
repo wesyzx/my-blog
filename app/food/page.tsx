@@ -2,8 +2,9 @@ import { getAllFoodPosts } from '@/lib/food'
 import FoodCard from '@/components/FoodCard'
 import FoodMapWrapper from '@/components/FoodMapWrapper'
 import Icon from '@/components/Icon'
+import { createPageMetadata } from '@/lib/metadata'
 
-export const metadata = { title: '美食地图', description: '记录探访过的美食，用味蕾丈量这座城市。' }
+export const metadata = createPageMetadata({ title: '美食地图', description: '记录探访过的美食，用味蕾丈量这座城市。', path: '/food' })
 
 export default async function FoodPage() {
   const posts = await getAllFoodPosts()

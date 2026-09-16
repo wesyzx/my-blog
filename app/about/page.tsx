@@ -2,9 +2,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAboutContent } from '@/lib/about'
+import { createPageMetadata } from '@/lib/metadata'
 import Icon from '@/components/Icon'
 
-export const metadata = { title: '关于', description: '关于轨道之外和 Can Chou。' }
+export const metadata = createPageMetadata({ title: '关于', description: '关于轨道之外和 Can Chou。', path: '/about' })
 
 export default function AboutPage() {
   return (

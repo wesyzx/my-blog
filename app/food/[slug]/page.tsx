@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllFoodPosts, getFoodPostBySlug } from '@/lib/food'
+import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
 import Icon from '@/components/Icon'
 
@@ -18,7 +19,12 @@ function formatEditorialDate(value: string) {
 export async function generateStaticParams() { return (await getAllFoodPosts()).map((post) => ({ slug: post.slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const post = await getFoodPostBySlug((await params).slug)
-  return post ? { title: `${post.title} - 美食地图`, description: post.excerpt || post.address, alternates: { canonical: `/food/${encodeURIComponent(post.slug)}` } } : {}
+  return post ? createPageMetadata({
+    title: `${post.title} - 美食地图`,
+    description: post.excerpt || post.address,
+    path: `/food/${encodeURIComponent(post.slug)}`,
+    images: post.cover ? [post.cover] : [],
+  }) : {}
 }
 
 export default async function FoodPostPage({ params }: { params: Promise<{ slug: string }> }) {

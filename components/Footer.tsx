@@ -8,7 +8,7 @@ import { getAllGalleryItems } from '@/lib/gallery'
 export default async function Footer() {
   const food = await getAllFoodPosts()
   const pageKeys = [
-    '/', '/about', '/food', '/gallery', '/message', '/say',
+    '/', '/posts', '/about', '/food', '/gallery', '/workouts', '/message', '/say',
     ...getAllPosts().map((post) => `/posts/${post.slug}`),
     ...food.map((post) => `/food/${post.slug}`),
     ...getAllGalleryItems().map((album) => `/gallery/${album.slug}`),

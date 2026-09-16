@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllPosts, getPostBySlug } from '@/lib/posts'
+import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
 import Icon from '@/components/Icon'
 
@@ -19,7 +20,12 @@ export function generateStaticParams() { return getAllPosts().map((post) => ({ s
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const post = getPostBySlug((await params).slug)
   if (!post) return {}
-  return { title: post.title, description: post.excerpt || post.title, alternates: { canonical: `/posts/${encodeURIComponent(post.slug)}` }, openGraph: { title: post.title, description: post.excerpt || post.title, images: post.cover ? [post.cover] : [] } }
+  return createPageMetadata({
+    title: post.title,
+    description: post.excerpt || post.title,
+    path: `/posts/${encodeURIComponent(post.slug)}`,
+    images: post.cover ? [post.cover] : [],
+  })
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -38,7 +44,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
         <header className="article-header">
           <div className="article-meta-top">
             <Link
-              href={`/?category=${encodeURIComponent(post.category)}`}
+              href={`/posts?category=${encodeURIComponent(post.category)}`}
               className="article-category editorial-meta"
             >
               {post.category}
@@ -109,7 +115,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </section>
 
       <div className="article-footer-nav">
-        <Link href="/" className="back-link">
+        <Link href="/posts" className="back-link">
           <Icon name="arrow-left" />
           <span>返回文章目录</span>
         </Link>

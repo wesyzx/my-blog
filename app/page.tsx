@@ -1,129 +1,138 @@
-import Image from 'next/image'
 import Link from 'next/link'
-import { getAllCategories, getAllPosts } from '@/lib/posts'
+import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems } from '@/lib/gallery'
-import PostCard from '@/components/PostCard'
+import { getAllSays } from '@/lib/say'
+import PublishingHeatmap, { type PublishingActivity } from '@/components/PublishingHeatmap'
 import Icon from '@/components/Icon'
+import { createPageMetadata } from '@/lib/metadata'
 
-const POSTS_PER_PAGE = 10
+interface SiteUpdate extends PublishingActivity {
+  id: string
+  title: string
+  href: string
+}
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ category?: string; page?: string }> }) {
-  const params = await searchParams
-  const category = params.category ?? ''
-  const requestedPage = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1)
+export const metadata = createPageMetadata({
+  title: '轨道之外',
+  description: '慢慢记录，用心感受。这里收集关于技术、生活、美食与旅途的片段。',
+  path: '/',
+})
+
+function dateValue(value: string) {
+  const parsed = new Date(value).getTime()
+  return Number.isNaN(parsed) ? 0 : parsed
+}
+
+function formatEditorialDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '日期待定'
+  return date.toISOString().slice(0, 10).replaceAll('-', '.')
+}
+
+function sayTitle(content: string) {
+  const plain = content
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_`~-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!plain) return '一则说说'
+  return plain.length > 34 ? `${plain.slice(0, 34)}…` : plain
+}
+
+export default async function Home() {
   const posts = getAllPosts()
-  const foodCount = (await getAllFoodPosts()).length
-  const galleryCount = getAllGalleryItems().length
-  const categories = getAllCategories()
-  const filtered = category ? posts.filter((post) => post.category === category) : posts
-  const totalPages = Math.max(1, Math.ceil(filtered.length / POSTS_PER_PAGE))
-  const page = Math.min(requestedPage, totalPages)
-  const pagedPosts = filtered.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE)
-  const activeCells = new Set(posts.map((post) => {
-    let value = 0
-    for (const character of post.date) value = (value * 31 + character.charCodeAt(0)) % 70
-    return value
-  }))
+  const gallery = getAllGalleryItems()
+  const [food, says] = await Promise.all([getAllFoodPosts(), getAllSays()])
 
-  const pageHref = (nextPage: number) => {
-    const query = new URLSearchParams()
-    if (category) query.set('category', category)
-    if (nextPage > 1) query.set('page', String(nextPage))
-    return query.size ? `/?${query}` : '/'
-  }
+  const updates: SiteUpdate[] = [
+    ...posts.map((post) => ({
+      id: `post-${post.slug}`,
+      type: '博文',
+      title: post.title,
+      date: post.date,
+      href: `/posts/${encodeURIComponent(post.slug)}`,
+    })),
+    ...says.map((say) => ({
+      id: `say-${say.slug}`,
+      type: '说说',
+      title: sayTitle(say.content),
+      date: say.date,
+      href: `/say#say-${encodeURIComponent(say.slug)}`,
+    })),
+    ...gallery.map((album) => ({
+      id: `gallery-${album.slug}`,
+      type: '相册',
+      title: album.title,
+      date: album.date,
+      href: `/gallery/${encodeURIComponent(album.slug)}`,
+    })),
+    ...food.map((place) => ({
+      id: `food-${place.slug}`,
+      type: '地点',
+      title: place.title,
+      date: place.date,
+      href: `/food/${encodeURIComponent(place.slug)}`,
+    })),
+  ].sort((a, b) => dateValue(b.date) - dateValue(a.date))
+
+  const facts = [
+    { count: posts.length, label: 'WRITING', href: '/posts' },
+    { count: says.length, label: 'NOTES', href: '/say' },
+    { count: gallery.length, label: 'GALLERY', href: '/gallery' },
+    { count: food.length, label: 'PLACES', href: '/food' },
+  ]
 
   return (
     <div className="home-shell animate-fade-up">
-      {/* Editorial Cover: 摄影大题图与独立排版 */}
-      <section className="home-cover" aria-label="封面题图">
-        <div className="home-cover-frame">
-          <Image
-            src="/home-memory.png"
-            alt="色彩丰富的街头墙绘"
-            fill
-            priority
-            sizes="(max-width: 760px) 100vw, 820px"
-          />
-        </div>
-        <div className="home-cover-meta">
-          <span className="editorial-meta">FIGURE 01 · 城市一隅</span>
-          <span className="home-cover-time">2026 — 06</span>
-        </div>
-      </section>
-
-      {/* Opening Statement / 卷首引言 */}
-      <section className="home-intro" aria-label="卷首引言">
+      <section className="home-intro" aria-labelledby="home-title">
         <div className="home-intro-main">
           <p className="editorial-meta home-intro-eyebrow">CAN CHOU / 轨道之外</p>
-          <h1 className="home-intro-title">慢慢记录，<br />用心感受。</h1>
-          <p className="home-lead">这里记录我的美食探访、生活日常和技术折腾。回忆已成，故事待叙，后会有期。</p>
+          <h1 id="home-title" className="home-intro-title">慢慢记录，<br />用心感受。</h1>
+          <p className="home-lead">这里收集我的技术折腾、生活日常、美食探访和旅途片段。首页看近况，博文页读完整目录。</p>
         </div>
+
         <div className="home-intro-aside">
           <div className="home-facts" aria-label="博客内容统计">
-            <div className="fact-item"><span className="fact-num">{posts.length}</span><span className="fact-label">博文</span></div>
-            <div className="fact-item"><span className="fact-num">{galleryCount}</span><span className="fact-label">相册</span></div>
-            <div className="fact-item"><span className="fact-num">{foodCount}</span><span className="fact-label">小店</span></div>
+            {facts.map((fact) => (
+              <Link key={fact.href} href={fact.href} className="fact-item" aria-label={`${fact.label} ${fact.count}`}>
+                <span className="fact-num">{fact.count}</span>
+                <span className="fact-label editorial-meta">{fact.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
 
       <hr className="editorial-rule home-section-divider" />
 
-      {/* A Year in Writing / 轻量信息图 */}
-      <section className="activity-panel" aria-label="记录足迹">
-        <div className="activity-header">
-          <span className="editorial-meta">A YEAR IN WRITING · 足迹</span>
-          <span className="editorial-meta">2025 – 2026</span>
-        </div>
-        <div className="activity-months" aria-hidden="true"><span>Sep</span><span>Nov</span><span>Jan</span><span>Mar</span><span>May</span><span>Jul</span></div>
-        <div className="activity-grid" aria-hidden="true">
-          {Array.from({ length: 70 }, (_, index) => <span key={index} className={activeCells.has(index) ? `level-${(index % 3) + 1}` : ''} />)}
-        </div>
-        <p className="activity-motto">per aspera ad astra.</p>
-      </section>
+      <PublishingHeatmap activities={updates} />
 
-      {/* 目录式分类索引 */}
-      <nav className="category-filter" aria-label="文章分类">
-        <span className="category-label editorial-meta">INDEX</span>
-        <div className="category-links">
-          {categories.map((item) => {
-            const value = item === '全部' ? '' : item
-            return (
-              <Link
-                key={item}
-                href={value ? `/?category=${encodeURIComponent(value)}` : '/'}
-                className={category === value ? 'active' : ''}
-              >
-                {item}
-              </Link>
-            )
-          })}
+      <section className="latest-updates" aria-labelledby="latest-updates-title">
+        <div className="latest-updates-header">
+          <div>
+            <p id="latest-updates-title" className="editorial-meta">LATEST UPDATES / 最近更新</p>
+            <p>不分栏目，按时间收拢最近留下的内容。</p>
+          </div>
+          <span className="editorial-meta">{updates.length} ENTRIES</span>
         </div>
-      </nav>
 
-      <section className="post-list" aria-label="文章列表">
-        <div className="post-list-header">
-          <span className="editorial-meta">RECENT WRITING / 目录索引</span>
-          <span className="editorial-meta">{filtered.length} ESSAYS</span>
+        <div className="latest-update-list">
+          {updates.slice(0, 7).map((update) => (
+            <Link key={update.id} href={update.href} className="latest-update-row">
+              <span className="latest-update-type">{update.type}</span>
+              <strong>{update.title}</strong>
+              <time dateTime={update.date}>{formatEditorialDate(update.date)}</time>
+              <Icon name="arrow-right" />
+            </Link>
+          ))}
         </div>
-        {pagedPosts.length > 0 ? (
-          pagedPosts.map((post, index) => (
-            <PostCard
-              key={`${post.slug}-${index}`}
-              post={post}
-              index={(page - 1) * POSTS_PER_PAGE + index}
-            />
-          ))
-        ) : (
-          <div className="empty-state">这个分类还没有文章。</div>
-        )}
+
+        <div className="latest-updates-more">
+          <Link href="/posts">浏览全部博文 <Icon name="arrow-right" /></Link>
+        </div>
       </section>
-      {totalPages > 1 && <nav className="pagination" aria-label="文章分页">
-        {page > 1 ? <Link href={pageHref(page - 1)}><Icon name="arrow-left" />上一页</Link> : <span />}
-        <span>第 {page} / {totalPages} 页</span>
-        {page < totalPages ? <Link href={pageHref(page + 1)}>下一页<Icon name="arrow-right" /></Link> : <span />}
-      </nav>}
     </div>
   )
 }

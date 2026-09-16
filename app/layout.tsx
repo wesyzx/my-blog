@@ -26,12 +26,10 @@ export const metadata: Metadata = {
     template: "%s | 轨道之外",
   },
   description: "回忆已成，故事待叙，后会有期",
-  alternates: { canonical: '/' },
   // 社交媒体分享时的 OpenGraph 配置
   openGraph: {
     title: "轨道之外",
     description: "回忆已成，故事待叙，后会有期",
-    url: 'https://guanyan.me',
     siteName: "轨道之外",
     locale: 'zh_CN',
     type: 'website',

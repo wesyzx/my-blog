@@ -21,6 +21,7 @@ export default function FoodMap({ posts }: { posts: FoodMeta[] }) {
     const validPosts = posts.filter((post) => post.lng && post.lat)
     const map = new maplibregl.Map({ container: containerRef.current, style: LIGHT_STYLE, center: [121.55, 29.87], zoom: 13, attributionControl: false })
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left')
 
     map.on('load', () => {
       validPosts.forEach((post) => {

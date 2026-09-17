@@ -114,8 +114,8 @@ export const getWorkoutsData = cache(async (): Promise<WorkoutsDataContract> => 
   }
 
   try {
-    // Revalidate every 6 hours (21600 seconds) to match W1 sync frequency
-    const res = await fetch(url, { next: { revalidate: 21600 } })
+    // Refresh frequently enough for a newly uploaded workout to appear promptly.
+    const res = await fetch(url, { next: { revalidate: 300 } })
     if (!res.ok) {
       console.warn(`Failed to fetch workouts data: ${res.status} ${res.statusText}`)
       return emptyData()

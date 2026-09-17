@@ -2,7 +2,7 @@ import { getWorkoutsData, type HeatmapNode } from '@/lib/workouts'
 import { createPageMetadata } from '@/lib/metadata'
 import WorkoutMap from '@/components/WorkoutMap'
 
-export const revalidate = 21600
+export const revalidate = 300
 
 export const metadata = createPageMetadata({
   title: '运动',
@@ -75,6 +75,7 @@ function Heatmap({ data, year }: { data: HeatmapNode[]; year: number }) {
 
 export default async function WorkoutsPage() {
   const data = await getWorkoutsData()
+  const isConfigured = Boolean(process.env.WORKOUTS_API_URL)
   const hasData = data.activities.length > 0 || data.heatmap.length > 0 || Object.keys(data.summary).length > 0
   const years = Object.keys(data.summary).sort((left, right) => Number(right) - Number(left))
   const latestYear = years[0] ?? data.activities[0]?.startedAt.slice(0, 4)
@@ -91,7 +92,9 @@ export default async function WorkoutsPage() {
       </header>
 
       {!hasData ? (
-        <div className="empty-state">运动数据尚未接入，配置完成后会自动显示。</div>
+        <div className="empty-state">
+          {isConfigured ? '运动数据接口已接入，等待首条运动记录。' : '运动数据尚未接入，配置完成后会自动显示。'}
+        </div>
       ) : (
         <div className="workouts-content">
           {summary && (

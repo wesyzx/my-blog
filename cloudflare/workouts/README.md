@@ -20,9 +20,27 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 - `GET /v1/workouts.json`：公开快照，与 `lib/workouts.ts` 的 `WorkoutsDataContract` 一致。
 - `GET /health`：快照健康状态，不返回运动详情。
 - `POST /internal/ingest`：导入标准化活动，需要 `Authorization: Bearer <INGEST_TOKEN>`。
+- `POST /internal/healthkit`：供 iPhone 快捷指令导入 Apple Health Workout，格式同上但默认来源为 `apple-health`，需要同一令牌。
 - `POST /internal/sync`：立即从 `SOURCE_URL` 同步，需要同一令牌。
 
 单次导入最多 500 条、2 MB。路线默认不会公开，只有活动明确包含 `"publishRoute": true` 时才写入快照。
+
+快捷指令发送的最小 JSON：
+
+```json
+{
+  "activities": [{
+    "id": "healthkit-sample-uuid",
+    "type": "Run",
+    "startedAt": "2026-09-17T06:30:00+08:00",
+    "distanceMeters": 5000,
+    "durationSeconds": 1680,
+    "elevationGainMeters": 32
+  }]
+}
+```
+
+将请求发往 `https://workouts.wesyzx.workers.dev/internal/healthkit`，添加 `Authorization: Bearer <INGEST_TOKEN>` 和 `Content-Type: application/json`。服务端按活动 ID 幂等更新，重复运行不会产生重复记录。
 
 ## 首次部署
 

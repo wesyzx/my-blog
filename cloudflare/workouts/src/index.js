@@ -76,12 +76,12 @@ async function parsePayload(request) {
   return { payload, activities }
 }
 
-async function ingest(request, env) {
+async function ingest(request, env, defaultSource = 'manual') {
   if (!await authorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const { payload, activities: rawActivities } = await parsePayload(request)
-    const source = String(payload.source || 'manual')
+    const source = String(payload.source || defaultSource)
     const activities = rawActivities.map((activity) => normalizeActivity(activity, source))
     await upsertActivities(env.DB, activities)
     await recordSync(env.DB, source, { cursor: payload.cursor || null, status: 'ok' })
@@ -163,6 +163,7 @@ const worker = {
       if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/v1/workouts.json') return await serveSnapshot(request, env)
       if (request.method === 'GET' && url.pathname === '/health') return await health(env)
       if (request.method === 'POST' && url.pathname === '/internal/ingest') return await ingest(request, env)
+      if (request.method === 'POST' && url.pathname === '/internal/healthkit') return await ingest(request, env, 'apple-health')
       if (request.method === 'POST' && url.pathname === '/internal/sync') {
         if (!await authorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 })
         try {

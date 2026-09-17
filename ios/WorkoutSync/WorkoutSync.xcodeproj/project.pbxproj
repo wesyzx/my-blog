@@ -242,6 +242,7 @@
 				CODE_SIGN_ENTITLEMENTS = WorkoutSync/WorkoutSync.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4XP84Z8R55;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "用于同步你的运动记录、路线和训练指标到个人博客。";
@@ -275,6 +276,7 @@
 				CODE_SIGN_ENTITLEMENTS = WorkoutSync/WorkoutSync.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 4XP84Z8R55;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "用于同步你的运动记录、路线和训练指标到个人博客。";

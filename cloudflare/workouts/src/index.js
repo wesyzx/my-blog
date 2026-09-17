@@ -125,8 +125,7 @@ async function syncSource(env) {
   }
 }
 
-async function serveSnapshot(request, env) {
-  const key = env.SNAPSHOT_KEY || 'v1/workouts.json'
+async function serveSnapshot(request, env, key = env.SNAPSHOT_KEY || 'v1/workouts.json') {
   let object = await env.SNAPSHOTS.get(key)
   if (!object) {
     await createAndStoreSnapshot(env)
@@ -161,6 +160,7 @@ const worker = {
 
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: publicHeaders(env) })
       if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/v1/workouts.json') return await serveSnapshot(request, env)
+      if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname === '/v1/routes.json') return await serveSnapshot(request, env, env.ROUTES_SNAPSHOT_KEY || 'v1/routes.json')
       if (request.method === 'GET' && url.pathname === '/health') return await health(env)
       if (request.method === 'POST' && url.pathname === '/internal/ingest') return await ingest(request, env)
       if (request.method === 'POST' && url.pathname === '/internal/healthkit') return await ingest(request, env, 'apple-health')

@@ -17,13 +17,14 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 
 ## API
 
-- `GET /v1/workouts.json`：公开快照，与 `lib/workouts.ts` 的 `WorkoutsDataContract` 一致。
+- `GET /v1/workouts.json`：公开汇总快照，与 `lib/workouts.ts` 的 `WorkoutsDataContract` 一致。为控制首屏体积，活动列表默认保留最近 50 条。
+- `GET /v1/routes.json`：公开路线快照，包含所有明确标记 `publishRoute: true` 的活动，供路线墙和详情页按需加载。
 - `GET /health`：快照健康状态，不返回运动详情。
 - `POST /internal/ingest`：导入标准化活动，需要 `Authorization: Bearer <INGEST_TOKEN>`。
 - `POST /internal/healthkit`：供 iPhone 快捷指令导入 Apple Health Workout，格式同上但默认来源为 `apple-health`，需要同一令牌。
 - `POST /internal/sync`：立即从 `SOURCE_URL` 同步，需要同一令牌。
 
-单次导入最多 500 条、2 MB。路线默认不会公开，只有活动明确包含 `"publishRoute": true` 时才写入快照。
+单次导入最多 500 条、2 MB。路线默认不会公开，只有活动明确包含 `"publishRoute": true` 时才写入路线快照。单条编码路线超过 100 KB 会被拒绝，避免误把异常数据写入公开存储。
 
 快捷指令发送的最小 JSON：
 
@@ -86,6 +87,24 @@ curl -X POST "https://<worker-domain>/internal/ingest" \
     }]
   }'
 ```
+
+历史 Apple Health 导入（包含路线）
+
+在 iPhone 的“健康”中导出数据后，把 ZIP 保存在本机，然后先预览解析结果：
+
+```bash
+python3 scripts/import-apple-health.py ~/Downloads/apple-health-export.zip --dry-run
+```
+
+确认数量后再上传。令牌只从本机环境变量读取，不要写入仓库：
+
+```bash
+export WORKOUTS_INGEST_URL=https://<worker-domain>/internal/healthkit
+export INGEST_TOKEN='在 Cloudflare 中创建的 Secret'
+python3 scripts/import-apple-health.py ~/Downloads/apple-health-export.zip
+```
+
+脚本会从 `export.xml` 读取活动，从 `workout-routes/*.gpx` 按时间和日期匹配路线，并将路线编码为前端使用的 polyline。重复导入是幂等的；未匹配到路线的活动仍会正常导入。
 
 ## 接入真实来源
 

@@ -51,6 +51,12 @@ test('honors an R2 etag conditional request', async () => {
   assert.equal(response.status, 304)
 })
 
+test('serves the complete route snapshot endpoint', async () => {
+  const response = await worker.fetch(new Request('https://workouts.example/v1/routes.json'), env())
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), JSON.parse(SNAPSHOT))
+})
+
 test('reports snapshot health without exposing activities', async () => {
   const response = await worker.fetch(new Request('https://workouts.example/health'), env())
   const data = await response.json()

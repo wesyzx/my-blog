@@ -1,4 +1,4 @@
-import { buildSnapshot } from './domain.js'
+import { buildRoutesSnapshot, buildSnapshot } from './domain.js'
 
 const UPSERT_SQL = `
   INSERT INTO activities (
@@ -84,14 +84,24 @@ export async function loadActivities(db) {
 }
 
 export async function createAndStoreSnapshot(env, now = new Date()) {
-  const snapshot = buildSnapshot(await loadActivities(env.DB), now)
+  const activities = await loadActivities(env.DB)
+  const snapshot = buildSnapshot(activities, now)
+  const routesSnapshot = buildRoutesSnapshot(activities, now)
   const body = JSON.stringify(snapshot)
-  await env.SNAPSHOTS.put(env.SNAPSHOT_KEY || 'v1/workouts.json', body, {
+  const routesBody = JSON.stringify(routesSnapshot)
+  const metadata = {
     httpMetadata: {
       contentType: 'application/json; charset=utf-8',
       cacheControl: 'public, max-age=300, s-maxage=21600, stale-while-revalidate=86400',
     },
     customMetadata: { lastUpdated: snapshot.lastUpdated, schemaVersion: String(snapshot.schemaVersion) },
+  }
+  await env.SNAPSHOTS.put(env.SNAPSHOT_KEY || 'v1/workouts.json', body, {
+    ...metadata,
   })
-  return snapshot
+  await env.SNAPSHOTS.put(env.ROUTES_SNAPSHOT_KEY || 'v1/routes.json', routesBody, {
+    ...metadata,
+    customMetadata: { lastUpdated: routesSnapshot.lastUpdated, schemaVersion: String(routesSnapshot.schemaVersion) },
+  })
+  return { ...snapshot, routes: routesSnapshot.routes }
 }

@@ -1,15 +1,20 @@
 const ACTIVITY_TYPES = new Map([
   ['run', 'Run'],
   ['running', 'Run'],
+  ['hkworkoutactivitytyperunning', 'Run'],
   ['ride', 'Ride'],
   ['cycling', 'Ride'],
   ['bike', 'Ride'],
+  ['hkworkoutactivitytypecycling', 'Ride'],
   ['swim', 'Swim'],
   ['swimming', 'Swim'],
+  ['hkworkoutactivitytypeswimming', 'Swim'],
   ['hike', 'Hike'],
   ['hiking', 'Hike'],
+  ['hkworkoutactivitytypehiking', 'Hike'],
   ['walk', 'Walk'],
   ['walking', 'Walk'],
+  ['hkworkoutactivitytypewalking', 'Walk'],
   ['workout', 'Workout'],
 ])
 
@@ -53,9 +58,12 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   const calculatedPace = distanceMeters > 0 && durationSeconds > 0
     ? durationSeconds / (distanceMeters / 1000)
     : undefined
-  const route = input.publishRoute === true && typeof input.route === 'string' && input.route.length <= 100_000
-    ? input.route
-    : undefined
+  let route
+  if (input.publishRoute === true) {
+    if (typeof input.route !== 'string' || !input.route.trim()) throw new Error(`Activity ${sourceActivityId} has an invalid route`)
+    if (input.route.length > 100_000) throw new Error(`Activity ${sourceActivityId} route exceeds 100 KB`)
+    route = input.route
+  }
 
   return {
     id: `${source}:${sourceActivityId}`,
@@ -115,5 +123,27 @@ export function buildSnapshot(activities, now = new Date()) {
       ...(activity.pace ? { pace: activity.pace } : {}),
       ...(activity.route ? { route: activity.route } : {}),
     })),
+  }
+}
+
+export function buildRoutesSnapshot(activities, now = new Date()) {
+  const routes = [...activities]
+    .filter((activity) => typeof activity.route === 'string' && activity.route.length > 0)
+    .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
+    .map((activity) => ({
+      id: activity.id,
+      type: activity.type,
+      startedAt: activity.startedAt,
+      distanceMeters: activity.distanceMeters,
+      durationSeconds: activity.durationSeconds,
+      elevationGainMeters: activity.elevationGainMeters,
+      ...(activity.pace ? { pace: activity.pace } : {}),
+      route: activity.route,
+    }))
+
+  return {
+    schemaVersion: 1,
+    lastUpdated: now.toISOString(),
+    routes,
   }
 }

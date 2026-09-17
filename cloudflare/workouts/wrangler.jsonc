@@ -32,6 +32,7 @@
   ],
   "vars": {
     "SNAPSHOT_KEY": "v1/workouts.json",
+    "ROUTES_SNAPSHOT_KEY": "v1/routes.json",
     "SOURCE_NAME": "upstream",
     "PUBLIC_ORIGIN": "https://guanyan.me"
   }

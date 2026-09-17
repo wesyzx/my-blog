@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildSnapshot, normalizeActivity } from '../src/domain.js'
+import { buildRoutesSnapshot, buildSnapshot, normalizeActivity } from '../src/domain.js'
 
 const NOW = new Date('2026-09-16T08:00:00.000Z')
 
@@ -26,6 +26,18 @@ test('does not publish a route unless explicitly allowed', () => {
   const visible = normalizeActivity({ id: 'b', startedAt: NOW, route: 'encoded-route', publishRoute: true }, 'manual', NOW)
   assert.equal(hidden.route, undefined)
   assert.equal(visible.route, 'encoded-route')
+  assert.throws(() => normalizeActivity({ id: 'c', startedAt: NOW, route: '  ', publishRoute: true }, 'manual', NOW), /invalid route/)
+})
+
+test('builds a complete route snapshot independently from the recent activity list', () => {
+  const activities = [
+    normalizeActivity({ id: 'old', type: 'run', startedAt: '2024-01-01T08:00:00Z', route: 'old-route', publishRoute: true }, 'apple-health', NOW),
+    normalizeActivity({ id: 'hidden', type: 'run', startedAt: '2025-01-01T08:00:00Z', route: 'private-route' }, 'apple-health', NOW),
+  ]
+  const snapshot = buildRoutesSnapshot(activities, NOW)
+  assert.equal(snapshot.routes.length, 1)
+  assert.equal(snapshot.routes[0].id, 'apple-health:old')
+  assert.equal(snapshot.routes[0].route, 'old-route')
 })
 
 test('builds the frontend schema with yearly and daily aggregates', () => {

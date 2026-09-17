@@ -92,12 +92,9 @@ final class HealthKitManager: ObservableObject {
     private func makePayload(from workout: HKWorkout) async throws -> WorkoutPayload {
         let distance = workout.totalDistance?.doubleValue(for: .meter()) ?? 0
         let duration = workout.duration
-        // HealthKit exposes elevation as an associated sample on some sources;
-        // route altitude is handled separately when available.
-        let elevation = 0.0
         let energy = workout.totalEnergyBurned?.doubleValue(for: .kilocalorie())
         let heartRates = try await queryHeartRates(for: workout)
-        let route = try await queryRoute(for: workout)
+        let routeDetails = try await queryRoute(for: workout)
         let pace = distance > 0 && duration > 0 ? duration / (distance / 1000) : nil
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -111,13 +108,13 @@ final class HealthKitManager: ObservableObject {
             localDate: localDate,
             distanceMeters: distance,
             durationSeconds: duration,
-            elevationGainMeters: elevation,
+            elevationGainMeters: routeDetails?.elevationGainMeters ?? 0,
             pace: pace,
             activeEnergyKcal: energy,
             averageHeartRateBpm: heartRates.average,
             maxHeartRateBpm: heartRates.maximum,
             averageCadenceRpm: nil,
-            route: route
+            route: routeDetails?.polyline
         )
     }
 
@@ -147,7 +144,12 @@ final class HealthKitManager: ObservableObject {
         return (values.reduce(0, +) / Double(values.count), values.max())
     }
 
-    private func queryRoute(for workout: HKWorkout) async throws -> String? {
+    private struct RouteDetails {
+        let polyline: String
+        let elevationGainMeters: Double
+    }
+
+    private func queryRoute(for workout: HKWorkout) async throws -> RouteDetails? {
         let routeType = HKSeriesType.workoutRoute()
         let predicate = HKQuery.predicateForSamples(withStart: workout.startDate.addingTimeInterval(-300), end: workout.endDate.addingTimeInterval(300), options: [])
         let routes: [HKWorkoutRoute] = try await withCheckedThrowingContinuation { continuation in
@@ -171,7 +173,15 @@ final class HealthKitManager: ObservableObject {
             healthStore.execute(query)
         }
         guard locations.count >= 2 else { return nil }
-        return Polyline.encode(locations)
+        let orderedLocations = locations.sorted { $0.timestamp < $1.timestamp }
+        var elevationGain = 0.0
+        for pair in zip(orderedLocations, orderedLocations.dropFirst()) {
+            let delta = pair.1.altitude - pair.0.altitude
+            if delta.isFinite, delta > 0.5 {
+                elevationGain += delta
+            }
+        }
+        return RouteDetails(polyline: Polyline.encode(orderedLocations), elevationGainMeters: elevationGain)
     }
 
     private func upload(_ payload: WorkoutUpload, endpoint: URL, token: String) async throws {

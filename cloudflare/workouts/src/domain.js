@@ -33,6 +33,11 @@ function optionalPositiveNumber(value) {
   return Number.isFinite(number) && number > 0 ? number : undefined
 }
 
+function optionalNonNegativeNumber(value) {
+  const number = Number(value)
+  return Number.isFinite(number) && number >= 0 ? number : undefined
+}
+
 function dateKey(value, fallback) {
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value
   return fallback.slice(0, 10)
@@ -55,6 +60,10 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   const durationSeconds = nonNegativeNumber(input.durationSeconds ?? input.duration)
   const elevationGainMeters = nonNegativeNumber(input.elevationGainMeters ?? input.elevationGain)
   const suppliedPace = optionalPositiveNumber(input.pace ?? input.paceSecondsPerKm)
+  const activeEnergyKcal = optionalNonNegativeNumber(input.activeEnergyKcal ?? input.calories ?? input.energyKcal)
+  const averageHeartRateBpm = optionalNonNegativeNumber(input.averageHeartRateBpm ?? input.avgHeartRateBpm)
+  const maxHeartRateBpm = optionalNonNegativeNumber(input.maxHeartRateBpm)
+  const averageCadenceRpm = optionalNonNegativeNumber(input.averageCadenceRpm ?? input.avgCadenceRpm)
   const calculatedPace = distanceMeters > 0 && durationSeconds > 0
     ? durationSeconds / (distanceMeters / 1000)
     : undefined
@@ -76,6 +85,10 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
     durationSeconds,
     elevationGainMeters,
     pace: suppliedPace ?? calculatedPace,
+    activeEnergyKcal,
+    averageHeartRateBpm,
+    maxHeartRateBpm,
+    averageCadenceRpm,
     route,
     updatedAt: now.toISOString(),
   }
@@ -121,6 +134,10 @@ export function buildSnapshot(activities, now = new Date()) {
       durationSeconds: activity.durationSeconds,
       elevationGainMeters: activity.elevationGainMeters,
       ...(activity.pace ? { pace: activity.pace } : {}),
+      ...(activity.activeEnergyKcal !== undefined ? { activeEnergyKcal: activity.activeEnergyKcal } : {}),
+      ...(activity.averageHeartRateBpm !== undefined ? { averageHeartRateBpm: activity.averageHeartRateBpm } : {}),
+      ...(activity.maxHeartRateBpm !== undefined ? { maxHeartRateBpm: activity.maxHeartRateBpm } : {}),
+      ...(activity.averageCadenceRpm !== undefined ? { averageCadenceRpm: activity.averageCadenceRpm } : {}),
       ...(activity.route ? { route: activity.route } : {}),
     })),
   }
@@ -138,6 +155,10 @@ export function buildRoutesSnapshot(activities, now = new Date()) {
       durationSeconds: activity.durationSeconds,
       elevationGainMeters: activity.elevationGainMeters,
       ...(activity.pace ? { pace: activity.pace } : {}),
+      ...(activity.activeEnergyKcal !== undefined ? { activeEnergyKcal: activity.activeEnergyKcal } : {}),
+      ...(activity.averageHeartRateBpm !== undefined ? { averageHeartRateBpm: activity.averageHeartRateBpm } : {}),
+      ...(activity.maxHeartRateBpm !== undefined ? { maxHeartRateBpm: activity.maxHeartRateBpm } : {}),
+      ...(activity.averageCadenceRpm !== undefined ? { averageCadenceRpm: activity.averageCadenceRpm } : {}),
       route: activity.route,
     }))
 

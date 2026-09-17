@@ -4,8 +4,9 @@ const UPSERT_SQL = `
   INSERT INTO activities (
     id, source, source_activity_id, type, started_at, local_date,
     distance_meters, duration_seconds, elevation_gain_meters,
-    pace_seconds_per_km, route_polyline, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    pace_seconds_per_km, active_energy_kcal, average_heart_rate_bpm,
+    max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     type = excluded.type,
     started_at = excluded.started_at,
@@ -14,6 +15,10 @@ const UPSERT_SQL = `
     duration_seconds = excluded.duration_seconds,
     elevation_gain_meters = excluded.elevation_gain_meters,
     pace_seconds_per_km = excluded.pace_seconds_per_km,
+    active_energy_kcal = excluded.active_energy_kcal,
+    average_heart_rate_bpm = excluded.average_heart_rate_bpm,
+    max_heart_rate_bpm = excluded.max_heart_rate_bpm,
+    average_cadence_rpm = excluded.average_cadence_rpm,
     route_polyline = excluded.route_polyline,
     updated_at = excluded.updated_at
 `
@@ -37,6 +42,10 @@ export async function upsertActivities(db, activities) {
       activity.durationSeconds,
       activity.elevationGainMeters,
       activity.pace ?? null,
+      activity.activeEnergyKcal ?? null,
+      activity.averageHeartRateBpm ?? null,
+      activity.maxHeartRateBpm ?? null,
+      activity.averageCadenceRpm ?? null,
       activity.route ?? null,
       activity.updatedAt,
     )))
@@ -74,6 +83,10 @@ export async function loadActivities(db) {
       duration_seconds AS durationSeconds,
       elevation_gain_meters AS elevationGainMeters,
       pace_seconds_per_km AS pace,
+      active_energy_kcal AS activeEnergyKcal,
+      average_heart_rate_bpm AS averageHeartRateBpm,
+      max_heart_rate_bpm AS maxHeartRateBpm,
+      average_cadence_rpm AS averageCadenceRpm,
       route_polyline AS route,
       updated_at AS updatedAt
     FROM activities

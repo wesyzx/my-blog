@@ -9,6 +9,10 @@ export interface NormalizedActivity {
   durationSeconds: number
   elevationGainMeters: number
   pace?: number
+  activeEnergyKcal?: number
+  averageHeartRateBpm?: number
+  maxHeartRateBpm?: number
+  averageCadenceRpm?: number
   route?: string
 }
 
@@ -68,6 +72,10 @@ function normalizeData(value: unknown): WorkoutsDataContract | null {
       durationSeconds: nonNegativeNumber(item.durationSeconds),
       elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
       pace: pace > 0 ? pace : undefined,
+      activeEnergyKcal: nonNegativeNumber(item.activeEnergyKcal) || undefined,
+      averageHeartRateBpm: nonNegativeNumber(item.averageHeartRateBpm) || undefined,
+      maxHeartRateBpm: nonNegativeNumber(item.maxHeartRateBpm) || undefined,
+      averageCadenceRpm: nonNegativeNumber(item.averageCadenceRpm) || undefined,
       route: typeof item.route === 'string' && item.route.length > 0 ? item.route : undefined,
     }]
   }).sort((left, right) => right.startedAt.localeCompare(left.startedAt))

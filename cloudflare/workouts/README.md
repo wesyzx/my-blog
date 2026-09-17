@@ -8,7 +8,7 @@
 运动平台或适配器
   -> Cron / 手动同步
   -> D1（标准化活动 + 同步游标）
-  -> R2（v1/workouts.json）
+  -> R2（v1/workouts.json + v1/routes.json）
   -> GET /v1/workouts.json
   -> 博客 WORKOUTS_API_URL
 ```
@@ -41,6 +41,8 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 }
 ```
 
+HealthKit App 还可以附带 `activeEnergyKcal`、`averageHeartRateBpm`、`maxHeartRateBpm` 和 `averageCadenceRpm`；Worker 会将这些指标保存在 D1 并返回给博客。
+
 将请求发往 `https://workouts.wesyzx.workers.dev/internal/healthkit`，添加 `Authorization: Bearer <INGEST_TOKEN>` 和 `Content-Type: application/json`。服务端按活动 ID 幂等更新，重复运行不会产生重复记录。
 
 ## 首次部署
@@ -49,7 +51,7 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 
 当前资源：Worker `workouts`、D1 `workouts`、R2 `workouts-snapshots`。D1 绑定名为 `DB`，R2 绑定名为 `SNAPSHOTS`。旧的空桶 `guanyan-workouts-snapshots` 未参与当前服务，待确认后清理。
 
-已部署公开快照、健康检查、Cron 和基础运行变量。尚未设置 `SOURCE_URL`、来源授权或 `INGEST_TOKEN`；内部写接口保持关闭，公开数据为空。`PUBLIC_ORIGIN` 保留实际博客域名 `https://guanyan.me`，它不是资源名称。
+已部署公开快照、健康检查、Cron、基础运行变量和 HealthKit 写入接口。`INGEST_TOKEN` 已配置为 secret；尚未设置 `SOURCE_URL` 或来源授权，因此定时任务只会重建快照，公开数据会在首次上传运动记录后出现。`PUBLIC_ORIGIN` 保留实际博客域名 `https://guanyan.me`，它不是资源名称。
 
 Cloudflare MCP 的连接令牌至少需要当前账户的 `D1 Write`、`Workers R2 Storage Write` 与 `Workers Scripts Write` 权限；只读连接可以发现资源，但无法完成首次部署。
 

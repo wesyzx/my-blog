@@ -22,6 +22,8 @@ out/
 # IDE files
 .vscode/
 .idea/
+**/xcuserdata/
+DerivedData/
 *.swp
 *.swo
 
@@ -99,4 +101,3 @@ dmypy.json
 # Temporary files
 *.tmp
 *~
-

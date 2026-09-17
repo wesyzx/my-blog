@@ -8,6 +8,7 @@ final class HealthKitManager: ObservableObject {
     @Published private(set) var status = "尚未授权健康数据"
     @Published private(set) var lastSync: Date?
     @Published private(set) var syncedCount = 0
+    @Published private(set) var isBusy = false
 
     private let healthStore = HKHealthStore()
     private let calendar = Calendar.current
@@ -49,6 +50,9 @@ final class HealthKitManager: ObservableObject {
             status = "请先填写 Worker 令牌"
             return
         }
+        guard !isBusy else { return }
+        isBusy = true
+        defer { isBusy = false }
         status = "正在读取 Apple 健康数据…"
         do {
             let workouts = try await queryWorkouts(limit: limit)
@@ -60,12 +64,54 @@ final class HealthKitManager: ObservableObject {
             for workout in workouts {
                 payloads.append(try await makePayload(from: workout))
             }
+            status = "正在上传 (payloads.count) 条运动记录…"
             try await upload(WorkoutUpload(activities: payloads), endpoint: endpoint, token: token)
             syncedCount = payloads.count
             lastSync = Date()
             status = "已同步 \(payloads.count) 条运动记录"
         } catch {
-            status = "同步失败：\(error.localizedDescription)"
+            if let urlError = error as? URLError, urlError.code == .timedOut {
+                status = "同步超时：请检查代理或网络后重试"
+            } else {
+                status = "同步失败：\(error.localizedDescription)"
+            }
+        }
+    }
+
+    func checkConnection(endpoint: URL) async {
+        guard !isBusy else { return }
+        guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
+            status = "接口地址无效"
+            return
+        }
+        components.path = "/health"
+        components.query = nil
+        components.fragment = nil
+        guard let healthEndpoint = components.url else {
+            status = "接口地址无效"
+            return
+        }
+        isBusy = true
+        defer { isBusy = false }
+        status = "正在测试 Worker 连接…"
+        var request = URLRequest(url: healthEndpoint)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 15
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let http = response as? HTTPURLResponse else {
+                status = "Worker 返回无效响应"
+                return
+            }
+            status = (200..<300).contains(http.statusCode)
+                ? "Worker 连接正常"
+                : "Worker 返回 HTTP \(http.statusCode)"
+        } catch {
+            if let urlError = error as? URLError, urlError.code == .timedOut {
+                status = "连接超时：请检查代理或网络"
+            } else {
+                status = "连接失败：\(error.localizedDescription)"
+            }
         }
     }
 
@@ -185,15 +231,62 @@ final class HealthKitManager: ObservableObject {
     }
 
     private func upload(_ payload: WorkoutUpload, endpoint: URL, token: String) async throws {
-        var request = URLRequest(url: endpoint)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(payload)
-        let (_, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw URLError(.badServerResponse)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 120
+        configuration.timeoutIntervalForResource = 180
+        let session = URLSession(configuration: configuration)
+        let body = try JSONEncoder().encode(payload)
+        var lastError: Error?
+
+        for attempt in 0..<3 {
+            var request = URLRequest(url: endpoint)
+            request.httpMethod = "POST"
+            request.timeoutInterval = 120
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = body
+            do {
+                let (responseBody, response) = try await session.data(for: request)
+                guard let http = response as? HTTPURLResponse else {
+                    throw URLError(.badServerResponse)
+                }
+                if (200..<300).contains(http.statusCode) { return }
+                let message = String(data: responseBody, encoding: .utf8) ?? "HTTP \(http.statusCode)"
+                if !(500..<600).contains(http.statusCode) || attempt == 2 {
+                    throw SyncError.server(status: http.statusCode, message: message)
+                }
+                lastError = SyncError.server(status: http.statusCode, message: message)
+            } catch {
+                lastError = error
+                let shouldRetry: Bool
+                if let urlError = error as? URLError {
+                    shouldRetry = [.timedOut, .cannotConnectToHost, .networkConnectionLost, .notConnectedToInternet].contains(urlError.code)
+                } else if let serverError = error as? SyncError {
+                    shouldRetry = serverError.isRetryable
+                } else {
+                    shouldRetry = false
+                }
+                if !shouldRetry || attempt == 2 { throw error }
+            }
+            try? await Task.sleep(nanoseconds: UInt64(attempt + 1) * 1_000_000_000)
         }
+        throw lastError ?? URLError(.unknown)
+    }
+}
+
+private enum SyncError: LocalizedError {
+    case server(status: Int, message: String)
+
+    var isRetryable: Bool {
+        if case let .server(status, _) = self { return (500..<600).contains(status) }
+        return false
+    }
+
+    var errorDescription: String? {
+        if case let .server(status, message) = self {
+            return "Worker 返回 HTTP \(status)：\(message)"
+        }
+        return nil
     }
 }
 

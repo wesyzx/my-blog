@@ -29,11 +29,19 @@ struct ContentView: View {
                     Button("授权 Apple 健康数据") {
                         Task { await healthKit.requestAuthorization() }
                     }
+                    .disabled(healthKit.isBusy)
+                    Button("测试 Worker 连接") {
+                        guard let endpoint = URL(string: workerEndpoint) else {
+                            return
+                        }
+                        Task { await healthKit.checkConnection(endpoint: endpoint) }
+                    }
+                    .disabled(healthKit.isBusy)
                     Button("同步最近 25 条运动") {
                         guard let endpoint = URL(string: workerEndpoint) else { return }
                         Task { await healthKit.syncRecent(endpoint: endpoint, token: workerToken) }
                     }
-                    .disabled(workerToken.isEmpty)
+                    .disabled(workerToken.isEmpty || healthKit.isBusy)
                 }
 
                 Section("状态") {

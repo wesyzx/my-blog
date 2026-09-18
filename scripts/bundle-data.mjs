@@ -189,7 +189,24 @@ async function buildBundle() {
     posts.push({ slug: uniqueSlug(richText(props.Slug), postTitle, page.id, postSlugs), title: postTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '未分类', tags: multiSelect(props.Tags), excerpt: richText(props.Excerpt), cover: url(props.Cover), published: true, content: await markdown(page.id) })
   }
   posts.sort((a, b) => b.date.localeCompare(a.date))
-  if (!posts.length) throw new Error('Notion returned no published posts; previous bundle was preserved')
+  const previousPosts = existing.posts || []
+  const allowEmpty = process.env.CONTENT_ALLOW_EMPTY === '1'
+  if (!posts.length && previousPosts.length && !allowEmpty) {
+    // Notion 返回空时默认沿用上一版快照，避免 Notion 抖动导致线上文章凭空消失。
+    // 早期实现这里直接 throw，导致「保留了旧快照」这句话形同虚设 —— 构建照样失败、无法部署。
+    // 确实要清空线上文章时，用 CONTENT_ALLOW_EMPTY=1 跑一次即可（清空后不再需要该开关）。
+    console.warn([
+      '',
+      '  ' + '='.repeat(64),
+      `  ! Notion 没有任何已发布文章，继续沿用上一版快照里的 ${previousPosts.length} 篇`,
+      '  ! 确实要清空线上文章，请用 CONTENT_ALLOW_EMPTY=1 重新构建',
+      '  ' + '='.repeat(64),
+      '',
+    ].join('\n'))
+    posts.push(...previousPosts)
+  } else if (!posts.length) {
+    console.warn('\n  ! Notion 当前没有任何已发布文章，本次构建的博文列表为空。\n')
+  }
 
   const foodPages = await queryAll(FOOD_DS_ID)
   const foodSlugs = new Set()

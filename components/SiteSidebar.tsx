@@ -15,7 +15,7 @@ const groups: Array<{ label: string; items: Array<{ label: string; href: string;
     label: '抽屉',
     items: [
       { label: '博文', href: '/posts', icon: 'post' },
-      { label: '说说', href: '/say', icon: 'say' },
+      { label: '短记', href: '/say', icon: 'say' },
     ],
   },
   {

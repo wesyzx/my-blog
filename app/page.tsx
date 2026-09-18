@@ -73,7 +73,7 @@ export default async function Home() {
     })),
     ...food.map((place) => ({
       id: `food-${place.slug}`,
-      type: '地点',
+      type: '美食',
       title: place.title,
       detail: place.address || place.location,
       date: place.date,
@@ -85,7 +85,7 @@ export default async function Home() {
     { count: posts.length, label: '文章', href: '/posts' },
     { count: says.length, label: '短记', href: '/say' },
     { count: gallery.length, label: '相册', href: '/gallery' },
-    { count: food.length, label: '地点', href: '/food' },
+    { count: food.length, label: '美食', href: '/food' },
   ]
 
   const latest = updates.slice(0, 7)

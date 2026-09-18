@@ -62,7 +62,9 @@ export default function WorkoutMap({ route, className = '' }: { route?: string; 
             {
               id: 'route',
               styleId: 'route',
-              path: path.map((point) => new TMap.LatLng(point.lat, point.lng)),
+              // 注意：PolylineGeometry 的坐标字段是 `paths` 而不是 `path`。
+              // 写成 path 不会报错，但坐标为空 → 整条轨迹静默不显示。
+              paths: path.map((point) => new TMap.LatLng(point.lat, point.lng)),
             },
           ],
         })

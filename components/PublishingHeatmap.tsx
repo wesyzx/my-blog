@@ -73,10 +73,10 @@ export default function PublishingHeatmap({ activities }: { activities: Publishi
     <section className="publishing-panel" aria-labelledby="publishing-title">
       <div className="publishing-header">
         <div>
-          <p id="publishing-title" className="editorial-meta">PUBLISHING FOOTPRINT / 内容足迹</p>
-          <p className="publishing-description">每个方块代表一天；发布博文、说说、相册或地点后，当天才会点亮。</p>
+          <p className="editorial-meta">MOMENTS</p>
+          <h2 id="publishing-title" className="home-section-title">内容足迹</h2>
+          <p className="publishing-description">过去一年，日子在这里留下了 {visibleTotal} 个片段。</p>
         </div>
-        <span className="editorial-meta">{visibleTotal} UPDATES</span>
       </div>
 
       <div className="publishing-heatmap-scroll">
@@ -88,14 +88,14 @@ export default function PublishingHeatmap({ activities }: { activities: Publishi
               </span>
             ))}
           </div>
-          <div className="publishing-grid" role="img" aria-label={`${visibleStart} 至 ${visibleEnd} 共发布 ${visibleTotal} 条内容`}>
+          <div className="publishing-grid" role="img" aria-label={`近一年共留下 ${visibleTotal} 个片段`}>
             {days.map((day) => {
               const key = formatDate(day)
               const activity = counts.get(key)
               const isFuture = day > todayUtc
               const count = isFuture ? 0 : activity?.count ?? 0
               const types = activity ? Array.from(activity.types).join('、') : ''
-              const title = isFuture ? '' : count > 0 ? `${key} · ${count} 次更新（${types}）` : `${key} · 无更新`
+              const title = isFuture ? '' : count > 0 ? `${key} · ${count} 个片段（${types}）` : `${key} · 这一天还没有内容`
 
               return (
                 <span
@@ -111,8 +111,8 @@ export default function PublishingHeatmap({ activities }: { activities: Publishi
       </div>
 
       <div className="publishing-footer">
-        <span>{visibleStart.replaceAll('-', '.')} — {visibleEnd.replaceAll('-', '.')}</span>
-        <span className="publishing-legend" aria-label="颜色越深，当天更新越多">
+        <span>近一年</span>
+        <span className="publishing-legend" aria-label="颜色越深，这一天留下的内容越多">
           少
           {[0, 1, 2, 3].map((level) => <i key={level} className={`publishing-day level-${level}`} />)}
           多

@@ -10,12 +10,13 @@ import { createPageMetadata } from '@/lib/metadata'
 interface SiteUpdate extends PublishingActivity {
   id: string
   title: string
+  detail?: string
   href: string
 }
 
 export const metadata = createPageMetadata({
   title: '轨道之外',
-  description: '慢慢记录，用心感受。这里收集关于技术、生活、美食与旅途的片段。',
+  description: '把日子写下来，等它们慢慢发光。这里有正在进行的事，也有已经走过的路。',
   path: '/',
 })
 
@@ -37,7 +38,7 @@ function sayTitle(content: string) {
     .replace(/[#>*_`~-]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
-  if (!plain) return '一则说说'
+  if (!plain) return '一则短记'
   return plain.length > 34 ? `${plain.slice(0, 34)}…` : plain
 }
 
@@ -49,14 +50,15 @@ export default async function Home() {
   const updates: SiteUpdate[] = [
     ...posts.map((post) => ({
       id: `post-${post.slug}`,
-      type: '博文',
+      type: '文章',
       title: post.title,
+      detail: post.excerpt || post.category,
       date: post.date,
       href: `/posts/${encodeURIComponent(post.slug)}`,
     })),
     ...says.map((say) => ({
       id: `say-${say.slug}`,
-      type: '说说',
+      type: '短记',
       title: sayTitle(say.content),
       date: say.date,
       href: `/say#say-${encodeURIComponent(say.slug)}`,
@@ -65,6 +67,7 @@ export default async function Home() {
       id: `gallery-${album.slug}`,
       type: '相册',
       title: album.title,
+      detail: album.excerpt || (album.images?.length ? `${album.images.length} 张照片` : ''),
       date: album.date,
       href: `/gallery/${encodeURIComponent(album.slug)}`,
     })),
@@ -72,33 +75,36 @@ export default async function Home() {
       id: `food-${place.slug}`,
       type: '地点',
       title: place.title,
+      detail: place.address || place.location,
       date: place.date,
       href: `/food/${encodeURIComponent(place.slug)}`,
     })),
   ].sort((a, b) => dateValue(b.date) - dateValue(a.date))
 
   const facts = [
-    { count: posts.length, label: 'WRITING', href: '/posts' },
-    { count: says.length, label: 'NOTES', href: '/say' },
-    { count: gallery.length, label: 'GALLERY', href: '/gallery' },
-    { count: food.length, label: 'PLACES', href: '/food' },
+    { count: posts.length, label: '文章', href: '/posts' },
+    { count: says.length, label: '短记', href: '/say' },
+    { count: gallery.length, label: '相册', href: '/gallery' },
+    { count: food.length, label: '地点', href: '/food' },
   ]
+
+  const latest = updates.slice(0, 7)
 
   return (
     <div className="home-shell animate-fade-up">
       <section className="home-intro" aria-labelledby="home-title">
         <div className="home-intro-main">
           <p className="editorial-meta home-intro-eyebrow">CAN CHOU / 轨道之外</p>
-          <h1 id="home-title" className="home-intro-title">慢慢记录，<br />用心感受。</h1>
-          <p className="home-lead">这里收集我的技术折腾、生活日常、美食探访和旅途片段。首页看近况，博文页读完整目录。</p>
+          <h1 id="home-title" className="home-intro-title">把日子写下来，<br />等它们慢慢发光。</h1>
+          <p className="home-lead">这里有正在进行的事，也有已经走过的路。愿你在其中找到一点共鸣。</p>
         </div>
 
         <div className="home-intro-aside">
-          <div className="home-facts" aria-label="博客内容统计">
+          <div className="home-facts" aria-label="这里已经留下的内容">
             {facts.map((fact) => (
               <Link key={fact.href} href={fact.href} className="fact-item" aria-label={`${fact.label} ${fact.count}`}>
                 <span className="fact-num">{fact.count}</span>
-                <span className="fact-label editorial-meta">{fact.label}</span>
+                <span className="fact-label">{fact.label}</span>
               </Link>
             ))}
           </div>
@@ -112,17 +118,21 @@ export default async function Home() {
       <section className="latest-updates" aria-labelledby="latest-updates-title">
         <div className="latest-updates-header">
           <div>
-            <p id="latest-updates-title" className="editorial-meta">LATEST UPDATES / 最近更新</p>
-            <p>不分栏目，按时间收拢最近留下的内容。</p>
+            <p className="editorial-meta">LATEST</p>
+            <h2 id="latest-updates-title" className="home-section-title">最近留下</h2>
+            <p>从一篇文章到一顿饭，最近的片段都在这里。</p>
           </div>
-          <span className="editorial-meta">{updates.length} ENTRIES</span>
+          <span className="editorial-meta">最近 {latest.length} 条</span>
         </div>
 
         <div className="latest-update-list">
-          {updates.slice(0, 7).map((update) => (
+          {latest.map((update) => (
             <Link key={update.id} href={update.href} className="latest-update-row">
               <span className="latest-update-type">{update.type}</span>
-              <strong>{update.title}</strong>
+              <span className="latest-update-body">
+                <strong>{update.title}</strong>
+                {update.detail ? <span className="latest-update-detail">{update.detail}</span> : null}
+              </span>
               <time dateTime={update.date}>{formatEditorialDate(update.date)}</time>
               <Icon name="arrow-right" />
             </Link>
@@ -130,7 +140,7 @@ export default async function Home() {
         </div>
 
         <div className="latest-updates-more">
-          <Link href="/posts">浏览全部博文 <Icon name="arrow-right" /></Link>
+          <Link href="/posts">浏览全部文章 <Icon name="arrow-right" /></Link>
         </div>
       </section>
     </div>

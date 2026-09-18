@@ -113,26 +113,62 @@ async function geocode(address) {
   return { lng, lat }
 }
 
+const MEMOS_BASE_URL = process.env.MEMOS_BASE_URL || 'https://memos.guanyan.me'
+const MEMOS_PROXY_PREFIX = '/api/memos/file'
+
+function toProxyUrl(url) {
+  if (!url) return ''
+  const match = String(url).match(/^https?:\/\/memos\.guanyan\.me\/file\/(.+)$/)
+  return match ? `${MEMOS_PROXY_PREFIX}/${match[1]}` : url
+}
+
+function memoAttachmentUrl(attachment) {
+  if (attachment.externalLink) return attachment.externalLink
+  const id = attachment.name ? attachment.name.split('/').pop() : attachment.id
+  return id && attachment.filename ? `${MEMOS_PROXY_PREFIX}/attachments/${id}/${attachment.filename}` : ''
+}
+
 function parseMemos(data) {
   return (data.memos || []).filter((memo) => memo.state === 'NORMAL').map((memo) => {
-    const resources = (memo.resources || []).filter((resource) => !resource.type || resource.type.startsWith('image/')).map((resource) => resource.externalLink || (resource.name ? `https://memos.guanyan.me/file/${resource.name}/${resource.filename || ''}` : resource.id ? `https://memos.guanyan.me/o/r/${resource.id}/${resource.filename || ''}` : '')).filter(Boolean)
-    const images = Array.from(new Set([...resources, ...imageLinks(memo.content || '')]))
+    // Memos v0.25 起把 memo.resources 改名为 memo.attachments，两种字段都兼容
+    const attachments = memo.attachments || memo.resources || []
+    const fromAttachments = attachments.filter((item) => !item.type || item.type.startsWith('image/')).map(memoAttachmentUrl).filter(Boolean)
+    const images = Array.from(new Set([...fromAttachments, ...imageLinks(memo.content || '').map(toProxyUrl)]))
     return { slug: memo.name?.split('/').pop() || memo.uid || memo.id, date: memo.createTime || memo.displayTime || '', content: (memo.content || '').replace(/!\[.*?\]\((.*?)\)/g, '').trim(), image: images[0], images }
   }).filter((memo) => memo.slug)
 }
 
+function reportMemosFailure(error, existingSays) {
+  const reason = process.env.MEMOS_TOKEN
+    ? `请求失败：${error.message}`
+    : '未配置 MEMOS_TOKEN —— 请求以匿名身份发出，Memos 会直接返回 401'
+  const bar = '='.repeat(64)
+  console.warn([
+    '',
+    `  ${bar}`,
+    '  ! Memos 同步失败 —— 说说页面将继续沿用旧快照，内容不会更新',
+    `  ! 原因: ${reason}`,
+    '  ! 修复: 在 .env.local 与部署环境配置有效的 MEMOS_TOKEN',
+    `  ! 自检: curl -H "Authorization: Bearer $MEMOS_TOKEN" "${MEMOS_BASE_URL}/api/v1/memos?pageSize=2"`,
+    '  ! 需要让构建直接失败可设置 MEMOS_STRICT=1',
+    `  ${bar}`,
+    '',
+  ].join('\n'))
+  if (process.env.MEMOS_STRICT === '1') throw new Error(`Memos 同步失败（MEMOS_STRICT=1）：${reason}`)
+  return existingSays
+}
+
 async function fetchSays(existingSays) {
   try {
-    const headers = { Accept: 'application/json' }
-    if (process.env.MEMOS_TOKEN) headers.Authorization = `Bearer ${process.env.MEMOS_TOKEN}`
-    const endpoint = process.env.MEMOS_API_URL || 'https://memos.guanyan.me/api/v1/memos'
+    if (!process.env.MEMOS_TOKEN) throw new Error('MEMOS_TOKEN 未设置')
+    const headers = { Accept: 'application/json', Authorization: `Bearer ${process.env.MEMOS_TOKEN}` }
+    const endpoint = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
     const response = await fetch(`${endpoint}?pageSize=20`, { headers })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const says = parseMemos(await response.json())
     return says.length ? says : existingSays
   } catch (error) {
-    console.warn(`  Memos snapshot unchanged: ${error.message}`)
-    return existingSays
+    return reportMemosFailure(error, existingSays)
   }
 }
 

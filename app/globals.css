@@ -217,14 +217,14 @@ button { font: inherit; }
 .food-card > p svg { width: 13px; height: 13px; color: var(--color-warm); }
 .food-meta-location { display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; color: var(--color-text-muted); font-size: 13px; }
 .food-meta-location svg { width: 14px; height: 14px; color: var(--color-warm); }
-.food-marker { position: relative; width: 16px; height: 16px; padding: 0; border: 0; background: transparent; cursor: pointer; }
-.food-marker-pin { display: block; width: 16px; height: 16px; border: 3px solid white; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--color-warm); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-.food-marker-label { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); padding: 3px 8px; border-radius: var(--radius-editorial); white-space: nowrap; color: var(--color-text-primary); background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.1); font-size: 11px; }
 .food-popup-content { min-width: 180px; padding: 2px; font-family: var(--font-sans); }
 .food-popup-content h4 { margin: 0 0 4px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 15px; font-weight: 600; }
 .food-popup-content p { margin: 2px 0; color: var(--color-text-secondary); font-size: 12px; }
 .food-popup-content a { display: inline-block; margin-top: 6px; color: var(--color-accent); font-size: 12px; font-weight: 500; }
-.maplibregl-popup-content { border-radius: var(--radius-control) !important; box-shadow: var(--shadow-subtle) !important; border: 1px solid var(--color-border-hairline) !important; }
+.map-key-notice { display: flex; flex-direction: column; justify-content: center; gap: 6px; height: 100%; padding: 24px; color: var(--color-text-secondary); background: var(--color-bg-surface); font-size: 13px; line-height: 1.7; }
+.map-key-notice p { margin: 0; }
+.map-key-notice strong { color: var(--color-text-primary); font-family: var(--font-serif); font-size: 15px; }
+.map-key-notice code { padding: 1px 5px; border-radius: 4px; background: var(--color-accent-light); color: var(--color-accent-hover); font-size: 12px; }
 
 .article-header { margin-bottom: var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border-hairline); }
 .article-meta-top { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
@@ -415,7 +415,11 @@ button { font: inherit; }
 .workout-row dt { color: var(--color-text-hint); font-size: 10px; }
 .workout-row dd { margin: 2px 0 0; color: var(--color-text-primary); font-family: var(--font-mono); font-size: 12px; }
 
-[data-theme="dark"] .food-map .maplibregl-canvas, [data-theme="dark"] .workout-map .maplibregl-canvas { filter: brightness(.72) invert(.88) hue-rotate(180deg) saturate(.55); }
+/* 腾讯地图默认底图没有暗色版本，深色模式下用滤镜翻转画布。
+   只作用于 canvas，避免把自定义标记一起翻转掉。
+   旧值是 brightness(.72) invert(.88)，实测翻转后平均色只有 #6C6B68（中等灰，文字几乎读不出来）；
+   改为满量反转 + 轻微暖调，平均色约 #2A2823，贴合站点深色底 #171815 / #252821。 */
+[data-theme="dark"] .food-map canvas, [data-theme="dark"] .workout-map canvas { filter: invert(1) hue-rotate(180deg) saturate(.5) sepia(.18) brightness(.95); }
 
 /* Responsive media queries */
 @media (max-width: 1180px) {

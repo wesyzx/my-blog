@@ -73,7 +73,7 @@ export async function getAllSays(): Promise<SayMeta[]> {
       : '未配置 MEMOS_TOKEN —— 请求以匿名身份发出，Memos 会直接返回 401'
     console.error([
       '',
-      '  ! Memos 同步失败 —— 说说页面将继续沿用旧快照，内容不会更新',
+      '  ! Memos 同步失败 —— 短记页面将继续沿用旧快照，内容不会更新',
       `  ! 原因: ${reason}`,
       '  ! 修复: 在 .env.local 与部署环境配置有效的 MEMOS_TOKEN',
       `  ! 自检: curl -H "Authorization: Bearer $MEMOS_TOKEN" "${MEMOS_BASE_URL}/api/v1/memos?pageSize=2"`,

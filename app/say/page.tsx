@@ -4,7 +4,7 @@ import SayCommentsToggle from '@/components/SayCommentsToggle'
 import SafeMarkdown from '@/components/SafeMarkdown'
 import { createPageMetadata } from '@/lib/metadata'
 
-export const metadata = createPageMetadata({ title: '说说', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
+export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
 const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
 
 function formatDate(dateStr: string) {
@@ -18,12 +18,12 @@ export default async function SayPage() {
     <div className="page-shell narrow animate-fade-up">
       <header className="page-header">
         <div className="page-header-meta editorial-meta">FRAGMENTS / 随笔微语</div>
-        <h1 className="page-title">说说</h1>
+        <h1 className="page-title">短记</h1>
         <p className="page-lead">零碎的思考、瞬间的感悟，以及生活的日常。</p>
       </header>
 
       {says.length === 0 ? (
-        <div className="empty-state">暂时没有可显示的说说。</div>
+        <div className="empty-state">暂时没有可显示的短记。</div>
       ) : (
         <div className="say-timeline">
           {says.map((say) => (
@@ -52,7 +52,7 @@ export default async function SayPage() {
                     <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
                       <Image
                         src={src}
-                        alt={`说说配图 ${index + 1}`}
+                        alt={`短记配图 ${index + 1}`}
                         width={720}
                         height={720}
                         sizes="(max-width: 760px) 50vw, 240px"
@@ -62,7 +62,7 @@ export default async function SayPage() {
                 </div>
               )}
 
-              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`说说 ${formatDate(say.date)}`} />
+              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`短记 ${formatDate(say.date)}`} />
             </article>
           ))}
         </div>

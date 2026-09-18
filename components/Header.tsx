@@ -16,7 +16,7 @@ const mobileGroups = [
     label: '抽屉',
     items: [
       { label: '博文', href: '/posts', icon: 'post' as const },
-      { label: '说说', href: '/say', icon: 'say' as const },
+      { label: '短记', href: '/say', icon: 'say' as const },
     ],
   },
   {
@@ -103,7 +103,8 @@ export default function Header() {
       <header className="site-header">
         <div className="site-header-inner">
           <Link href="/" className="site-brand" aria-label="轨道之外首页">
-            <span className="brand-icon"><Icon name="orbit" /></span><span>轨道之外</span>
+            {/* 品牌图标用 CSS mask + currentColor 上色，自动跟随 --color-accent，深浅色模式自适应 */}
+            <span className="brand-icon" aria-hidden="true" /><span>轨道之外</span>
           </Link>
 
           <nav className="desktop-nav desktop-section-nav" aria-label="栏目导航">

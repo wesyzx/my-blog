@@ -46,6 +46,17 @@ export const bundleData = {
       "cover": "",
       "published": true,
       "content": "\n你好，世界！\n\n"
+    },
+    {
+      "slug": "xiexieayi",
+      "title": "谢谢阿姨",
+      "date": "2017-04-30",
+      "category": "随笔",
+      "tags": [],
+      "excerpt": "",
+      "cover": "",
+      "published": true,
+      "content": "\n五一小长假，学校人少了不少，冷冷清清的。假期不适感产生……\n\n\n家庭原因，屎尿不能自理就被送进了幼儿园，然后遍历小学、初中、高中，再至大学。这么多的阶段，留给自己认识过的人和个中的记忆还是蛮丰富的。毕业之后，很少再回去，即使回去过也不是因为**怀念母校**这个情怀回去的。其实在我心里，它们都不能称之为我的母校，我也不会称之为母校。我很内疚，但是这是我的真实想法。我反感过去压抑的生活，压抑的自己，驼着背低着头脸上多有焦虑负担没有笑容和青春活力的自己。它们教会了我，当远离束缚后，放肆自我，去tmd。\n\n\n想称为母校的，是我的大学，更贴切的说，我的大学生活。没啥可以辩论，至少说，这是我自己的选择，我能做我想做的事情，而且我把它们做的还可以。大学是座熔炉，进了这个锅，出来怎么样谁也不知道。当初做出的选择，有其背后个中的道理，我们总不能指望着一个刚刚被套着素质教育光环的应试教育下修理出来的孩子做出一个未来四年非常正确的决定吧。反正我不会，我也不想，我也不能啊。\n\n\n每个人都有试错的机会，大学就是一个很好的时机。以现在将要毕业的时段来做回顾，我这个试错的成本仍然不算大。虽然现在真心地认为，大学四年应该多看点书，多出去走走看看，多思考一些非功利化形而上的问题。我的格局太小，眼光太浅。过去可悲的是，我觉得小学、初中、高中，都不知道什么是对错，哪里来的试错，连这个概念都没有。现在起码让我证明了我有不对，盲目的地方。\n\n\n今年有几个月患上了间歇性熟人恐惧症🙃，这个月总算痊愈了。现在路上看到人，主动招手打招呼，保持笑容，这些曾经的小伙伴看起来好亲切啊，不知道他们是不是这么想，也许我的主动让他们比较尴尬……现在很多时候去食堂吃饭，阿姨打完饭菜后我一定说声谢谢阿姨，不是单单说声谢谢了，把宾语补全的作用让自己很舒服，很感激她们啊，陪伴我们每一天。\n\n\n嗯，坐在图书馆，知乎了一个小时的“男生如何挑选自己的第一套西装”，无聊就写些东西，怕以后忘了，还真别说年纪大记性就是差。\n\n\n总之呢，谢谢你们。\n\n"
     }
   ],
   "food": [
@@ -69,10 +80,10 @@ export const bundleData = {
   ],
   "gallery": [
     {
-      "slug": "doujiang",
-      "title": "doujiang",
+      "slug": "朗霞豆浆",
+      "title": "朗霞豆浆",
       "date": "2026-06-08",
-      "category": "日常",
+      "category": "小吃",
       "cover": "https://images.guanyan.me/IMG_7764.JPG",
       "images": [
         {
@@ -84,36 +95,31 @@ export const bundleData = {
       "excerpt": "",
       "published": true,
       "content": "\n \n\n\n![IMG_7764.JPG](https://images.guanyan.me/IMG_7764.JPG)\n\n"
-    },
-    {
-      "slug": "kafei",
-      "title": "kafei",
-      "date": "2026-06-02",
-      "category": "日常",
-      "cover": "https://img.215320.xyz/2026/05/fa7d85a90137299c295a3cdbe9790395.png",
-      "images": [
-        {
-          "src": "https://img.215320.xyz/2026/05/fa7d85a90137299c295a3cdbe9790395.png",
-          "width": 1200,
-          "height": 800
-        }
-      ],
-      "excerpt": "",
-      "published": true,
-      "content": "\n \n\n"
     }
   ],
   "says": [
     {
+      "slug": "SBf5HvfQpJV9Kkef7tnge5",
+      "date": "2026-09-18T08:02:22Z",
+      "content": "看到的：当一个人的满足感主要来自健康身体状态、稳定关系、阅读、运动、自然、创造、真实体验，而不是来自持续购买刺激时，生活成本就会显著下降。\n人一旦减少高刺激、高面子、高欲望消费，真正高质量的生活其实非常便宜。\n最强的生活结构：稳定住房 + 健康饮食 + 规律运动 + 少量高质量社交 + 阅读/兴趣 + 低频旅行 + 不靠消费证明自己。",
+      "images": []
+    },
+    {
+      "slug": "KdLWhzTgZpmsCPLXBMinTG",
+      "date": "2026-09-18T06:05:20Z",
+      "content": "别太快，太快就失去感觉",
+      "images": []
+    },
+    {
       "slug": "ewJEfE9TxizBxtPTLmtyZJ",
       "date": "2026-07-15T11:19:06Z",
       "content": "身体好，这个世界才是属于你的。\n心态好，不着相，那么快乐才是你的。",
-      "image": "https://memos.guanyan.me/file/resources/eQE3AqMYyrxAKA4a6JLofS/IMG_7509.jpeg",
+      "image": "/api/memos/file/attachments/eQE3AqMYyrxAKA4a6JLofS/IMG_7509.jpeg",
       "images": [
-        "https://memos.guanyan.me/file/resources/eQE3AqMYyrxAKA4a6JLofS/IMG_7509.jpeg"
+        "/api/memos/file/attachments/eQE3AqMYyrxAKA4a6JLofS/IMG_7509.jpeg"
       ]
     }
   ],
   "about": "\n你好，欢迎来到 **轨道之外**，我是 **Can Chou**。\n\n这里记录我的美食探访、生活日常和技术折腾。轨道之外时间，慢慢记录，用心感受。\n",
-  "updatedAt": "2026-09-16T08:45:02.172Z"
+  "updatedAt": "2026-09-18T10:46:42.302Z"
 };

@@ -5,6 +5,12 @@ import SafeMarkdown from '@/components/SafeMarkdown'
 import { createPageMetadata } from '@/lib/metadata'
 
 export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
+
+// 短记必须跟着 Memos 实时变。原先这里是静态页 + 60 秒 ISR，而 Next 给 ISR 页发的响应头是
+// `s-maxage=60, stale-while-revalidate=31535940`（默认 expire 是一整年）——
+// 缓存过期后仍然先返回旧内容、后台再刷新，所以新增要等一会儿、删除更要刷新两次才消失。
+// 改成每次请求都重新渲染，发出去的响应头变成 no-store，CDN 不再缓存。
+export const dynamic = 'force-dynamic'
 const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
 
 function formatDate(dateStr: string) {

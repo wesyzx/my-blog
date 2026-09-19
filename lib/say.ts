@@ -62,7 +62,9 @@ export async function getAllSays(): Promise<SayMeta[]> {
     if (!process.env.MEMOS_TOKEN) throw new Error('MEMOS_TOKEN 未设置')
     const response = await fetch(`${MEMOS_API_URL}?pageSize=20`, {
       headers: { Accept: 'application/json', Authorization: `Bearer ${process.env.MEMOS_TOKEN}` },
-      next: { revalidate: 60 },
+      // 不缓存：短记的增删都要求立刻反映到页面上。
+      // 之前用 next: { revalidate: 60 }，加上页面本身的 ISR，最坏要等两分钟还得刷两次。
+      cache: 'no-store',
     })
     if (!response.ok) throw new Error(`Memos API returned HTTP ${response.status}`)
     const says = parseMemos(await response.json() as MemosResponse)

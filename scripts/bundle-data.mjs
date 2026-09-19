@@ -117,8 +117,8 @@ function readImageSize(buffer) {
   return null
 }
 
-async function fetchImageMeta(imageUrl) {
-  if (!imageUrl.includes('guanyan.me')) return { width: 1200, height: 800 }
+async function fetchImageMeta(imageUrl, lastKnown) {
+  if (!imageUrl.includes('guanyan.me')) return lastKnown || { width: 1200, height: 800 }
   try {
     // 尺寸信息在文件头里，只取前 64KB 即可，不必下载整张图。
     // 注意：不要带图片处理参数，处理后的图会丢失原始尺寸与元数据。
@@ -128,6 +128,12 @@ async function fetchImageMeta(imageUrl) {
     if (size?.width && size?.height) return size
     throw new Error('无法从文件头解析出尺寸')
   } catch (error) {
+    // 抓不到时优先沿用上一版快照里这个 URL 的真实尺寸，
+    // 否则一次网络抖动就会把已经量到的尺寸冲掉，退回错误的 1200x800。
+    if (lastKnown) {
+      console.warn(`  Image size unavailable, reusing last known ${lastKnown.width}x${lastKnown.height}: ${imageUrl} (${error.message})`)
+      return lastKnown
+    }
     console.warn(`  Image size unavailable, falling back to 1200x800: ${imageUrl} (${error.message})`)
     return { width: 1200, height: 800 }
   }
@@ -225,6 +231,10 @@ async function buildBundle() {
   console.log('Bundling content from Notion and Memos...')
   const existing = loadExistingBundle()
   const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
+  // 上一版快照里各张图已量到的尺寸，抓取失败时用来兜底，避免退回错误的 1200x800
+  const previousImageSizes = new Map(
+    (existing.gallery || []).flatMap((album) => (album.images || []).filter((image) => image.src && image.width && image.height).map((image) => [image.src, { width: image.width, height: image.height }])),
+  )
 
   const postPages = await queryAll(POSTS_DS_ID)
   postPages.sort((left, right) => date(right.properties?.Date).localeCompare(date(left.properties?.Date)) || left.id.localeCompare(right.id))
@@ -314,7 +324,7 @@ async function buildBundle() {
     const sources = imageLinks(content)
     const cover = url(props.Cover)
     if (!sources.length && cover) sources.push(cover)
-    const images = await Promise.all(sources.map(async (src) => ({ src, ...await fetchImageMeta(src) })))
+    const images = await Promise.all(sources.map(async (src) => ({ src, ...await fetchImageMeta(src, previousImageSizes.get(src)) })))
     gallery.push({ slug: uniqueSlug(richText(props.Slug) || richText(props.slug), galleryTitle, page.id, gallerySlugs), title: galleryTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '日常', cover, images, excerpt: richText(props.Excerpt), published: true, content })
   }
   gallery.sort((a, b) => b.date.localeCompare(a.date))

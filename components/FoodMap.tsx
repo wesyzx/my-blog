@@ -102,31 +102,6 @@ export default function FoodMap({ posts }: { posts: FoodMeta[] }) {
 
         markers.on('click', (event) => openPopup(event.geometry?.id))
 
-        // 地点文字标签。注意腾讯的 LabelStyle 不支持背景色 / 内边距，只能是纯文字，
-        // 所以拿不回原来那种白色胶囊底。深色模式下画布会被滤镜整体翻转，文字颜色会跟着变。
-        const labels = new TMap.MultiLabel({
-          id: 'food-labels',
-          map,
-          styles: {
-            name: new TMap.LabelStyle({
-              color: '#242621',
-              size: 12,
-              offset: { x: 0, y: 4 },
-              angle: 0,
-              alignment: 'center',
-              verticalAlignment: 'top',
-            }),
-          },
-          geometries: spots.map((spot) => ({
-            id: spot.post.slug,
-            styleId: 'name',
-            position: new TMap.LatLng(spot.position.lat, spot.position.lng),
-            content: spot.post.location,
-          })),
-        })
-
-        labels.on('click', (event) => openPopup(event.geometry?.id))
-
         if (spots.length === 1) {
           map.setCenter(new TMap.LatLng(spots[0].position.lat, spots[0].position.lng))
           map.setZoom(15)

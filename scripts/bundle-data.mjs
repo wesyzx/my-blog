@@ -9,6 +9,9 @@ dotenv.config({ path: '.env.local' })
 const POSTS_DS_ID = process.env.NOTION_DB_POSTS || '6bff5b12-623c-4404-9e80-66c4b77f82eb'
 const FOOD_DS_ID = process.env.NOTION_DB_FOOD || '3806b772-5d3c-8046-88b8-000b3b624968'
 const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-1232e3590807'
+
+// 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
+const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
 const OUTPUT_PATH = path.join(process.cwd(), 'lib/data-bundle.ts')
 
 if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
@@ -227,29 +230,48 @@ async function buildBundle() {
   postPages.sort((left, right) => date(right.properties?.Date).localeCompare(date(left.properties?.Date)) || left.id.localeCompare(right.id))
   const postSlugs = new Set()
   const posts = []
+  let missingPublishFlag = 0
   for (const page of postPages) {
     const props = page.properties
-    if (props.Published && !checkbox(props.Published)) continue
+    const publishFlag = property(props, PUBLISH_KEYS)
+    // 勾选列找不到时按「不发布」处理：宁可少发几篇，也不能把草稿误发到线上。
+    if (!publishFlag) { missingPublishFlag += 1; continue }
+    if (!checkbox(publishFlag)) continue
     const postTitle = title(props.Name)
     if (!postTitle) continue
     posts.push({ slug: uniqueSlug(richText(props.Slug), postTitle, page.id, postSlugs), title: postTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '未分类', tags: multiSelect(props.Tags), excerpt: richText(props.Excerpt), cover: url(props.Cover), published: true, content: await markdown(page.id) })
   }
   posts.sort((a, b) => b.date.localeCompare(a.date))
-  const previousPosts = existing.posts || []
-  const allowEmpty = process.env.CONTENT_ALLOW_EMPTY === '1'
-  if (!posts.length && previousPosts.length && !allowEmpty) {
-    // Notion 返回空时默认沿用上一版快照，避免 Notion 抖动导致线上文章凭空消失。
-    // 早期实现这里直接 throw，导致「保留了旧快照」这句话形同虚设 —— 构建照样失败、无法部署。
-    // 确实要清空线上文章时，用 CONTENT_ALLOW_EMPTY=1 跑一次即可（清空后不再需要该开关）。
+
+  if (missingPublishFlag) {
     console.warn([
       '',
       '  ' + '='.repeat(64),
-      `  ! Notion 没有任何已发布文章，继续沿用上一版快照里的 ${previousPosts.length} 篇`,
+      `  ! 有 ${missingPublishFlag} 条记录找不到「发布」勾选列，已全部按未发布处理`,
+      `  ! 请检查 Notion 里这一列的名字，支持：${PUBLISH_KEYS.join(' / ')}`,
+      '  ' + '='.repeat(64),
+      '',
+    ].join('\n'))
+  }
+
+  const previousPosts = existing.posts || []
+  const allowEmpty = process.env.CONTENT_ALLOW_EMPTY === '1'
+  // 「空」分两种，必须区别对待，否则勾选框就管不住发布：
+  //   Notion 一条都没返回 / 勾选列整个不见了 → 更像故障或配置错误 → 沿用旧快照
+  //   Notion 有记录但全都没勾选            → 是明确的意图       → 尊重它，线上就是空的
+  const looksLikeFailure = postPages.length === 0 || missingPublishFlag === postPages.length
+  if (!posts.length && previousPosts.length && !allowEmpty && looksLikeFailure) {
+    console.warn([
+      '',
+      '  ' + '='.repeat(64),
+      `  ! ${postPages.length === 0 ? 'Notion 没有返回任何博文记录' : '找不到「发布」勾选列'}，继续沿用上一版快照里的 ${previousPosts.length} 篇`,
       '  ! 确实要清空线上文章，请用 CONTENT_ALLOW_EMPTY=1 重新构建',
       '  ' + '='.repeat(64),
       '',
     ].join('\n'))
     posts.push(...previousPosts)
+  } else if (!posts.length && !looksLikeFailure) {
+    console.warn('\n  ! 所有博文都取消了「发布」勾选，本次构建的博文列表为空（这是预期结果）。\n')
   } else if (!posts.length) {
     console.warn('\n  ! Notion 当前没有任何已发布文章，本次构建的博文列表为空。\n')
   }
@@ -259,7 +281,7 @@ async function buildBundle() {
   const food = []
   for (const page of foodPages) {
     const props = page.properties
-    const published = property(props, ['Published', 'published', '发布', '是否发布'])
+    const published = property(props, PUBLISH_KEYS)
     if (published && !checkbox(published)) continue
     const foodTitle = title(property(props, ['Name', '名称', 'data ']))
     if (!foodTitle) continue
@@ -284,7 +306,8 @@ async function buildBundle() {
   const gallery = []
   for (const page of galleryPages) {
     const props = page.properties
-    if (props.Published && !checkbox(props.Published)) continue
+    const publishFlag = property(props, PUBLISH_KEYS)
+    if (publishFlag && !checkbox(publishFlag)) continue
     const galleryTitle = title(props.Name)
     if (!galleryTitle) continue
     const content = await markdown(page.id)

@@ -75,7 +75,7 @@ export default function SiteSidebar() {
           </Link>
         </section>
       </nav>
-      <p className="sidebar-verse">苔花如米小，<br />也学牡丹开。</p>
+      <p className="sidebar-verse">苔花如米小<br />也学牡丹开</p>
     </aside>
   )
 }

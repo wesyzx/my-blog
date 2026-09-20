@@ -20,6 +20,12 @@ export const metadata = createPageMetadata({
   path: '/',
 })
 
+// 首页汇总的是「此刻还剩下什么」，必须跟内容源一致。原先它是静态页，Next 给 ISR 页发的响应头是
+// `s-maxage=60, stale-while-revalidate=31535940`（默认 expire 是一整年）——缓存过期后仍会先返回旧
+// 内容、后台再刷新。于是博文清空、/posts 已经空了，首页却还在展示旧文章列表。
+// 和 /say、/workouts 一样改成每次请求都重新渲染，响应头变成 no-store，CDN 不再缓存。
+export const dynamic = 'force-dynamic'
+
 function dateValue(value: string) {
   const parsed = new Date(value).getTime()
   return Number.isNaN(parsed) ? 0 : parsed

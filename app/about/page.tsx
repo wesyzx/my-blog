@@ -7,6 +7,9 @@ import Icon from '@/components/Icon'
 
 export const metadata = createPageMetadata({ title: '关于', description: '关于轨道之外和 Can Chou。', path: '/about' })
 
+// 关于页正文来自内容源，改完要立刻可见，不能被 EdgeOne 的静态缓存挡住（原因详见 app/say/page.tsx）。
+export const dynamic = 'force-dynamic'
+
 export default function AboutPage() {
   return (
     <div className="page-shell narrow animate-fade-up">

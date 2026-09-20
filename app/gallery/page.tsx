@@ -8,6 +8,10 @@ export const metadata = createPageMetadata({
   path: '/gallery',
 })
 
+// 相册列表跟着内容源走，必须每次请求重新渲染 —— 静态页的响应头会被 EdgeOne 缓存住，
+// 删掉的相册还会继续挂在列表上（原因详见 app/say/page.tsx 里的说明）。
+export const dynamic = 'force-dynamic'
+
 export default function GalleryPage() {
   const albums = getAllGalleryItems()
 

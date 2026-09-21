@@ -76,10 +76,9 @@ export default function RootLayout({
 
         <div className="site-frame">
           <SiteSidebar />
-          <main className="site-content min-h-screen px-5 md:px-8" style={{ backgroundColor: 'var(--color-bg-page)' }}>
+          <main className="site-content">
             {children}
           </main>
-          <aside className="site-breathing-room" aria-hidden="true"><span /></aside>
         </div>
 
         {/* 底部版权信息栏 */}

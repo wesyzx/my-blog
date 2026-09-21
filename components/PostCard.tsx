@@ -2,85 +2,62 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { PostMeta } from '@/lib/posts'
 
-function formatEditorialDate(dateStr: string) {
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr || '—'
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}.${month}.${day}`
+/** ueno 的日期格式：Nov 13, 2025 */
+function formatItemDate(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value || '—'
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
 
-function formatFullDate(dateStr: string) {
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return '日期待定'
-  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(date)
-}
+/**
+ * 列表条目 —— 对齐 ueno 的 .item
+ *
+ * 有封面时渲染成 .item-cover（全宽封面 + 深色蒙版 + 白字覆盖，悬停蒙版加深）；
+ * 没有封面时退化成纯文字行（日期 / 标题 / 摘要 / 标签）。
+ * 这是这套设计里最能拉开观感的一处：图片成为列表的主角。
+ */
+export default function PostCard({ post }: { post: PostMeta; index?: number }) {
+  const href = `/posts/${encodeURIComponent(post.slug)}`
+  const dateLabel = formatItemDate(post.date)
 
-export default function PostCard({ post, index }: { post: PostMeta; index?: number }) {
-  const hasCover = Boolean(post.cover)
-  const numStr = typeof index === 'number' ? String(index + 1).padStart(2, '0') : null
+  if (post.cover) {
+    return (
+      <article className="item item-cover">
+        <Link href={href} className="item-cover_link">
+          <span className="item-cover_image">
+            <Image
+              src={post.cover}
+              alt=""
+              fill
+              sizes="(max-width: 860px) 100vw, 680px"
+              className="object-cover"
+            />
+          </span>
+          <span className="item-cover_inner">
+            <time className="item-time" dateTime={post.date}>{dateLabel}</time>
+            <h3 className="item-title">{post.title}</h3>
+          </span>
+        </Link>
+      </article>
+    )
+  }
 
   return (
-    <article className={`post-row ${hasCover ? 'has-cover' : 'no-cover'}`}>
-      {numStr && (
-        <span className="post-num editorial-meta" aria-hidden="true">
-          {numStr}
-        </span>
-      )}
+    <article className="item">
+      <time className="item-time" dateTime={post.date}>{dateLabel}</time>
 
-      <div className="post-row-content">
-        <div className="post-row-header">
-          <h2 className="post-row-title">
-            <Link href={`/posts/${encodeURIComponent(post.slug)}`}>
-              {post.title}
-            </Link>
-          </h2>
+      <h3 className="item-title">
+        <Link href={href}>{post.title}</Link>
+      </h3>
 
-          <div className="post-row-meta">
-            <Link
-              href={`/posts?category=${encodeURIComponent(post.category)}`}
-              className="post-category"
-            >
-              {post.category}
-            </Link>
-            <span className="post-meta-sep" aria-hidden="true">/</span>
-            <time
-              className="post-date"
-              dateTime={post.date}
-              title={formatFullDate(post.date)}
-            >
-              {formatEditorialDate(post.date)}
-            </time>
-          </div>
+      {post.excerpt && <p className="item-subtitle">{post.excerpt}</p>}
+
+      {post.tags.length > 0 && (
+        <div className="item-tags" aria-label="文章标签">
+          {post.tags.map((tag) => (
+            <span key={tag} className="item-label">{tag}</span>
+          ))}
         </div>
-
-        {post.excerpt && <p className="post-excerpt">{post.excerpt}</p>}
-
-        {post.tags.length > 0 && (
-          <div className="post-tags" aria-label="文章标签">
-            {post.tags.map((tag) => (
-              <span key={tag} className="post-tag">#{tag}</span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {post.cover && (
-        <Link
-          href={`/posts/${encodeURIComponent(post.slug)}`}
-          className="post-cover"
-          tabIndex={-1}
-          aria-hidden="true"
-        >
-          <Image
-            src={post.cover}
-            alt=""
-            fill
-            sizes="(max-width: 640px) 72px, 120px"
-            className="object-cover"
-          />
-        </Link>
       )}
     </article>
   )

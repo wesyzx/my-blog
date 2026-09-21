@@ -426,7 +426,8 @@ button { font: inherit; }
 .publishing-legend .publishing-day { display: inline-block; flex: 0 0 9px; }
 
 .latest-updates { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border-hairline); }
-.latest-update-list { margin-top: 18px; border-top: 1px solid var(--color-border-hairline); }
+/* 列表改走 ueno 的 .item：分隔线由 .item + .item 提供，容器自己不再画一条 */
+.latest-update-list { margin-top: 18px; border-top: 0; }
 .latest-update-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 88px 16px; gap: 16px; align-items: center; min-height: 58px; border-bottom: 1px solid var(--color-border-hairline); transition: border-color .15s ease; }
 .latest-update-row:hover { border-bottom-color: var(--color-border-subtle); }
 .latest-update-type { color: var(--color-accent); font-size: 11px; letter-spacing: .08em; }
@@ -673,4 +674,98 @@ button { font: inherit; }
 }
 .prose p, .prose li, .safe-markdown p, .page-lead, .article-lead, .home-lead {
   text-autospace: ideograph-alpha ideograph-numeric;
+}
+
+
+/* ============================================================================
+   ueno 文章页：左侧通栏封面
+   ----------------------------------------------------------------------------
+   .entry-cover 是固定定位的 380px 竖图，.entry-main 是右栏正文；
+   .entry-page.has-cover 用 padding-left 把正文整体推开。
+   封面顶部是站名（有封面时全站导航收起，这是唯一的回退入口），
+   底部叠分类标签，靠一层自上而下的渐变保证白字可读。
+   ============================================================================ */
+
+.entry-page { display: block; }
+.entry-page.has-cover { padding-left: 380px; }
+
+.entry-cover {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 380px;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+}
+.entry-cover_image { object-fit: cover; }
+
+.entry-cover .site-nav {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 2;
+  padding: 28px 30px 44px;
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0));
+}
+.entry-cover .site-link { color: rgba(255, 255, 255, .98); font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+.entry-cover .site-link:hover { opacity: .8; }
+
+.entry-head {
+  position: absolute;
+  left: 0; bottom: 0;
+  z-index: 2;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 80px 30px 60px;
+  line-height: 1.2;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, .03) 26%, rgba(0, 0, 0, .4) 71%, rgba(0, 0, 0, .5));
+}
+.entry-tags a { display: inline-block; padding: 6px 10px; background: rgba(255, 255, 255, .18); color: rgba(255, 255, 255, .97); font-size: 12px; font-weight: 600; letter-spacing: .06em; }
+.entry-tags a::before { content: "#"; }
+.entry-tags a:hover { background: rgba(255, 255, 255, .3); }
+
+.entry-main { min-width: 0; }
+.entry-main .inner { max-width: 680px; margin: 0 auto; padding: 0 2.4rem; }
+
+/* 有封面时整页让位：收起左栏、去掉主栏的宽度限制与上下内边距 */
+body:has(.entry-cover) .site-sidebar { display: none; }
+body:has(.entry-cover) .site-frame { max-width: none; }
+body:has(.entry-cover) .site-content { padding: 0; }
+body:has(.entry-cover) .entry-main .inner { padding-top: 80px; padding-bottom: 40px; }
+
+/* 文章页日期条 —— 对齐 ueno 的 .entry-meta（下方 48×3px 强调短线） */
+.entry-meta {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 2em;
+  padding-bottom: 8px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.entry-meta::after { content: ""; position: absolute; bottom: 0; left: 0; width: 48px; border-bottom: 3px solid var(--color-accent); }
+.entry-meta a { color: var(--color-text-muted); }
+.entry-meta a:hover { color: var(--color-accent); }
+
+/* 1100px 以下：封面回到文档流（16:9 横幅），左栏恢复成整宽堆叠 —— 导航始终可用，但不重复 */
+@media (max-width: 1100px) {
+  body:has(.entry-cover) .site-sidebar { display: block; }
+  body:has(.entry-cover) .site-frame { max-width: 1280px; }
+  body:has(.entry-cover) .site-content { padding: 40px 0; }
+  body:has(.entry-cover) .entry-main .inner { padding-top: 0; padding-bottom: 0; }
+
+  .entry-page.has-cover { padding-left: 0; }
+  .entry-cover { position: relative; width: 100%; height: 0; padding-bottom: 56%; }
+  .entry-cover .site-nav { padding: 20px 22px 40px; }
+  .entry-head { padding: 80px 22px 34px; }
+}
+
+/* 860px 以下顶栏回来了，文章页不再重复一份侧栏；封面用 ueno 的 4:3 竖图比例 */
+@media (max-width: 860px) {
+  body:has(.entry-cover) .site-sidebar { display: none; }
+  .entry-cover { padding-bottom: 133%; }
+  /* ueno 的移动端字号：标题 38→32、导语 22→20 */
+  .article-title { font-size: 30px; }
+  .article-lead { font-size: 19px; }
 }

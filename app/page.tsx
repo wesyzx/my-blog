@@ -1,8 +1,10 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems } from '@/lib/gallery'
 import { getAllSays } from '@/lib/say'
+import { formatItemDate } from '@/lib/format'
 import PublishingHeatmap, { type PublishingActivity } from '@/components/PublishingHeatmap'
 import Icon from '@/components/Icon'
 import { createPageMetadata } from '@/lib/metadata'
@@ -11,6 +13,8 @@ interface SiteUpdate extends PublishingActivity {
   id: string
   title: string
   detail?: string
+  /** 有封面的条目在首页渲染成封面卡，没有的退化成纯文字行（对齐 ueno 的 .item） */
+  cover?: string
   href: string
 }
 
@@ -29,12 +33,6 @@ export const dynamic = 'force-dynamic'
 function dateValue(value: string) {
   const parsed = new Date(value).getTime()
   return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function formatEditorialDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '日期待定'
-  return date.toISOString().slice(0, 10).replaceAll('-', '.')
 }
 
 function sayTitle(content: string) {
@@ -59,6 +57,7 @@ export default async function Home() {
       type: '文章',
       title: post.title,
       detail: post.excerpt || post.category,
+      cover: post.cover || undefined,
       date: post.date,
       href: `/posts/${encodeURIComponent(post.slug)}`,
     })),
@@ -74,6 +73,7 @@ export default async function Home() {
       type: '相册',
       title: album.title,
       detail: album.excerpt || (album.images?.length ? `${album.images.length} 张照片` : ''),
+      cover: album.cover || undefined,
       date: album.date,
       href: `/gallery/${encodeURIComponent(album.slug)}`,
     })),
@@ -82,6 +82,7 @@ export default async function Home() {
       type: '美食',
       title: place.title,
       detail: place.address || place.location,
+      cover: place.cover || undefined,
       date: place.date,
       href: `/food/${encodeURIComponent(place.slug)}`,
     })),
@@ -94,7 +95,7 @@ export default async function Home() {
     { count: food.length, label: '美食', href: '/food' },
   ]
 
-  const latest = updates.slice(0, 7)
+  const latest = updates.slice(0, 9)
 
   return (
     <div className="home-shell animate-fade-up">
@@ -131,18 +132,40 @@ export default async function Home() {
           <span className="editorial-meta">最近 {latest.length} 条</span>
         </div>
 
+        {/* 封面卡列表（对齐 ueno 的 .item）：有封面走封面卡，没有封面退化成纯文字行 */}
         <div className="latest-update-list">
-          {latest.map((update) => (
-            <Link key={update.id} href={update.href} className="latest-update-row">
-              <span className="latest-update-type">{update.type}</span>
-              <span className="latest-update-body">
-                <strong>{update.title}</strong>
-                {update.detail ? <span className="latest-update-detail">{update.detail}</span> : null}
-              </span>
-              <time dateTime={update.date}>{formatEditorialDate(update.date)}</time>
-              <Icon name="arrow-right" />
-            </Link>
-          ))}
+          {latest.map((update) =>
+            update.cover ? (
+              <article className="item item-cover" key={update.id}>
+                <Link href={update.href} className="item-cover_link">
+                  <span className="item-cover_image">
+                    <Image
+                      src={update.cover}
+                      alt=""
+                      fill
+                      sizes="(max-width: 860px) 100vw, 680px"
+                      className="object-cover"
+                    />
+                  </span>
+                  <span className="item-cover_inner">
+                    <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
+                    <h3 className="item-title">{update.title}</h3>
+                  </span>
+                </Link>
+              </article>
+            ) : (
+              <article className="item" key={update.id}>
+                <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
+                <h3 className="item-title">
+                  <Link href={update.href}>{update.title}</Link>
+                </h3>
+                {update.detail && <p className="item-subtitle">{update.detail}</p>}
+                <div className="item-tags">
+                  <span className="item-label">{update.type}</span>
+                </div>
+              </article>
+            )
+          )}
         </div>
 
         <div className="latest-updates-more">

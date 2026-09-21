@@ -1,13 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { PostMeta } from '@/lib/posts'
-
-/** ueno 的日期格式：Nov 13, 2025 */
-function formatItemDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value || '—'
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
-}
+import { formatItemDate } from '@/lib/format'
 
 /**
  * 列表条目 —— 对齐 ueno 的 .item

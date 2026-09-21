@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { getAllSays } from '@/lib/say'
 import SayCommentsToggle from '@/components/SayCommentsToggle'
 import SafeMarkdown from '@/components/SafeMarkdown'
+import ImageLightbox from '@/components/ImageLightbox'
 import { createPageMetadata } from '@/lib/metadata'
 
 export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
@@ -52,8 +53,9 @@ export default async function SayPage() {
                 <SafeMarkdown source={say.content} />
               </div>
 
+              {/* 同一则短记的多张图组成一组，点开即灯箱；data-lightbox-src 让灯箱拿原图而不是缩略图 */}
               {say.images && say.images.length > 0 && (
-                <div className={`say-images count-${Math.min(say.images.length, 3)}`}>
+                <ImageLightbox className={`say-images count-${Math.min(say.images.length, 3)}`}>
                   {say.images.map((src, index) => (
                     <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
                       <Image
@@ -62,10 +64,11 @@ export default async function SayPage() {
                         width={720}
                         height={720}
                         sizes="(max-width: 760px) 50vw, 240px"
+                        data-lightbox-src={src}
                       />
                     </a>
                   ))}
-                </div>
+                </ImageLightbox>
               )}
 
               <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`短记 ${formatDate(say.date)}`} />

@@ -1,48 +1,70 @@
-@import url("https://font.sec.miui.com/font/css?family=MiSans:400,450,500:Chinese_Simplify,Latin&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/*
+  色板与排版对齐 Typlog 的 ueno 主题（song.al 在用的那套）。
+  两条纪律：
+    1. 界面只用无彩灰阶（Radix gray 12 阶），唯一强调色是墨黑 —— 颜色交给照片。
+    2. 标题用无衬线，正文用衬线。
+  字体方面不再加载 MiSans（约 300KB），改用系统 CJK（PingFang SC 等），
+  这也是 ueno 的做法；西文衬线用 Source Serif 4（ueno 用的是它的前身 Source Serif Pro）。
+*/
 :root {
-  --color-accent: #52704b;
-  --color-accent-hover: #3f5d39;
-  --color-accent-light: rgba(82, 112, 75, .09);
-  --color-accent-subtle: rgba(82, 112, 75, .04);
-  --color-warm: #a96545;
-  --color-bg-page: #fbfbf8;
-  --color-bg-card: #fffefb;
-  --color-bg-surface: #f2f2ec;
-  --color-bg-nav: rgba(255, 255, 252, .94);
-  --color-text-primary: #242621;
-  --color-text-secondary: #61645c;
-  --color-text-muted: #85887f;
-  --color-text-hint: #a8aaa2;
-  --color-border: rgba(42, 47, 38, .10);
-  --color-border-hover: rgba(42, 47, 38, .20);
-  --color-border-hairline: rgba(42, 47, 38, .06);
-  --color-border-subtle: rgba(42, 47, 38, .10);
-  --color-border-default: rgba(42, 47, 38, .14);
-  --color-border-strong: rgba(42, 47, 38, .22);
+  /* Radix gray 12 阶 —— 浅色 */
+  --gray-1: #fcfcfc; --gray-2: #f9f9f9; --gray-3: #f0f0f0; --gray-4: #e8e8e8;
+  --gray-5: #e0e0e0; --gray-6: #d9d9d9; --gray-7: #cecece; --gray-8: #bbbbbb;
+  --gray-9: #8d8d8d; --gray-10: #838383; --gray-11: #646464; --gray-12: #202020;
+  /* 同色阶的 alpha 版本，用于细线（ueno 的边框都走 a4 / a5） */
+  --gray-a3: rgba(0, 0, 0, .06);
+  --gray-a4: rgba(0, 0, 0, .09);
+  --gray-a5: rgba(0, 0, 0, .12);
 
-  --font-zh: "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --color-accent: #000000;
+  --color-accent-hover: #333333;
+  --color-accent-light: rgba(0, 0, 0, .05);
+  --color-accent-subtle: rgba(0, 0, 0, .03);
+  --color-warm: #000000;
+  --color-bg-page: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-surface: #f9f9f9;
+  --color-bg-nav: rgba(255, 255, 255, .94);
+  --color-text-primary: #000000;
+  --color-text-secondary: #232324;
+  --color-text-muted: #646464;
+  --color-text-hint: #b9bbc6;
+  --color-border: var(--gray-a4);
+  --color-border-hover: rgba(0, 0, 0, .27);
+  --color-border-hairline: var(--gray-a3);
+  --color-border-subtle: var(--gray-a4);
+  --color-border-default: var(--gray-a5);
+  --color-border-strong: rgba(0, 0, 0, .27);
+
+  --font-zh: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --font-sans: var(--font-zh);
-  --font-serif: "Noto Serif SC", "Songti SC", STSong, "Source Han Serif SC", serif;
+  --font-serif: "Source Serif 4", "Noto Serif SC", "Songti SC", STSong, "Source Han Serif SC", serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Legacy radius tokens (preserved for backwards compatibility during migration) */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 15px;
+  --radius-sm: 3px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
 
-  /* New editorial radius tokens */
-  --radius-editorial: 2px;
-  --radius-image: 4px;
-  --radius-control: 6px;
+  /* ueno 几乎没有圆角，也几乎没有阴影 */
+  --radius-editorial: 3px;
+  --radius-image: 3px;
+  --radius-control: 3px;
+  --radius-pill: 16px;
 
   /* Shadow tokens */
-  --shadow-float: 0 14px 36px rgba(42, 47, 38, .10);
+  --shadow-float: 0 10px 26px rgba(0, 0, 0, .14);
   --shadow-editorial: none;
-  --shadow-subtle: 0 1px 2px rgba(42, 47, 38, .04);
+  --shadow-subtle: none;
+
+  /* ueno 的版式骨架 */
+  --side-width: 300px;
+  --content-width: 680px;
+  --content-gutter: 80px;
 
   /* Spacing scale (recommended design scale: 8 / 12 / 20 / 32 / 48 / 72 / 96) */
   --space-1: 8px;
@@ -55,35 +77,44 @@
 }
 
 [data-theme="dark"] {
-  --color-accent: #9ab28f;
-  --color-accent-hover: #b3c6aa;
-  --color-accent-light: rgba(154, 178, 143, .12);
-  --color-accent-subtle: rgba(154, 178, 143, .05);
-  --color-warm: #c78767;
-  --color-bg-page: #171815;
-  --color-bg-card: #1d1f1b;
-  --color-bg-surface: #252821;
-  --color-bg-nav: rgba(23, 24, 21, .94);
-  --color-text-primary: #eeeee7;
-  --color-text-secondary: #b6b9ae;
-  --color-text-muted: #898d82;
-  --color-text-hint: #6e7269;
-  --color-border: rgba(238, 238, 231, .10);
-  --color-border-hover: rgba(238, 238, 231, .20);
-  --color-border-hairline: rgba(238, 238, 231, .06);
-  --color-border-subtle: rgba(238, 238, 231, .10);
-  --color-border-default: rgba(238, 238, 231, .14);
-  --color-border-strong: rgba(238, 238, 231, .22);
+  /* ueno 的深色底是 #212328（略带蓝调），不是把浅色反转 */
+  --gray-1: #111111; --gray-2: #191919; --gray-3: #222222; --gray-4: #2a2a2a;
+  --gray-5: #313131; --gray-6: #3a3a3a; --gray-7: #484848; --gray-8: #606060;
+  --gray-9: #6e6e6e; --gray-10: #7b7b7b; --gray-11: #b4b4b4; --gray-12: #eeeeee;
+  --gray-a3: rgba(255, 255, 255, .07);
+  --gray-a4: rgba(255, 255, 255, .11);
+  --gray-a5: rgba(255, 255, 255, .14);
 
-  --shadow-float: 0 18px 46px rgba(0, 0, 0, .30);
+  --color-accent: #6c6e79;
+  --color-accent-hover: #b4b4b4;
+  --color-accent-light: rgba(255, 255, 255, .07);
+  --color-accent-subtle: rgba(255, 255, 255, .04);
+  --color-warm: #6c6e79;
+  --color-bg-page: #212328;
+  --color-bg-card: #26272d;
+  --color-bg-surface: #2a2a2a;
+  --color-bg-nav: rgba(33, 35, 40, .94);
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #eeeeee;
+  --color-text-muted: #b4b4b4;
+  --color-text-hint: #696e77;
+  --color-border: rgba(255, 255, 255, .11);
+  --color-border-hover: rgba(255, 255, 255, .27);
+  --color-border-hairline: rgba(255, 255, 255, .07);
+  --color-border-subtle: rgba(255, 255, 255, .11);
+  --color-border-default: rgba(255, 255, 255, .14);
+  --color-border-strong: rgba(255, 255, 255, .27);
+
+  --shadow-float: 0 10px 26px rgba(0, 0, 0, .50);
   --shadow-editorial: none;
-  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, .18);
+  --shadow-subtle: none;
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; font-family: var(--font-zh); background: var(--color-bg-page); color: var(--color-text-secondary); line-height: 1.75; -webkit-font-smoothing: antialiased; }
-body > main { background-image: linear-gradient(rgba(63, 75, 56, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(63, 75, 56, .025) 1px, transparent 1px); background-size: 56px 56px; }
+body { margin: 0; font-family: var(--font-zh); background: var(--color-bg-page); color: var(--color-text-secondary); line-height: 1.75; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+/* 原先 body > main 上有一层 56px 淡绿网格纹理，已按「颜色归零」删除：
+   背景不加图案，温度由照片和强调色承担。 */
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 ::selection { color: white; background: var(--color-accent); }
@@ -125,30 +156,34 @@ button { font: inherit; }
 .mobile-theme-button svg { width: 16px; height: 16px; }
 
 .eyebrow { margin: 0 0 12px; color: var(--color-accent); font-size: 11px; font-weight: 500; letter-spacing: .16em; }
-.page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-serif); font-size: clamp(32px, 5vw, 42px); line-height: 1.36; letter-spacing: .01em; font-weight: 600; text-wrap: balance; }
-.page-lead { max-width: 590px; margin: 16px 0 0; color: var(--color-text-secondary); font-size: 15px; line-height: 1.8; }
+.page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 32px; line-height: 1.25; letter-spacing: -.01em; font-weight: 600; text-wrap: balance; }
+.page-lead { max-width: 590px; margin: 12px 0 0; color: var(--color-text-muted); font-size: 17px; font-weight: 300; line-height: 1.6; }
+/* 列表 —— 对齐 ueno 的 .item / .item-cover / .item-subtitle */
 .post-list { margin-top: var(--space-4); }
-.post-list-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 0 10px; border-bottom: 1px solid var(--color-border-hairline); }
-.post-row { position: relative; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: var(--space-3); align-items: baseline; padding: 22px 0; border-bottom: 1px solid var(--color-border-hairline); transition: border-color .2s ease; }
-.post-row.no-cover { grid-template-columns: 28px minmax(0, 1fr); }
-.post-row:hover { border-bottom-color: var(--color-border-subtle); }
-.post-num { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-hint); letter-spacing: .06em; user-select: none; padding-top: 3px; }
-.post-row-content { min-width: 0; }
-.post-row-header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
-.post-row-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 19px; font-weight: 600; line-height: 1.45; letter-spacing: .01em; }
-.post-row-title a { color: inherit; transition: color .15s ease; }
-.post-row:hover .post-row-title a { color: var(--color-accent); }
-.post-row-meta { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: .08em; color: var(--color-text-hint); font-family: var(--font-sans); white-space: nowrap; }
-.post-category { color: var(--color-text-muted); transition: color .15s ease; }
-.post-category:hover { color: var(--color-accent); }
-.post-meta-sep { opacity: .5; }
-.post-date { color: var(--color-text-hint); text-transform: uppercase; }
-.post-excerpt { margin: 8px 0 0; color: var(--color-text-secondary); font-size: 13.5px; line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.post-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-size: 11px; color: var(--color-text-hint); }
-.post-tag { letter-spacing: .04em; }
-.post-cover { position: relative; width: 110px; aspect-ratio: 3 / 2; overflow: hidden; border-radius: var(--radius-image); border: 1px solid var(--color-border-hairline); background: var(--color-bg-surface); align-self: center; margin-left: var(--space-2); }
-.post-cover img { object-fit: cover; filter: saturate(.88) contrast(.98); transition: transform .4s ease, filter .4s ease; }
-.post-row:hover .post-cover img { transform: scale(1.02); filter: saturate(1) contrast(1); }
+.post-list-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 0 10px; border-bottom: 1px solid var(--gray-a4); }
+
+.item { padding: 20px 0 40px; }
+.item:first-of-type { padding-top: 0; }
+.item + .item { border-top: 1px solid var(--gray-a3); }
+.item a { color: var(--color-text-primary); text-decoration: none; }
+.item a:hover { color: var(--color-accent); }
+.item-time { display: block; color: var(--color-text-muted); font-size: 14px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.item-title { margin: 4px 0 10px; font-size: 26px; font-weight: 500; line-height: 1.35; }
+.item-subtitle { margin: 0; color: var(--color-text-muted); font-size: 20px; font-weight: 300; line-height: 1.45; }
+.item-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.item-label { display: inline-block; padding: 0 6px; border: 1px solid var(--gray-a5); border-radius: var(--radius-pill); color: var(--color-text-muted); font-size: 11px; font-weight: 600; line-height: 18px; }
+
+/* 封面卡：全宽封面 + 深色蒙版 + 白字覆盖；悬停时蒙版加深（ueno 的 .item-cover_inner） */
+.item-cover { padding: 0; }
+/* 相邻封面卡之间保留 ueno 的 1px 细线，否则两张图会糊成一块 */
+.item-cover + .item-cover { border-top: 1px solid var(--gray-a3); }
+.item-cover_link { position: relative; display: block; overflow: hidden; background: var(--color-bg-surface); }
+.item-cover_image { position: absolute; inset: 0; z-index: 1; display: block; }
+.item-cover_image img { width: 100%; height: 100%; object-fit: cover; }
+.item-cover_inner { position: relative; z-index: 2; display: block; padding: 120px 40px 40px; color: #fff; background: rgba(0, 0, 0, .42); transition: background-color .2s ease; }
+.item-cover_link:hover .item-cover_inner { background: rgba(0, 0, 0, .68); }
+.item-cover .item-time { color: rgba(255, 255, 255, .96); }
+.item-cover .item-title { margin: 4px 0 0; color: rgba(255, 255, 255, .98); font-size: 30px; font-weight: 500; line-height: 1.3; }
 .pagination { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) 0 var(--space-5); margin-top: var(--space-3); color: var(--color-text-hint); font-size: 12px; letter-spacing: .06em; border-top: 1px solid var(--color-border-hairline); }
 .pagination a { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-secondary); transition: color .15s ease; }
 .pagination a:hover { color: var(--color-accent); }
@@ -226,16 +261,17 @@ button { font: inherit; }
 .map-key-notice strong { color: var(--color-text-primary); font-family: var(--font-serif); font-size: 15px; }
 .map-key-notice code { padding: 1px 5px; border-radius: 4px; background: var(--color-accent-light); color: var(--color-accent-hover); font-size: 12px; }
 
-.article-header { margin-bottom: var(--space-5); padding-bottom: var(--space-3); border-bottom: 1px solid var(--color-border-hairline); }
+/* 文章页标题区 —— 对齐 ueno 的 h1.p-name（38px/700 无衬线）+ h2.p-summary（22px/300 灰） */
+.article-header { margin-bottom: 2em; padding-bottom: 1em; border-bottom: 1px solid var(--gray-a4); }
 .article-meta-top { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
 .article-category { color: var(--color-accent); font-weight: 500; }
 .editorial-meta-sep { color: var(--color-text-hint); opacity: .5; font-size: 11px; }
 .article-date { color: var(--color-text-hint); }
-.article-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-serif); font-size: clamp(28px, 4.5vw, 38px); line-height: 1.34; letter-spacing: .01em; font-weight: 600; text-wrap: balance; }
-.article-lead { max-width: 660px; margin: 16px 0 0; color: var(--color-text-secondary); font-family: var(--font-serif); font-size: 16px; line-height: 1.8; }
+.article-title { margin: 0 0 10px; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 38px; line-height: 1.25; letter-spacing: -.01em; font-weight: 700; text-wrap: balance; }
+.article-lead { max-width: 660px; margin: 10px 0 0; color: var(--color-text-muted); font-size: 22px; line-height: 1.45; font-weight: 300; }
 .article-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; color: var(--color-text-hint); font-size: 11px; letter-spacing: .04em; }
 .article-tag { font-family: var(--font-sans); }
-.article-cover { position: relative; width: 100%; aspect-ratio: 2 / 1; margin: var(--space-4) 0 var(--space-5); overflow: hidden; border: 1px solid var(--color-border-hairline); border-radius: var(--radius-image); background: var(--color-bg-surface); }
+.article-cover { position: relative; width: 100%; aspect-ratio: 2 / 1; margin: 2em 0; overflow: hidden; border: 0; border-radius: 3px; background: var(--color-bg-surface); }
 .article-cover img { object-fit: cover; }
 .comments-section { margin: var(--space-6) 0 var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border-hairline); }
 .detail-gallery { margin-top: 48px; padding-top: 36px; border-top: 1px solid var(--color-border-hairline); }
@@ -245,13 +281,12 @@ button { font: inherit; }
 
 .page-shell { width: min(100%, 1100px); margin: auto; padding: var(--space-5) 0 var(--space-7); }
 .page-shell.narrow { width: min(100%, 680px); }
-.page-header { position: relative; margin-bottom: 46px; padding-bottom: 24px; border-bottom: 1px solid var(--color-border-hairline); }
-.page-header::after { content: ""; position: absolute; bottom: -1px; left: 0; width: 42px; height: 1.5px; background: var(--color-accent); }
+/* 页面标题区 —— 对齐 ueno 的 .main_mark + .main_head：
+   左侧 4px 强调竖条（80px 高），标题 32px/600，底部一条细线。 */
+.page-header { position: relative; margin-bottom: 2em; padding: 0 0 1em 24px; border-bottom: 1px solid var(--gray-a4); }
+.page-header::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 80px; background: var(--color-accent); }
 .page-header-row { display: flex; align-items: center; gap: 14px; }
-.page-icon { flex: 0 0 auto; width: 44px; height: 44px; border: 1px solid var(--color-border-hairline); border-radius: var(--radius-control); display: grid; place-items: center; color: var(--color-accent); background: var(--color-accent-subtle); }
-.page-icon.warm { color: var(--color-warm); border-color: rgba(169, 101, 69, .16); background: rgba(169, 101, 69, .06); }
-.page-icon svg { width: 22px; height: 22px; }
-.page-title { font-size: clamp(28px, 4.5vw, 36px); font-weight: 600; }
+.page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
 .section-title { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 19px; font-weight: 600; }
 .section-title svg { width: 18px; height: 18px; color: var(--color-accent); }
 .flat-panel { border: 1px solid var(--color-border-hairline); border-radius: var(--radius-image); overflow: hidden; background: var(--color-bg-card); }
@@ -271,17 +306,23 @@ button { font: inherit; }
 .post-nav-title { font-family: var(--font-serif); font-size: 15px; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; }
 .post-nav-item:hover .post-nav-title { color: var(--color-accent); }
 
-.prose { --tw-prose-body: var(--color-text-secondary); --tw-prose-headings: var(--color-text-primary); --tw-prose-links: var(--color-accent); --tw-prose-bold: var(--color-text-primary); --tw-prose-quotes: var(--color-text-secondary); --tw-prose-quote-borders: var(--color-border-default); --tw-prose-code: var(--color-text-primary); --tw-prose-pre-bg: #21231e; max-width: 680px; font-family: var(--font-serif); }
-.prose p, .prose li { font-size: 16.5px; line-height: 1.9; letter-spacing: .01em; }
-.prose p { margin-top: 0; margin-bottom: 1.6em; }
-.prose h2 { font-family: var(--font-serif); font-size: 23px; font-weight: 600; letter-spacing: .01em; margin-top: 2.4em; margin-bottom: 0.8em; padding-bottom: 8px; border-bottom: 1px solid var(--color-border-hairline); }
-.prose h3 { font-family: var(--font-serif); font-size: 19px; font-weight: 600; letter-spacing: .01em; margin-top: 1.9em; margin-bottom: 0.6em; }
-.prose a { color: var(--color-accent); text-decoration: underline; text-decoration-color: var(--color-border-subtle); text-underline-offset: 4px; transition: color .15s ease, text-decoration-color .15s ease; }
-.prose a:hover { color: var(--color-accent-hover); text-decoration-color: currentColor; }
-.prose blockquote { margin: 2em 0; border-left: 2px solid var(--color-border-default); padding: 6px 0 6px 20px; font-style: normal; color: var(--color-text-muted); }
-.prose img { max-width: 100%; height: auto; border-radius: var(--radius-image); border: 1px solid var(--color-border-hairline); margin: 2em auto; }
-.prose figure { margin: 2.2em 0; }
-.prose figcaption { font-family: var(--font-sans); font-size: 12px; letter-spacing: .04em; color: var(--color-text-hint); text-align: center; margin-top: 8px; }
+/* 正文 —— 对齐 ueno 的 .e-content：18px / 1.62，衬线正文 + 无衬线小标题，
+   引用块是 4px 强调色左边框 + 悬挂大引号，分隔线是居中的 100x5px 短粗线。 */
+.prose { --tw-prose-body: var(--color-text-secondary); --tw-prose-headings: var(--color-text-primary); --tw-prose-links: var(--color-text-primary); --tw-prose-bold: var(--color-text-primary); --tw-prose-quotes: var(--color-text-secondary); --tw-prose-quote-borders: var(--color-accent); --tw-prose-code: var(--color-text-primary); --tw-prose-pre-bg: var(--color-bg-surface); max-width: 680px; font-family: var(--font-serif); font-size: 18px; line-height: 1.62; }
+.prose p, .prose li { font-size: 18px; line-height: 1.62; letter-spacing: 0; }
+.prose p { margin-top: 0; margin-bottom: 1.12em; -webkit-hyphens: auto; hyphens: auto; }
+.prose h2 { font-family: var(--font-sans); font-size: 1.42em; font-weight: 700; letter-spacing: 0; margin-top: 1.6em; margin-bottom: 1.2em; padding-bottom: 0; border-bottom: 0; }
+.prose h3 { font-family: var(--font-sans); font-size: 1.17em; font-weight: 600; letter-spacing: 0; margin-top: 1.4em; margin-bottom: 0.9em; }
+.prose a { color: var(--color-text-primary); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 3px; transition: color .15s ease; }
+.prose a:hover { color: var(--color-accent); }
+.prose blockquote { position: relative; margin: 0 0 1.64em; padding: 34px 1em .1em 20px; border-left: 4px solid var(--color-accent); font-size: 1.12em; font-style: normal; color: var(--color-text-secondary); }
+.prose blockquote::before { content: "\201C"; position: absolute; top: 0; left: 20px; color: var(--color-accent); font: 700 48px/1 "Times New Roman", Georgia, Palatino, serif; }
+.prose img { max-width: 100%; height: auto; border: 0; border-radius: 3px; margin: 1.6em auto; }
+.prose figure { margin: 1.6em 0; }
+.prose figcaption { font-family: var(--font-sans); font-size: 13px; letter-spacing: 0; color: var(--color-text-muted); text-align: center; margin-top: 4px; }
+.prose hr { display: block; width: 90%; max-width: 100px; border: 0; border-top: 5px solid var(--gray-a3); margin: 2.4em auto; }
+.prose ul, .prose ol { margin: 0 0 24px 6px; padding-left: 16px; }
+.prose li::marker { color: var(--color-text-muted); }
 .prose code { font-family: var(--font-mono); border-radius: var(--radius-editorial); background: var(--color-bg-surface); border: 1px solid var(--color-border-hairline); padding: 2px 5px; font-size: .88em; }
 .prose code::before, .prose code::after { content: none; }
 .prose pre { font-family: var(--font-mono); border-radius: var(--radius-image); border: 1px solid var(--color-border-hairline); padding: 16px 20px; line-height: 1.65; overflow-x: auto; max-width: 100%; }
@@ -298,29 +339,56 @@ button { font: inherit; }
 @keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 
-/* Ralvines-inspired branch layout and homepage */
-.site-frame { width: min(100%, 1280px); margin: 0 auto; display: grid; grid-template-columns: 190px minmax(0, 820px) 190px; justify-content: center; align-items: start; }
-.site-content { min-width: 0; border-inline: 1px solid rgba(42, 47, 38, .035); }
-.site-sidebar { position: sticky; top: 88px; align-self: start; min-height: calc(100vh - 140px); padding: 36px 20px 32px 0; display: flex; flex-direction: column; justify-content: space-between; }
+/* ------------------------------------------------------------------
+   ueno 版式骨架
+   .site-frame 相当于 ueno 的 .body（flex 容器）
+   左栏固定 300px 作者卡，主栏 flex-grow
+   主栏内容 680px + 左右各 80px 内边距，对齐 ueno 的 .main .inner
+   ------------------------------------------------------------------ */
+.site-frame { max-width: 1280px; margin: 0 auto; display: flex; align-items: flex-start; }
+.site-content { flex-grow: 1; min-width: 0; min-height: 480px; padding: 80px 0 40px; }
+
+/* 所有页面的内容统一收进同一条 680px 栏宽 */
+.home-shell, .page-shell, .page-shell.narrow {
+  width: min(100%, calc(var(--content-width) + var(--content-gutter) * 2));
+  margin: 0 auto;
+  padding: 0 var(--content-gutter);
+}
+
+.site-sidebar { flex: 0 0 var(--side-width); align-self: stretch; padding-right: 40px; }
 .site-sidebar nav { border: none; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
-.sidebar-group + .sidebar-group { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border-hairline); }
-.sidebar-group > p { margin: 0 0 10px; padding: 0 8px; color: var(--color-text-hint); font-family: var(--font-sans); font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; }
-.sidebar-group a { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: var(--radius-editorial); color: var(--color-text-secondary); font-size: 13px; transition: color .15s ease; }
-.sidebar-group a svg { width: 14px; height: 14px; color: var(--color-text-hint); transition: color .15s ease; }
-.sidebar-group a:hover { color: var(--color-text-primary); background: transparent; }
-.sidebar-group a:hover svg { color: var(--color-text-secondary); }
-.sidebar-group a.active { color: var(--color-accent); font-weight: 500; background: transparent; }
-.sidebar-group a.active svg { color: var(--color-accent); }
-.sidebar-group a.active::before { content: ""; position: absolute; left: -4px; top: 50%; transform: translateY(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--color-accent); }
-.sidebar-verse { margin: 36px 0 0; padding: 16px 8px 0; border-top: 1px solid var(--color-border-hairline); color: var(--color-text-hint); font-family: var(--font-serif); font-size: 11px; line-height: 2; letter-spacing: .1em; }
-.site-breathing-room { position: sticky; top: 88px; min-height: 260px; padding: 36px 0 0 20px; }
-.site-breathing-room span { display: none; }
-.desktop-section-nav { gap: 6px; }
-.desktop-section-nav > a { position: relative; padding: 18px 12px 16px; color: var(--color-text-secondary); font-family: var(--font-sans); font-size: 13px; letter-spacing: .04em; transition: color .15s ease; }
-.desktop-section-nav > a::after { content: ""; position: absolute; right: 12px; bottom: 0; left: 12px; height: 1.5px; background: var(--color-accent); transform: scaleX(0); transition: transform .2s ease; }
-.desktop-section-nav > a:hover { color: var(--color-text-primary); }
-.desktop-section-nav > a.active { color: var(--color-accent); font-weight: 500; }
-.desktop-section-nav > a.active::after { transform: scaleX(1); }
+.site-sidebar .sidebar-inner { display: flex; flex-direction: column; min-height: 100%; padding: 80px 40px; }
+
+/* 侧栏品牌区 —— 对齐 ueno 的 .side_logo / .side_title / .side_description */
+.sidebar-brand { display: flex; flex-direction: column; color: inherit; }
+.sidebar-logo { display: block; width: 120px; height: 120px; overflow: hidden; border-radius: 3px; background: var(--color-bg-surface); }
+/* 注意：不要复用 .brand-icon —— 那个类带 logo 的 mask，会把照片裁成图标形状 */
+.sidebar-avatar { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sidebar-title { margin: 20px 0 10px; color: var(--color-text-primary); font-size: 1.625rem; font-weight: 600; line-height: 1.2; letter-spacing: .02em; }
+.sidebar-desc { margin: 0 0 18px; color: var(--color-text-muted); font-size: 1.05rem; font-weight: 300; line-height: 1.4; }
+
+/* 侧栏导航 —— 对齐 ueno 的 .side_links：14px / 600 / 图标 40% 透明度 */
+.sidebar-nav { margin-top: 30px; }
+.sidebar-group + .sidebar-group { margin-top: 22px; }
+.sidebar-group > p { margin: 0 0 8px; color: var(--color-text-hint); font-family: var(--font-sans); font-size: 10.5px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+.sidebar-group a { display: flex; align-items: center; gap: 4px; margin: .4em 0; color: var(--color-text-primary); font-size: 14px; font-weight: 600; transition: color .2s ease; }
+.sidebar-group a svg { width: 15px; height: 15px; opacity: .4; transition: opacity .2s ease; }
+.sidebar-group a:hover, .sidebar-group a.active { color: var(--color-accent); }
+.sidebar-group a:hover svg, .sidebar-group a.active svg { opacity: .9; }
+
+.sidebar-foot { margin-top: auto; padding-top: 40px; }
+.sidebar-social { display: flex; gap: 12px; margin-bottom: 18px; }
+.sidebar-social a { color: var(--color-text-muted); transition: color .2s ease, transform .2s ease; }
+.sidebar-social a:hover { color: var(--color-accent); transform: translateY(-3px); }
+.sidebar-social svg { width: 17px; height: 17px; }
+.sidebar-theme { display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 0; border: 0; background: transparent; color: var(--color-text-muted); font-size: 12px; cursor: pointer; transition: color .2s ease; }
+.sidebar-theme:hover { color: var(--color-accent); }
+.sidebar-theme svg { width: 15px; height: 15px; }
+.sidebar-verse { margin: 0; padding-top: 16px; border-top: 1px solid var(--color-border-hairline); color: var(--color-text-hint); font-family: var(--font-serif); font-size: 11px; line-height: 2; letter-spacing: .1em; }
+
+/* 桌面端取消顶栏：品牌、导航、主题切换都在左栏（对齐 ueno 的无顶栏结构）。
+   移动端（<860px）在下面的媒体查询里恢复。 */
+.site-header { display: none; }
 
 .home-shell { width: min(100%, 820px); margin: 0 auto; padding: var(--space-4) 0 var(--space-6); }
 .home-intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-5); align-items: end; padding: var(--space-2) 0 var(--space-3); }
@@ -422,44 +490,59 @@ button { font: inherit; }
 [data-theme="dark"] .food-map canvas, [data-theme="dark"] .workout-map canvas { filter: invert(1) hue-rotate(180deg) saturate(.5) sepia(.18) brightness(.95); }
 
 /* Responsive media queries */
-@media (max-width: 1180px) {
-  .site-frame { grid-template-columns: 180px minmax(0, 820px); }
-  .site-breathing-room { display: none; }
+/* 1100px 以下：左栏不再固定，改为整宽居中堆到内容上方（对齐 ueno 的 .side 断点行为） */
+@media (max-width: 1100px) {
+  .site-frame { display: block; }
+  .site-sidebar { flex: none; width: 100%; padding: 0; border-bottom: 1px solid var(--color-border-hairline); }
+  .site-sidebar .sidebar-inner { align-items: center; min-height: 0; padding: 32px 24px; text-align: center; }
+  .sidebar-brand { align-items: center; }
+  .sidebar-logo { width: 72px; height: 72px; }
+  .sidebar-title { margin: 14px 0 6px; font-size: 1.25rem; }
+  .sidebar-desc { margin-bottom: 0; font-size: .95rem; }
+  .sidebar-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; margin-top: 20px; }
+  .sidebar-group + .sidebar-group { margin-top: 0; }
+  .sidebar-group > p { display: none; }
+  .sidebar-group a { display: inline-flex; margin: 0; }
+  .sidebar-foot { width: 100%; margin-top: 22px; padding-top: 0; }
+  .sidebar-verse { display: none; }
+  .sidebar-social { justify-content: center; margin-bottom: 0; }
+  .site-content { padding: 40px 0; }
+  .home-shell, .page-shell, .page-shell.narrow { padding: 0 24px; }
 }
 
+/* 860px 以下：左栏整体隐藏，交给顶栏 + 抽屉（保留原有可访问性实现） */
 @media (max-width: 860px) {
-  .site-frame { display: block; }
   .site-sidebar { display: none; }
-  .site-content { border: 0; }
+  .site-header { display: block; }
   .site-header-inner { height: 58px; padding: 0 20px; }
   .desktop-nav { display: none; }
   .mobile-menu-button { display: grid; }
   .mobile-nav { top: 58px; }
-  
-  .home-shell, .page-shell { padding: var(--space-4) 0 var(--space-5); }
+
+  .site-content { padding: 32px 0 40px; }
+  .home-shell, .page-shell, .page-shell.narrow { padding: 0 20px; }
   .home-intro { grid-template-columns: 1fr; gap: var(--space-3); padding: 4px 0 24px; }
   .home-intro-aside { align-items: flex-start; margin-top: var(--space-2); }
   .home-facts { width: auto; justify-content: flex-start; gap: var(--space-4); }
   .fact-item { align-items: flex-start; }
   .publishing-heatmap-scroll { margin-right: -20px; padding-right: 20px; }
   .workout-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  
-  .post-row { grid-template-columns: 24px minmax(0, 1fr) 80px; gap: 12px; padding: 18px 0; }
-  .post-row.no-cover { grid-template-columns: 24px minmax(0, 1fr); }
-  .post-row-title { font-size: 17px; }
-  .post-excerpt { font-size: 13px; }
-  .post-tags { display: none; }
-  .post-cover { width: 80px; }
-  
+
+  .item { padding: 18px 0 32px; }
+  .item-title { font-size: 21px; }
+  .item-subtitle { font-size: 16px; }
+  .item-cover_inner { padding: 72px 22px 22px; }
+  .item-cover .item-title { font-size: 21px; }
+
   .page-header { margin-bottom: 36px; }
   .prose p, .prose li { font-size: 16px; }
   .gallery-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 16px; }
   .food-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
   .food-map { height: 360px; }
-  
+
   .say-item { padding-left: 48px; }
   .say-author { margin-left: -48px; }
-  
+
   .site-footer-inner { padding: 24px 20px; }
   .footer-meta { flex-direction: column; align-items: flex-start; gap: 8px; }
 }
@@ -505,4 +588,89 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* ============================================================================
+   ueno 视觉语言 —— 收口层
+   ----------------------------------------------------------------------------
+   上面已经改完骨架（.site-frame / .sidebar-*）、列表（.item / .item-cover）、
+   页面标题（.page-header）与正文（.prose）。
+   这一段把剩下零散组件的字体、边框、圆角统一到同一套规则上，
+   集中在一处方便整体回退。
+   ============================================================================ */
+
+/* 标题一律无衬线（首页 hero、文章标题、正文、侧栏诗句除外） */
+.home-section-title,
+.section-title,
+.latest-update-row strong,
+.gallery-info h2,
+.food-card h3,
+.food-popup-content h4,
+.post-nav-title,
+.about-author-info h2,
+.map-key-notice strong { font-family: var(--font-sans); letter-spacing: -.005em; }
+
+/* 首页 hero 保持衬线，但按 ueno 的字重与行高收一遍 */
+.home-intro-eyebrow { color: var(--color-text-muted); }
+.home-intro-title { font-family: var(--font-serif); font-size: 38px; font-weight: 600; line-height: 1.28; letter-spacing: .01em; }
+.home-lead { color: var(--color-text-muted); font-size: 17px; font-weight: 300; line-height: 1.7; }
+.fact-num { font-family: var(--font-sans); font-size: 22px; font-weight: 600; }
+.fact-label { color: var(--color-text-muted); }
+
+/* 图片一律去边框、圆角 3px，不再压饱和度 */
+.gallery-cover,
+.food-cover,
+.article-cover,
+.say-images a,
+.about-avatar-wrap img,
+.flat-panel,
+.workout-map { border: 0; border-radius: 3px; }
+.gallery-cover img,
+.food-cover img { filter: none; }
+.gallery-card:hover img,
+.food-card:hover img { transform: none; }
+
+/* 相册列表：去掉卡片感，让照片自己成块 */
+.gallery-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; }
+.gallery-info { padding-top: 10px; }
+.gallery-info h2 { font-size: 16px; font-weight: 600; }
+.gallery-meta { color: var(--color-text-muted); }
+.cover-badge { background: rgba(0, 0, 0, .6); border-radius: 3px; font-family: var(--font-mono); }
+
+/* 美食 */
+.food-grid { gap: 30px 20px; }
+.food-card h3 { font-size: 16px; font-weight: 600; }
+.food-card > p svg,
+.food-meta-location svg { color: var(--color-text-muted); }
+.food-map { border: 0; border-radius: 3px; }
+
+/* 上/下一篇 —— 对齐 ueno 的 .navigation（18px / 700） */
+.post-nav { gap: 2rem; margin-top: 1.5rem; padding: 1.5rem 0; border-top: 1px solid var(--gray-a4); border-bottom: 1px solid var(--gray-a4); }
+.post-nav-label { font-size: 11px; font-weight: 600; letter-spacing: .1em; color: var(--color-text-muted); }
+.post-nav-title { font-size: 18px; font-weight: 700; color: var(--color-text-primary); line-height: 1.35; }
+.post-nav-item:hover { opacity: 1; }
+.post-nav-item:hover .post-nav-title { color: var(--color-accent); }
+
+/* 页脚 */
+.site-footer { border-top: 1px solid var(--gray-a4); }
+.footer-links a { color: var(--color-text-muted); font-size: 14px; font-weight: 600; }
+.footer-links a:hover { color: var(--color-accent); }
+.footer-stats strong { color: var(--color-text-primary); font-weight: 600; }
+
+/* 区块小标题 */
+.section-title { font-size: 17px; font-weight: 600; }
+.section-title svg { color: var(--color-text-muted); }
+
+/* 中文强调用点着重号，不用伪斜体；中英混排自动留白 */
+.prose em,
+.safe-markdown em {
+  font-style: normal;
+  text-emphasis: filled dot var(--color-text-muted);
+  -webkit-text-emphasis: filled dot var(--color-text-muted);
+  text-emphasis-position: under;
+  -webkit-text-emphasis-position: under;
+}
+.prose p, .prose li, .safe-markdown p, .page-lead, .article-lead, .home-lead {
+  text-autospace: ideograph-alpha ideograph-numeric;
 }

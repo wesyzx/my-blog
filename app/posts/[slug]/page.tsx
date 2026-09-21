@@ -5,6 +5,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllPosts, getPostBySlug } from '@/lib/posts'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
+import ImageLightbox from '@/components/ImageLightbox'
 import Icon from '@/components/Icon'
 
 function formatEditorialDate(value: string) {
@@ -80,9 +81,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </div>
         )}
 
-        <div className="prose">
+        {/* 正文里的图片点开即灯箱（ueno 用 Photoswipe 挂在 .photo / .photos 上，这里等价） */}
+        <ImageLightbox className="prose">
           <MDXRemote source={post.content} />
-        </div>
+        </ImageLightbox>
       </article>
 
       {/* Previous / Next Editorial Nav */}

@@ -4,25 +4,28 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --color-accent: #52704b;
-  --color-accent-hover: #3f5d39;
-  --color-accent-light: rgba(82, 112, 75, .09);
-  --color-accent-subtle: rgba(82, 112, 75, .04);
-  --color-warm: #a96545;
-  --color-bg-page: #fbfbf8;
-  --color-bg-card: #fffefb;
-  --color-bg-surface: #f2f2ec;
-  --color-bg-nav: rgba(255, 255, 252, .94);
-  --color-text-primary: #242621;
-  --color-text-secondary: #61645c;
-  --color-text-muted: #85887f;
-  --color-text-hint: #a8aaa2;
-  --color-border: rgba(42, 47, 38, .10);
-  --color-border-hover: rgba(42, 47, 38, .20);
-  --color-border-hairline: rgba(42, 47, 38, .06);
-  --color-border-subtle: rgba(42, 47, 38, .10);
-  --color-border-default: rgba(42, 47, 38, .14);
-  --color-border-strong: rgba(42, 47, 38, .22);
+  /* 暖灰 + 暖赭（warm-2）—— 依据 docs/theme-proposal.html 第 10 节。
+     相对原「米白 + 深绿」：色相从绿转到赭，中性色整体向暖侧偏移，
+     去掉两套彩色系统（深绿强调 + 暖棕美食）并存的分裂。 */
+  --color-accent: #8a4a2c;
+  --color-accent-hover: #6f3a21;
+  --color-accent-light: rgba(138, 74, 44, .08);
+  --color-accent-subtle: rgba(138, 74, 44, .04);
+  --color-warm: #8a4a2c;
+  --color-bg-page: #fffdf8;
+  --color-bg-card: #fffdf8;
+  --color-bg-surface: #f7f2e8;
+  --color-bg-nav: rgba(255, 253, 248, .94);
+  --color-text-primary: #241f18;
+  --color-text-secondary: #5a5245;
+  --color-text-muted: #8f8674;
+  --color-text-hint: #ada08a;
+  --color-border: rgba(70, 55, 35, .10);
+  --color-border-hover: rgba(70, 55, 35, .20);
+  --color-border-hairline: rgba(70, 55, 35, .07);
+  --color-border-subtle: rgba(70, 55, 35, .10);
+  --color-border-default: rgba(70, 55, 35, .14);
+  --color-border-strong: rgba(70, 55, 35, .20);
 
   --font-zh: "MiSans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --font-sans: var(--font-zh);
@@ -35,14 +38,14 @@
   --radius-lg: 15px;
 
   /* New editorial radius tokens */
-  --radius-editorial: 2px;
-  --radius-image: 4px;
-  --radius-control: 6px;
+  --radius-editorial: 3px;
+  --radius-image: 5px;
+  --radius-control: 5px;
 
   /* Shadow tokens */
-  --shadow-float: 0 14px 36px rgba(42, 47, 38, .10);
+  --shadow-float: 0 14px 36px rgba(70, 55, 35, .14);
   --shadow-editorial: none;
-  --shadow-subtle: 0 1px 2px rgba(42, 47, 38, .04);
+  --shadow-subtle: 0 1px 3px rgba(70, 55, 35, .05);
 
   /* Spacing scale (recommended design scale: 8 / 12 / 20 / 32 / 48 / 72 / 96) */
   --space-1: 8px;
@@ -55,35 +58,36 @@
 }
 
 [data-theme="dark"] {
-  --color-accent: #9ab28f;
-  --color-accent-hover: #b3c6aa;
-  --color-accent-light: rgba(154, 178, 143, .12);
-  --color-accent-subtle: rgba(154, 178, 143, .05);
-  --color-warm: #c78767;
-  --color-bg-page: #171815;
-  --color-bg-card: #1d1f1b;
-  --color-bg-surface: #252821;
-  --color-bg-nav: rgba(23, 24, 21, .94);
-  --color-text-primary: #eeeee7;
-  --color-text-secondary: #b6b9ae;
-  --color-text-muted: #898d82;
-  --color-text-hint: #6e7269;
-  --color-border: rgba(238, 238, 231, .10);
-  --color-border-hover: rgba(238, 238, 231, .20);
-  --color-border-hairline: rgba(238, 238, 231, .06);
-  --color-border-subtle: rgba(238, 238, 231, .10);
-  --color-border-default: rgba(238, 238, 231, .14);
-  --color-border-strong: rgba(238, 238, 231, .22);
+  --color-accent: #d9a06a;
+  --color-accent-hover: #e8b585;
+  --color-accent-light: rgba(217, 160, 106, .12);
+  --color-accent-subtle: rgba(217, 160, 106, .06);
+  --color-warm: #d9a06a;
+  --color-bg-page: #1a1713;
+  --color-bg-card: #211d18;
+  --color-bg-surface: #2a251e;
+  --color-bg-nav: rgba(26, 23, 19, .94);
+  --color-text-primary: #f0ebe2;
+  --color-text-secondary: #c0b6a6;
+  --color-text-muted: #8d8474;
+  --color-text-hint: #6b6455;
+  --color-border: rgba(255, 240, 215, .09);
+  --color-border-hover: rgba(255, 240, 215, .18);
+  --color-border-hairline: rgba(255, 240, 215, .07);
+  --color-border-subtle: rgba(255, 240, 215, .09);
+  --color-border-default: rgba(255, 240, 215, .12);
+  --color-border-strong: rgba(255, 240, 215, .18);
 
-  --shadow-float: 0 18px 46px rgba(0, 0, 0, .30);
+  --shadow-float: 0 18px 46px rgba(0, 0, 0, .38);
   --shadow-editorial: none;
-  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, .18);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, .22);
 }
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; font-family: var(--font-zh); background: var(--color-bg-page); color: var(--color-text-secondary); line-height: 1.75; -webkit-font-smoothing: antialiased; }
-body > main { background-image: linear-gradient(rgba(63, 75, 56, .025) 1px, transparent 1px), linear-gradient(90deg, rgba(63, 75, 56, .025) 1px, transparent 1px); background-size: 56px 56px; }
+/* 原先 body > main 上有一层 56px 的淡绿网格纹理。按「颜色归零」原则删掉：
+   背景不该有图案，温度应该来自照片和强调色，不是底纹。 */
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
 ::selection { color: white; background: var(--color-accent); }
@@ -245,12 +249,12 @@ button { font: inherit; }
 
 .page-shell { width: min(100%, 1100px); margin: auto; padding: var(--space-5) 0 var(--space-7); }
 .page-shell.narrow { width: min(100%, 680px); }
-.page-header { position: relative; margin-bottom: 46px; padding-bottom: 24px; border-bottom: 1px solid var(--color-border-hairline); }
-.page-header::after { content: ""; position: absolute; bottom: -1px; left: 0; width: 42px; height: 1.5px; background: var(--color-accent); }
-.page-header-row { display: flex; align-items: center; gap: 14px; }
-.page-icon { flex: 0 0 auto; width: 44px; height: 44px; border: 1px solid var(--color-border-hairline); border-radius: var(--radius-control); display: grid; place-items: center; color: var(--color-accent); background: var(--color-accent-subtle); }
-.page-icon.warm { color: var(--color-warm); border-color: rgba(169, 101, 69, .16); background: rgba(169, 101, 69, .06); }
-.page-icon svg { width: 22px; height: 22px; }
+/* 页面标题区：左侧 4px 竖条 + 标题块。
+   竖条是这套设计里唯一的装饰元素（取代原来标题下那条 42px 绿短线），
+   用 grid 实现，不需要改任何页面的 JSX。 */
+.page-header { position: relative; display: grid; grid-template-columns: 4px minmax(0, 1fr); column-gap: 16px; margin-bottom: 46px; padding-bottom: 24px; border-bottom: 1px solid var(--color-border-hairline); }
+.page-header::before { content: ""; grid-column: 1; grid-row: 1 / -1; align-self: start; width: 4px; height: 58px; margin-top: 3px; background: var(--color-accent); }
+.page-header > * { grid-column: 2; }
 .page-title { font-size: clamp(28px, 4.5vw, 36px); font-weight: 600; }
 .section-title { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 19px; font-weight: 600; }
 .section-title svg { width: 18px; height: 18px; color: var(--color-accent); }
@@ -300,7 +304,7 @@ button { font: inherit; }
 
 /* Ralvines-inspired branch layout and homepage */
 .site-frame { width: min(100%, 1280px); margin: 0 auto; display: grid; grid-template-columns: 190px minmax(0, 820px) 190px; justify-content: center; align-items: start; }
-.site-content { min-width: 0; border-inline: 1px solid rgba(42, 47, 38, .035); }
+.site-content { min-width: 0; border-inline: 1px solid rgba(70, 55, 35, .045); }
 .site-sidebar { position: sticky; top: 88px; align-self: start; min-height: calc(100vh - 140px); padding: 36px 20px 32px 0; display: flex; flex-direction: column; justify-content: space-between; }
 .site-sidebar nav { border: none; border-radius: 0; background: transparent; padding: 0; box-shadow: none; }
 .sidebar-group + .sidebar-group { margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--color-border-hairline); }
@@ -505,4 +509,50 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+
+/* ============================================================================
+   暖化主题 warm-2 —— 依据 docs/theme-proposal.html 第 10 / 11 节
+   ----------------------------------------------------------------------------
+   色板已在上面的 :root / [data-theme="dark"] 里换成暖灰 + 暖赭。
+   这一段只收口「去装饰」与「字体分工」两类改动，集中在一处方便整体回退。
+   字体分工：栏目标题 / 列表标题用无衬线（对齐 song.al），
+             首页 hero、文章标题、正文、侧栏诗句保持衬线。
+   ============================================================================ */
+
+.page-title,
+.home-section-title,
+.section-title,
+.post-row-title,
+.post-nav-title,
+.latest-update-row strong,
+.gallery-info h2,
+.food-card h3,
+.food-popup-content h4 { font-family: var(--font-sans); letter-spacing: -.005em; }
+
+/* 图片不再套一圈细边框：让照片自己成块，靠圆角和留白分隔。
+   占位底色仍用 --color-bg-surface，加载前不会闪白。 */
+.post-cover,
+.gallery-cover,
+.food-cover,
+.article-cover,
+.say-images a,
+.about-avatar-wrap img { border: 0; }
+
+.prose img { border: 0; margin: 1.6em auto; }
+
+/* 正文里的中文强调改用「点着重号」而不是伪斜体（中文没有斜体字形）。 */
+.prose em,
+.safe-markdown em {
+  font-style: normal;
+  text-emphasis: filled dot var(--color-text-muted);
+  -webkit-text-emphasis: filled dot var(--color-text-muted);
+  text-emphasis-position: under;
+  -webkit-text-emphasis-position: under;
+}
+
+/* 中英混排自动留白，一行 CSS 的收益很明显。 */
+.prose p, .prose li, .safe-markdown p, .page-lead, .article-lead {
+  text-autospace: ideograph-alpha ideograph-numeric;
 }

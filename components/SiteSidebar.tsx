@@ -73,7 +73,7 @@ export default function SiteSidebar() {
       <div className="sidebar-inner">
         <Link href="/" className="sidebar-brand" aria-label="轨道之外首页">
           <span className="sidebar-logo">
-            <Image src={AUTHOR_AVATAR} alt="" width={120} height={120} className="sidebar-avatar" unoptimized priority />
+            <Image src={AUTHOR_AVATAR} alt="" width={120} height={120} className="sidebar-avatar" unoptimized fetchPriority="high" />
           </span>
           <span className="sidebar-title">轨道之外</span>
           <span className="sidebar-desc">把日子写下来，等它们慢慢发光。</span>

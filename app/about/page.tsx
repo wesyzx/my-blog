@@ -20,7 +20,7 @@ export default function AboutPage() {
       </header>
       <section className="about-profile">
         <div className="about-avatar-wrap">
-          <Image src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png" alt="Can Chou" width={84} height={84} priority />
+          <Image src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png" alt="Can Chou" width={84} height={84} fetchPriority="high" />
         </div>
         <div className="about-author-info">
           <h2>Can Chou</h2>

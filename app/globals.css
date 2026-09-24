@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -6,9 +5,9 @@
   色板与排版对齐 Typlog 的 ueno 主题（song.al 在用的那套）。
   两条纪律：
     1. 界面只用无彩灰阶（Radix gray 12 阶），唯一强调色是墨黑 —— 颜色交给照片。
-    2. 标题用无衬线，正文用衬线。
-  字体方面不再加载 MiSans（约 300KB），改用系统 CJK（PingFang SC 等），
-  这也是 ueno 的做法；西文衬线用 Source Serif 4（ueno 用的是它的前身 Source Serif Pro）。
+    2. 界面与正文都用系统无衬线，只在侧栏短句保留宋体语气。
+  song.al 当前使用的 ueno 0.6.3 并不依赖网络字体；这里同样使用系统 CJK，
+  避免首屏还要等待 Google Fonts，也避免中西文字重不一致。
 */
 :root {
   /* Radix gray 12 阶 —— 浅色 */
@@ -42,7 +41,7 @@
 
   --font-zh: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
   --font-sans: var(--font-zh);
-  --font-serif: "Source Serif 4", "Noto Serif SC", "Songti SC", STSong, "Source Han Serif SC", serif;
+  --font-serif: "Songti SC", STSong, "Source Han Serif SC", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
   /* Legacy radius tokens (preserved for backwards compatibility during migration) */
@@ -209,7 +208,7 @@ button { font: inherit; }
 .say-author-info { display: flex; flex-direction: column; }
 .say-author-info strong { color: var(--color-text-primary); font-size: 13.5px; font-weight: 500; }
 .say-author-info time { color: var(--color-text-hint); font-size: 11px; letter-spacing: .04em; }
-.safe-markdown p { margin: 0 0 12px; color: var(--color-text-secondary); font-family: var(--font-serif); font-size: 15.5px; line-height: 1.85; }
+.safe-markdown p { margin: 0 0 12px; color: var(--color-text-secondary); font-family: var(--font-sans); font-size: 15.5px; line-height: 1.85; }
 .safe-markdown ul { margin: 0 0 14px; padding-left: 18px; }
 .safe-markdown a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
 .safe-markdown code { font-family: var(--font-mono); padding: 2px 5px; border-radius: var(--radius-editorial); background: var(--color-bg-surface); border: 1px solid var(--color-border-hairline); font-size: .88em; }
@@ -306,10 +305,11 @@ button { font: inherit; }
 .post-nav-title { font-family: var(--font-serif); font-size: 15px; font-weight: 500; color: var(--color-text-primary); line-height: 1.4; }
 .post-nav-item:hover .post-nav-title { color: var(--color-accent); }
 
-/* 正文 —— 对齐 ueno 的 .e-content：18px / 1.62，衬线正文 + 无衬线小标题，
+/* 正文 —— 延续 ueno 的 18px 紧凑阅读比例，针对中文将行高调整为 1.72，
+   正文与标题都用系统无衬线，
    引用块是 4px 强调色左边框 + 悬挂大引号，分隔线是居中的 100x5px 短粗线。 */
-.prose { --tw-prose-body: var(--color-text-secondary); --tw-prose-headings: var(--color-text-primary); --tw-prose-links: var(--color-text-primary); --tw-prose-bold: var(--color-text-primary); --tw-prose-quotes: var(--color-text-secondary); --tw-prose-quote-borders: var(--color-accent); --tw-prose-code: var(--color-text-primary); --tw-prose-pre-bg: var(--color-bg-surface); max-width: 680px; font-family: var(--font-serif); font-size: 18px; line-height: 1.62; }
-.prose p, .prose li { font-size: 18px; line-height: 1.62; letter-spacing: 0; }
+.prose { --tw-prose-body: var(--color-text-secondary); --tw-prose-headings: var(--color-text-primary); --tw-prose-links: var(--color-text-primary); --tw-prose-bold: var(--color-text-primary); --tw-prose-quotes: var(--color-text-secondary); --tw-prose-quote-borders: var(--color-accent); --tw-prose-code: var(--color-text-primary); --tw-prose-pre-bg: var(--color-bg-surface); max-width: 680px; font-family: var(--font-sans); font-size: 18px; line-height: 1.72; }
+.prose p, .prose li { font-size: 18px; line-height: 1.72; letter-spacing: 0; }
 .prose p { margin-top: 0; margin-bottom: 1.12em; -webkit-hyphens: auto; hyphens: auto; }
 .prose h2 { font-family: var(--font-sans); font-size: 1.42em; font-weight: 700; letter-spacing: 0; margin-top: 1.6em; margin-bottom: 1.2em; padding-bottom: 0; border-bottom: 0; }
 .prose h3 { font-family: var(--font-sans); font-size: 1.17em; font-weight: 600; letter-spacing: 0; margin-top: 1.4em; margin-bottom: 0.9em; }
@@ -579,7 +579,7 @@ button { font: inherit; }
 }
 
 @media (max-width: 400px) {
-  .site-content { padding-left: 16px !important; padding-right: 16px !important; }
+  .home-shell, .page-shell, .page-shell.narrow { padding-left: 16px; padding-right: 16px; }
   .home-facts { gap: var(--space-3); }
   .fact-num { font-size: 18px; }
   .fact-label { font-size: 10px; }
@@ -601,7 +601,7 @@ button { font: inherit; }
    集中在一处方便整体回退。
    ============================================================================ */
 
-/* 标题一律无衬线（首页 hero、文章标题、正文、侧栏诗句除外） */
+/* 标题一律无衬线（侧栏诗句除外） */
 .home-section-title,
 .section-title,
 .latest-update-row strong,
@@ -612,9 +612,9 @@ button { font: inherit; }
 .about-author-info h2,
 .map-key-notice strong { font-family: var(--font-sans); letter-spacing: -.005em; }
 
-/* 首页 hero 保持衬线，但按 ueno 的字重与行高收一遍 */
+/* 首页 hero 也回到 ueno 的系统无衬线 */
 .home-intro-eyebrow { color: var(--color-text-muted); }
-.home-intro-title { font-family: var(--font-serif); font-size: 38px; font-weight: 600; line-height: 1.28; letter-spacing: .01em; }
+.home-intro-title { font-family: var(--font-sans); font-size: 38px; font-weight: 600; line-height: 1.28; letter-spacing: -.01em; }
 .home-lead { color: var(--color-text-muted); font-size: 17px; font-weight: 300; line-height: 1.7; }
 .fact-num { font-family: var(--font-sans); font-size: 22px; font-weight: 600; }
 .fact-label { color: var(--color-text-muted); }
@@ -677,61 +677,11 @@ button { font: inherit; }
 }
 
 
-/* ============================================================================
-   ueno 文章页：左侧通栏封面
-   ----------------------------------------------------------------------------
-   .entry-cover 是固定定位的 380px 竖图，.entry-main 是右栏正文；
-   .entry-page.has-cover 用 padding-left 把正文整体推开。
-   封面顶部是站名（有封面时全站导航收起，这是唯一的回退入口），
-   底部叠分类标签，靠一层自上而下的渐变保证白字可读。
-   ============================================================================ */
+/* 文章页与列表页共用同一条 680px 阅读轴，不再因有无封面切换壳层。 */
+.article-shell { padding-bottom: var(--space-6); }
+.article-header { margin-bottom: 0; }
 
-.entry-page { display: block; }
-.entry-page.has-cover { padding-left: 380px; }
-
-.entry-cover {
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  width: 380px;
-  overflow: hidden;
-  background: var(--color-bg-surface);
-}
-.entry-cover_image { object-fit: cover; }
-
-.entry-cover .site-nav {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  z-index: 2;
-  padding: 28px 30px 44px;
-  background-image: linear-gradient(to bottom, rgba(0, 0, 0, .2), rgba(0, 0, 0, 0));
-}
-.entry-cover .site-link { color: rgba(255, 255, 255, .98); font-size: 15px; font-weight: 600; letter-spacing: .02em; }
-.entry-cover .site-link:hover { opacity: .8; }
-
-.entry-head {
-  position: absolute;
-  left: 0; bottom: 0;
-  z-index: 2;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 80px 30px 60px;
-  line-height: 1.2;
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, .03) 26%, rgba(0, 0, 0, .4) 71%, rgba(0, 0, 0, .5));
-}
-.entry-tags a { display: inline-block; padding: 6px 10px; background: rgba(255, 255, 255, .18); color: rgba(255, 255, 255, .97); font-size: 12px; font-weight: 600; letter-spacing: .06em; }
-.entry-tags a::before { content: "#"; }
-.entry-tags a:hover { background: rgba(255, 255, 255, .3); }
-
-.entry-main { min-width: 0; }
-.entry-main .inner { max-width: 680px; margin: 0 auto; padding: 0 2.4rem; }
-
-/* 有封面时整页让位：收起左栏、去掉主栏的宽度限制与上下内边距 */
-body:has(.entry-cover) .site-sidebar { display: none; }
-body:has(.entry-cover) .site-frame { max-width: none; }
-body:has(.entry-cover) .site-content { padding: 0; }
-body:has(.entry-cover) .entry-main .inner { padding-top: 80px; padding-bottom: 40px; }
-
-/* 文章页日期条 —— 对齐 ueno 的 .entry-meta（下方 48×3px 强调短线） */
+/* 日期条下方用 48×3px 短线作为唯一的强调符号。 */
 .entry-meta {
   position: relative;
   display: flex;
@@ -745,27 +695,12 @@ body:has(.entry-cover) .entry-main .inner { padding-top: 80px; padding-bottom: 4
   letter-spacing: .04em;
 }
 .entry-meta::after { content: ""; position: absolute; bottom: 0; left: 0; width: 48px; border-bottom: 3px solid var(--color-accent); }
+.entry-meta span { color: var(--color-text-hint); font-weight: 400; }
 .entry-meta a { color: var(--color-text-muted); }
 .entry-meta a:hover { color: var(--color-accent); }
 
-/* 1100px 以下：封面回到文档流（16:9 横幅），左栏恢复成整宽堆叠 —— 导航始终可用，但不重复 */
-@media (max-width: 1100px) {
-  body:has(.entry-cover) .site-sidebar { display: block; }
-  body:has(.entry-cover) .site-frame { max-width: 1280px; }
-  body:has(.entry-cover) .site-content { padding: 40px 0; }
-  body:has(.entry-cover) .entry-main .inner { padding-top: 0; padding-bottom: 0; }
-
-  .entry-page.has-cover { padding-left: 0; }
-  .entry-cover { position: relative; width: 100%; height: 0; padding-bottom: 56%; }
-  .entry-cover .site-nav { padding: 20px 22px 40px; }
-  .entry-head { padding: 80px 22px 34px; }
-}
-
-/* 860px 以下顶栏回来了，文章页不再重复一份侧栏；封面用 ueno 的 4:3 竖图比例 */
 @media (max-width: 860px) {
-  body:has(.entry-cover) .site-sidebar { display: none; }
-  .entry-cover { padding-bottom: 133%; }
-  /* ueno 的移动端字号：标题 38→32、导语 22→20 */
   .article-title { font-size: 30px; }
   .article-lead { font-size: 19px; }
+  .article-cover { aspect-ratio: 4 / 3; margin: 1.5em 0; }
 }

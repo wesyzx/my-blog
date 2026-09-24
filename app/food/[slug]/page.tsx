@@ -56,7 +56,7 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
 
         {post.cover && (
           <div className="article-cover">
-            <Image src={post.cover} alt={post.title} fill priority sizes="(max-width: 760px) 100vw, 720px" />
+            <Image src={post.cover} alt={post.title} fill fetchPriority="high" sizes="(max-width: 760px) 100vw, 720px" />
           </div>
         )}
 

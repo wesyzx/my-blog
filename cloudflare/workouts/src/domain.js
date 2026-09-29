@@ -15,6 +15,11 @@ const ACTIVITY_TYPES = new Map([
   ['walk', 'Walk'],
   ['walking', 'Walk'],
   ['hkworkoutactivitytypewalking', 'Walk'],
+  ['stairs', 'Stairs'],
+  ['stairclimbing', 'Stairs'],
+  ['stair-climbing', 'Stairs'],
+  ['stair_climbing', 'Stairs'],
+  ['hkworkoutactivitytypestairclimbing', 'Stairs'],
   ['workout', 'Workout'],
 ])
 

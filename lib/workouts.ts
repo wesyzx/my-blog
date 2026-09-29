@@ -3,7 +3,7 @@ import { cache } from 'react'
 
 export interface NormalizedActivity {
   id: string
-  type: 'Run' | 'Ride' | 'Swim' | 'Hike' | 'Walk' | 'Workout'
+  type: 'Run' | 'Ride' | 'Swim' | 'Hike' | 'Walk' | 'Stairs' | 'Workout'
   startedAt: string
   distanceMeters: number
   durationSeconds: number
@@ -38,7 +38,7 @@ export interface WorkoutsDataContract {
   activities: NormalizedActivity[]
 }
 
-const ACTIVITY_TYPES = new Set<NormalizedActivity['type']>(['Run', 'Ride', 'Swim', 'Hike', 'Walk', 'Workout'])
+const ACTIVITY_TYPES = new Set<NormalizedActivity['type']>(['Run', 'Ride', 'Swim', 'Hike', 'Walk', 'Stairs', 'Workout'])
 
 function emptyData(): WorkoutsDataContract {
   return { schemaVersion: 1, lastUpdated: new Date().toISOString(), summary: {}, heatmap: [], activities: [] }

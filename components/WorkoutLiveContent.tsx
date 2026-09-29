@@ -35,6 +35,20 @@ function formatDate(isoStr: string) {
   }).format(date)
 }
 
+const ACTIVITY_LABELS: Record<NormalizedActivity['type'], string> = {
+  Run: '跑步',
+  Ride: '骑行',
+  Swim: '游泳',
+  Hike: '徒步',
+  Walk: '步行',
+  Stairs: '爬楼',
+  Workout: '训练',
+}
+
+function activityLabel(type: NormalizedActivity['type']) {
+  return ACTIVITY_LABELS[type] ?? type
+}
+
 function daysInYear(year: number) {
   const days: string[] = []
   const current = new Date(Date.UTC(year, 0, 1))
@@ -131,7 +145,7 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
         <section className="workout-section" aria-labelledby="latest-route-title">
           <div className="workout-section-heading">
             <h2 id="latest-route-title">LATEST ROUTE / 最近路线</h2>
-            <span>{latestActivityWithRoute.type} · {(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} KM</span>
+            <span>{activityLabel(latestActivityWithRoute.type)} · {(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} KM</span>
           </div>
           <WorkoutMap route={latestActivityWithRoute.route} className="workout-map" />
         </section>
@@ -147,7 +161,7 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
             {recentActivities.map((activity: NormalizedActivity) => (
               <article key={activity.id} className="workout-row">
                 <div className="workout-row-title">
-                  <strong>{activity.type}</strong>
+                  <strong>{activityLabel(activity.type)}</strong>
                   <time dateTime={activity.startedAt}>{formatDate(activity.startedAt)}</time>
                 </div>
                 <dl>

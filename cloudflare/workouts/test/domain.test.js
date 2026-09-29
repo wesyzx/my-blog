@@ -21,6 +21,17 @@ test('normalizes metrics, type aliases and calculates pace', () => {
   assert.equal(activity.pace, 300)
 })
 
+test('preserves stair climbing as a distinct activity type', () => {
+  const activity = normalizeActivity({
+    id: 'stairs-1',
+    type: 'stairs',
+    startedAt: NOW,
+    durationSeconds: 900,
+  }, 'apple-health', NOW)
+
+  assert.equal(activity.type, 'Stairs')
+})
+
 test('does not publish a route unless explicitly allowed', () => {
   const hidden = normalizeActivity({ id: 'a', startedAt: NOW, route: 'encoded-route' }, 'manual', NOW)
   const visible = normalizeActivity({ id: 'b', startedAt: NOW, route: 'encoded-route', publishRoute: true }, 'manual', NOW)

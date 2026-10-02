@@ -18,9 +18,7 @@ export default async function WorkoutsPage() {
   return (
     <div className="page-shell narrow animate-fade-up">
       <header className="page-header">
-        <div className="page-header-meta editorial-meta">WORKOUTS / 运动</div>
         <h1 className="page-title">运动</h1>
-        <p className="page-lead">在路上，也在认识自己的边界。</p>
       </header>
       <WorkoutLiveContent initialData={data} />
     </div>

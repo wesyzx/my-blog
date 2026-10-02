@@ -33,9 +33,7 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
   return (
     <div className="home-shell posts-shell animate-fade-up">
       <header className="page-header posts-page-header">
-        <div className="page-header-meta editorial-meta">WRITING / 文章归档</div>
         <h1 className="page-title">博文</h1>
-        <p className="page-lead">关于技术、生活与一路所见。这里是完整目录，按发布时间由近及远排列。</p>
       </header>
 
       <nav className="category-filter" aria-label="文章分类">
@@ -53,10 +51,6 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
       </nav>
 
       <section className="post-list" aria-label="文章列表">
-        <div className="post-list-header">
-          <span className="editorial-meta">ALL WRITING / 目录索引</span>
-          <span className="editorial-meta">{filtered.length} ESSAYS</span>
-        </div>
         {pagedPosts.length > 0 ? (
           pagedPosts.map((post, index) => (
             <PostCard key={`${post.slug}-${index}`} post={post} index={(page - 1) * POSTS_PER_PAGE + index} />

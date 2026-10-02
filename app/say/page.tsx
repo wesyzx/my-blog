@@ -4,6 +4,7 @@ import SayCommentsToggle from '@/components/SayCommentsToggle'
 import SafeMarkdown from '@/components/SafeMarkdown'
 import ImageLightbox from '@/components/ImageLightbox'
 import { createPageMetadata } from '@/lib/metadata'
+import { formatItemDate } from '@/lib/format'
 
 export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
 
@@ -12,44 +13,24 @@ export const metadata = createPageMetadata({ title: '短记', description: '零�
 // 缓存过期后仍然先返回旧内容、后台再刷新，所以新增要等一会儿、删除更要刷新两次才消失。
 // 改成每次请求都重新渲染，发出去的响应头变成 no-store，CDN 不再缓存。
 export const dynamic = 'force-dynamic'
-const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png'
-
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr)
-  return Number.isNaN(date.getTime()) ? '时间待定' : new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }).format(date)
-}
 
 export default async function SayPage() {
   const says = await getAllSays()
   return (
     <div className="page-shell narrow animate-fade-up">
       <header className="page-header">
-        <div className="page-header-meta editorial-meta">FRAGMENTS / 随笔微语</div>
         <h1 className="page-title">短记</h1>
-        <p className="page-lead">零碎的思考、瞬间的感悟，以及生活的日常。</p>
       </header>
 
       {says.length === 0 ? (
         <div className="empty-state">暂时没有可显示的短记。</div>
       ) : (
-        <div className="say-timeline">
+        <div className="note-list">
           {says.map((say) => (
-            <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="say-item">
-              <div className="say-author">
-                <Image
-                  src={AUTHOR_AVATAR}
-                  alt="Can Chou"
-                  width={40}
-                  height={40}
-                  className="say-avatar"
-                />
-                <div className="say-author-info">
-                  <strong>Can Chou</strong>
-                  <time dateTime={say.date}>{formatDate(say.date)}</time>
-                </div>
-              </div>
+            <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="note-item">
+              <time className="item-time" dateTime={say.date}>{formatItemDate(say.date)}</time>
 
-              <div className="say-content">
+              <div className="note-content">
                 <SafeMarkdown source={say.content} />
               </div>
 
@@ -71,7 +52,7 @@ export default async function SayPage() {
                 </ImageLightbox>
               )}
 
-              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`短记 ${formatDate(say.date)}`} />
+              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`短记 ${formatItemDate(say.date)}`} />
             </article>
           ))}
         </div>

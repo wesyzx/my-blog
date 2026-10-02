@@ -704,3 +704,122 @@ button { font: inherit; }
   .article-lead { font-size: 19px; }
   .article-cover { aspect-ratio: 4 / 3; margin: 1.5em 0; }
 }
+
+/* ============================================================================
+   Ueno 内容流
+   首页不再另设 hero 或“站点说明”，打开后直接阅读最新内容；相册列表采用
+   Moments 式的日期 + 标题 + 照片组。功能性栏目仍沿用同一条 680px 阅读轴。
+   ============================================================================ */
+
+.home-shell {
+  width: min(100%, calc(var(--content-width) + var(--content-gutter) * 2));
+  margin: 0 auto;
+  padding: 0 var(--content-gutter) var(--space-6);
+}
+
+.home-stream > * + * { border-top: 1px solid var(--gray-a3); }
+.home-stream .item:first-of-type { padding-top: 0; }
+.home-stream .item-cover + .item-cover,
+.home-stream .item + .item { border-top-color: var(--gray-a3); }
+
+/* 参考站侧栏是一组连续链接，而不是后台式分组菜单。 */
+.sidebar-nav { margin-top: 30px; }
+.sidebar-links { display: flex; flex-direction: column; align-items: flex-start; }
+.sidebar-links a {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: .4em 0;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  transition: color .2s ease;
+}
+.sidebar-links a svg { width: 15px; height: 15px; opacity: .4; transition: opacity .2s ease; }
+.sidebar-links a:hover,
+.sidebar-links a.active { color: var(--color-accent); }
+.sidebar-links a:hover svg,
+.sidebar-links a.active svg { opacity: .9; }
+
+/* Moments：标题与图片属于同一个叙事块，照片本身承担视觉层级。 */
+.moment-list { margin-top: -4px; }
+.moment-item { padding: 20px 0 40px; }
+.moment-item:first-child { padding-top: 0; }
+.moment-item + .moment-item { border-top: 1px solid var(--gray-a3); }
+.moment-title {
+  margin: 4px 0 14px;
+  color: var(--color-text-primary);
+  font-size: 26px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+.moment-title a:hover { color: var(--color-accent); }
+.moment-excerpt {
+  margin: -6px 0 18px;
+  color: var(--color-text-muted);
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.55;
+}
+.moment-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.moment-photo {
+  position: relative;
+  display: block;
+  grid-column: span 3;
+  min-width: 0;
+  aspect-ratio: 1.15 / 1;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-bg-surface);
+}
+.moment-photo:nth-child(n + 5) { grid-column: span 4; aspect-ratio: 1.45 / 1; }
+.moment-photo img { object-fit: cover; transition: transform .35s ease, opacity .2s ease; }
+.moment-grid:hover .moment-photo img { opacity: .9; }
+.moment-photo:hover img { opacity: 1; transform: scale(1.015); }
+.moment-count-1 .moment-photo { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+.moment-count-2 .moment-photo { grid-column: span 6; aspect-ratio: 4 / 3; }
+.moment-count-3 .moment-photo { grid-column: span 4; aspect-ratio: 4 / 3; }
+
+/* 短记是个人随笔，不模拟社交网络时间线；日期、正文、图片直接构成条目。 */
+.note-item { padding: 20px 0 40px; }
+.note-item:first-child { padding-top: 0; }
+.note-item + .note-item { border-top: 1px solid var(--gray-a3); }
+.note-content { margin-top: 8px; }
+.note-content .safe-markdown p {
+  color: var(--color-text-primary);
+  font-size: 20px;
+  font-weight: 300;
+  line-height: 1.58;
+}
+.note-content .safe-markdown p:last-child { margin-bottom: 0; }
+.note-item .say-images { margin-top: 20px; }
+
+/* 博文页标题之后直接进入索引，减少重复的栏目说明。 */
+.posts-page-header { margin-bottom: 0; }
+.posts-shell .category-filter { border-top: 0; }
+.posts-shell .post-list { margin-top: 20px; }
+
+@media (max-width: 1100px) and (min-width: 861px) {
+  .sidebar-links { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px 22px; }
+  .sidebar-links a { margin: 0; }
+}
+
+@media (max-width: 860px) {
+  .home-shell { padding: 0 20px var(--space-6); }
+  .moment-title { font-size: 21px; }
+  .note-content .safe-markdown p { font-size: 17px; }
+  .moment-photo,
+  .moment-photo:nth-child(n + 5) { grid-column: span 6; aspect-ratio: 4 / 3; }
+  .moment-count-1 .moment-photo { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+  .moment-count-3 .moment-photo:last-child { grid-column: 1 / -1; aspect-ratio: 16 / 9; }
+}
+
+@media (max-width: 400px) {
+  .home-shell { padding-left: 16px; padding-right: 16px; }
+  .moment-grid { gap: 5px; }
+}

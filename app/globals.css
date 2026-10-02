@@ -110,7 +110,10 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}
 body { min-height: 100svh; margin: 0; display: flex; flex-direction: column; font-family: var(--font-zh); background: var(--color-bg-page); color: var(--color-text-secondary); line-height: 1.75; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
 /* 原先 body > main 上有一层 56px 淡绿网格纹理，已按「颜色归零」删除：
    背景不加图案，温度由照片和强调色承担。 */

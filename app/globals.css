@@ -187,7 +187,7 @@ button { font: inherit; }
 .pagination a { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-secondary); transition: color .15s ease; }
 .pagination a:hover { color: var(--color-accent); }
 .pagination svg { width: 14px; height: 14px; }
-.empty-state { padding: 70px 20px; text-align: center; color: var(--color-text-muted); }
+.empty-state { padding: 36px 0 44px; border-bottom: 1px solid var(--gray-a3); color: var(--color-text-muted); font-size: 14px; text-align: left; }
 
 .about-profile { display: flex; align-items: center; gap: 24px; padding: var(--space-2) 0; }
 .about-avatar-wrap { flex-shrink: 0; display: inline-flex; }
@@ -240,8 +240,9 @@ button { font: inherit; }
 .gallery-back { margin-top: var(--space-5); }
 
 .food-section + .food-section { margin-top: var(--space-6); }
-.section-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.section-header-row { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--gray-a3); }
 .section-header-row .section-title { margin: 0; }
+.section-note { flex-shrink: 0; color: var(--color-text-muted); font-size: 11px; font-weight: 500; letter-spacing: .04em; }
 .food-map { width: 100%; height: 440px; background: var(--color-bg-surface); }
 .food-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px 20px; }
 .food-cover { aspect-ratio: 4 / 3; }
@@ -282,11 +283,13 @@ button { font: inherit; }
 .page-shell.narrow { width: min(100%, 680px); }
 /* 页面标题区 —— 对齐 ueno 的 .main_mark + .main_head：
    左侧 4px 强调竖条（80px 高），标题 32px/600，底部一条细线。 */
-.page-header { position: relative; margin-bottom: 2em; padding: 0 0 1em 24px; border-bottom: 1px solid var(--gray-a4); }
-.page-header::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 80px; background: var(--color-accent); }
+.page-header { position: relative; margin-bottom: 2em; padding: 0 0 1em; border-bottom: 1px solid var(--gray-a4); }
+/* Ueno 的标记位于 680px 阅读栏之外的 80px 内边距中，而不是贴着标题。 */
+.page-header::before { content: ""; position: absolute; top: 0; left: calc(-1 * var(--content-gutter)); width: 4px; height: 80px; background: var(--color-accent); }
 .page-header-row { display: flex; align-items: center; gap: 14px; }
+.page-kicker { margin: 0 0 5px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
-.section-title { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 19px; font-weight: 600; }
+.section-title { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 13px; font-weight: 600; letter-spacing: .08em; }
 .section-title svg { width: 18px; height: 18px; color: var(--color-accent); }
 .flat-panel { border: 1px solid var(--color-border-hairline); border-radius: var(--radius-image); overflow: hidden; background: var(--color-bg-card); }
 .content-divider { height: 1px; margin: 40px 0; background: var(--color-border-hairline); }
@@ -446,13 +449,13 @@ button { font: inherit; }
 .posts-page-header { margin-bottom: var(--space-4); }
 .posts-shell .category-filter { margin-top: 0; }
 
-.category-filter { display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-5); padding: var(--space-2) 0; border-top: 1px solid var(--color-border-hairline); border-bottom: 1px solid var(--color-border-hairline); }
-.category-label { flex-shrink: 0; color: var(--color-text-hint); font-size: 11px; }
-.category-links { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.category-filter { display: flex; align-items: center; gap: 24px; margin-top: var(--space-5); padding: 0 0 14px; border-bottom: 1px solid var(--color-border-hairline); }
+.category-label { flex-shrink: 0; color: var(--color-text-muted); font-size: 12px; font-weight: 500; }
+.category-links { display: flex; align-items: center; gap: 20px; overflow-x: auto; scrollbar-width: none; }
 .category-links::-webkit-scrollbar { display: none; }
-.category-links a { flex: 0 0 auto; padding: 4px 10px; border-radius: var(--radius-editorial); color: var(--color-text-muted); font-size: 12px; transition: color .15s ease; }
+.category-links a { flex: 0 0 auto; padding: 0 0 3px; border-bottom: 2px solid transparent; color: var(--color-text-muted); font-size: 12px; transition: color .15s ease, border-color .15s ease; }
 .category-links a:hover { color: var(--color-text-primary); }
-.category-links a.active { color: var(--color-accent); font-weight: 500; background: var(--color-accent-subtle); }
+.category-links a.active { border-bottom-color: var(--color-accent); color: var(--color-text-primary); font-weight: 600; }
 
 .workouts-content { display: flex; flex-direction: column; gap: var(--space-6); }
 .workout-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--color-border-hairline); }
@@ -509,6 +512,7 @@ button { font: inherit; }
   .sidebar-social { justify-content: center; margin-bottom: 0; }
   .site-content { padding: 40px 0; }
   .home-shell, .page-shell, .page-shell.narrow { padding: 0 24px; }
+  .page-header::before { display: none; }
 }
 
 /* 860px 以下：左栏整体隐藏，交给顶栏 + 抽屉（保留原有可访问性实现） */
@@ -660,7 +664,7 @@ button { font: inherit; }
 .footer-stats strong { color: var(--color-text-primary); font-weight: 600; }
 
 /* 区块小标题 */
-.section-title { font-size: 17px; font-weight: 600; }
+.section-title { font-size: 13px; font-weight: 600; }
 .section-title svg { color: var(--color-text-muted); }
 
 /* 中文强调用点着重号，不用伪斜体；中英混排自动留白 */
@@ -799,10 +803,10 @@ button { font: inherit; }
 .note-content .safe-markdown p:last-child { margin-bottom: 0; }
 .note-item .say-images { margin-top: 20px; }
 
-/* 博文页标题之后直接进入索引，减少重复的栏目说明。 */
-.posts-page-header { margin-bottom: 0; }
-.posts-shell .category-filter { border-top: 0; }
-.posts-shell .post-list { margin-top: 20px; }
+/* 博文页：无实际分类时组件不渲染筛选；有分类时作为独立文字导航。 */
+.posts-page-header { margin-bottom: 24px; }
+.posts-shell .category-filter { margin-top: 0; }
+.posts-shell .post-list { margin-top: 0; }
 
 @media (max-width: 1100px) and (min-width: 861px) {
   .sidebar-links { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 4px 22px; }

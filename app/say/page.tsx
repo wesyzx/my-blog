@@ -5,6 +5,7 @@ import SafeMarkdown from '@/components/SafeMarkdown'
 import ImageLightbox from '@/components/ImageLightbox'
 import { createPageMetadata } from '@/lib/metadata'
 import { formatItemDate } from '@/lib/format'
+import PageHeader from '@/components/PageHeader'
 
 export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
 
@@ -18,9 +19,7 @@ export default async function SayPage() {
   const says = await getAllSays()
   return (
     <div className="page-shell narrow animate-fade-up">
-      <header className="page-header">
-        <h1 className="page-title">短记</h1>
-      </header>
+      <PageHeader title="短记" />
 
       {says.length === 0 ? (
         <div className="empty-state">暂时没有可显示的短记。</div>

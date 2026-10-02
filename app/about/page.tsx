@@ -4,6 +4,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAboutContent } from '@/lib/about'
 import { createPageMetadata } from '@/lib/metadata'
 import Icon from '@/components/Icon'
+import PageHeader from '@/components/PageHeader'
 
 export const metadata = createPageMetadata({ title: '关于', description: '关于轨道之外和 Can Chou。', path: '/about' })
 
@@ -13,9 +14,7 @@ export const dynamic = 'force-dynamic'
 export default function AboutPage() {
   return (
     <div className="page-shell narrow animate-fade-up">
-      <header className="page-header">
-        <h1 className="page-title">关于</h1>
-      </header>
+      <PageHeader title="关于" />
       <section className="about-profile">
         <div className="about-avatar-wrap">
           <Image src="https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png" alt="Can Chou" width={84} height={84} fetchPriority="high" />

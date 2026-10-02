@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getAllCategories, getAllPosts } from '@/lib/posts'
 import PostCard from '@/components/PostCard'
 import Icon from '@/components/Icon'
+import PageHeader from '@/components/PageHeader'
 import { createPageMetadata } from '@/lib/metadata'
 
 const POSTS_PER_PAGE = 10
@@ -32,23 +33,23 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="home-shell posts-shell animate-fade-up">
-      <header className="page-header posts-page-header">
-        <h1 className="page-title">博文</h1>
-      </header>
+      <PageHeader title="博文" className="posts-page-header" />
 
-      <nav className="category-filter" aria-label="文章分类">
-        <span className="category-label editorial-meta">INDEX</span>
-        <div className="category-links">
-          {categories.map((item) => {
-            const value = item === '全部' ? '' : item
-            return (
-              <Link key={item} href={value ? `/posts?category=${encodeURIComponent(value)}` : '/posts'} className={category === value ? 'active' : ''}>
-                {item}
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
+      {categories.length > 1 && (
+        <nav className="category-filter" aria-label="文章分类">
+          <span className="category-label">分类</span>
+          <div className="category-links">
+            {categories.map((item) => {
+              const value = item === '全部' ? '' : item
+              return (
+                <Link key={item} href={value ? `/posts?category=${encodeURIComponent(value)}` : '/posts'} className={category === value ? 'active' : ''}>
+                  {item}
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+      )}
 
       <section className="post-list" aria-label="文章列表">
         {pagedPosts.length > 0 ? (

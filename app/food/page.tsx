@@ -15,9 +15,7 @@ export default async function FoodPage() {
   return (
     <div className="page-shell animate-fade-up">
       <header className="page-header">
-        <div className="page-header-meta editorial-meta">JOURNEY / 美食探访</div>
         <h1 className="page-title">美食地图</h1>
-        <p className="page-lead">记录探访过的美食，用味蕾丈量这座城市。</p>
       </header>
       <section className="food-section">
         <h2 className="section-title"><Icon name="map" />探店地图</h2>

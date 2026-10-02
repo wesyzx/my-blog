@@ -14,9 +14,7 @@ export default function AboutPage() {
   return (
     <div className="page-shell narrow animate-fade-up">
       <header className="page-header">
-        <div className="page-header-meta editorial-meta">COLOPHON / 关于</div>
         <h1 className="page-title">关于</h1>
-        <p className="page-lead">轨道之外时间，慢慢记录，用心感受。</p>
       </header>
       <section className="about-profile">
         <div className="about-avatar-wrap">

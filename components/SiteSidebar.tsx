@@ -16,34 +16,15 @@ import Icon, { type IconName } from './Icon'
  */
 const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png?imageMogr2/thumbnail/240x/quality/80/format/webp'
 
-const groups: Array<{ label: string; items: Array<{ label: string; href: string; icon: IconName }> }> = [
-  {
-    label: '首页',
-    items: [
-      { label: '近况', href: '/', icon: 'orbit' },
-    ],
-  },
-  {
-    label: '抽屉',
-    items: [
-      { label: '博文', href: '/posts', icon: 'post' },
-      { label: '短记', href: '/say', icon: 'say' },
-    ],
-  },
-  {
-    label: '途中',
-    items: [
-      { label: '美食', href: '/food', icon: 'food' },
-      { label: '相册', href: '/gallery', icon: 'gallery' },
-      { label: '运动', href: '/workouts', icon: 'activity' },
-    ],
-  },
-  {
-    label: '交流',
-    items: [
-      { label: '留言', href: '/message', icon: 'message' },
-    ],
-  },
+const links: Array<{ label: string; href: string; icon: IconName }> = [
+  { label: '首页', href: '/', icon: 'orbit' },
+  { label: '博文', href: '/posts', icon: 'post' },
+  { label: '短记', href: '/say', icon: 'say' },
+  { label: '相册', href: '/gallery', icon: 'gallery' },
+  { label: '美食', href: '/food', icon: 'food' },
+  { label: '运动', href: '/workouts', icon: 'activity' },
+  { label: '留言', href: '/message', icon: 'message' },
+  { label: '关于', href: '/about', icon: 'about' },
 ]
 
 export default function SiteSidebar() {
@@ -66,8 +47,6 @@ export default function SiteSidebar() {
   }
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
-  const isAboutActive = isActive('/about')
-
   return (
     <aside className="site-sidebar" aria-label="站点导航">
       <div className="sidebar-inner">
@@ -80,37 +59,22 @@ export default function SiteSidebar() {
         </Link>
 
         <nav className="sidebar-nav">
-          {groups.map((group) => (
-            <section className="sidebar-group" key={group.label}>
-              <p>{group.label}</p>
-              {group.items.map((item) => {
-                const active = isActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={active ? 'active' : ''}
-                    aria-current={active ? 'page' : undefined}
-                  >
-                    <Icon name={item.icon} />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </section>
-          ))}
-
-          {/* 独立一级导航：关于 */}
-          <section className="sidebar-group sidebar-standalone">
-            <Link
-              href="/about"
-              className={isAboutActive ? 'active' : ''}
-              aria-current={isAboutActive ? 'page' : undefined}
-            >
-              <Icon name="about" />
-              <span>关于</span>
-            </Link>
-          </section>
+          <div className="sidebar-links">
+            {links.map((item) => {
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={active ? 'active' : ''}
+                  aria-current={active ? 'page' : undefined}
+                >
+                  <Icon name={item.icon} />
+                  <span>{item.label}</span>
+                </Link>
+              )
+            })}
+          </div>
         </nav>
 
         <div className="sidebar-foot">

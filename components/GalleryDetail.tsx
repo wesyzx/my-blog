@@ -9,7 +9,9 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import 'yet-another-react-lightbox/styles.css'
 import 'react-photo-album/styles.css'
 import type { GalleryItem } from '@/lib/gallery'
+import { formatItemDate } from '@/lib/format'
 import Icon from './Icon'
+import PageHeader from './PageHeader'
 
 export default function GalleryDetail({ album }: { album: GalleryItem }) {
   const [index, setIndex] = useState(-1)
@@ -17,11 +19,7 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
 
   return (
     <div className="page-shell animate-fade-up">
-      <header className="page-header">
-        <div className="page-header-meta editorial-meta">PORTFOLIO / 相册详情</div>
-        <h1 className="page-title">{album.title}</h1>
-        {album.excerpt && <p className="page-lead">{album.excerpt}</p>}
-      </header>
+      <PageHeader title={album.title} eyebrow={formatItemDate(album.date)} description={album.excerpt} />
       {photos.length > 0 ? (
         <PhotoAlbum
           layout="rows"

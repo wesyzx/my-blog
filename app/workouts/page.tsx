@@ -1,6 +1,7 @@
 import { getWorkoutsData } from '@/lib/workouts'
 import { createPageMetadata } from '@/lib/metadata'
 import WorkoutLiveContent from '@/components/WorkoutLiveContent'
+import PageHeader from '@/components/PageHeader'
 
 // Workout data is written independently by the HealthKit sync flow. Render this
 // route at request time so a build cannot freeze an empty snapshot into HTML.
@@ -17,9 +18,7 @@ export default async function WorkoutsPage() {
 
   return (
     <div className="page-shell narrow animate-fade-up">
-      <header className="page-header">
-        <h1 className="page-title">运动</h1>
-      </header>
+      <PageHeader title="运动" />
       <WorkoutLiveContent initialData={data} />
     </div>
   )

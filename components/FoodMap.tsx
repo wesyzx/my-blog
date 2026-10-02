@@ -130,14 +130,13 @@ export default function FoodMap({ posts }: { posts: FoodMeta[] }) {
   if (TMAP_KEY_MISSING) {
     return (
       <div className="map-key-notice">
-        <p><strong>地图需要配置腾讯位置服务的 Key</strong></p>
-        <p>去腾讯位置服务控制台创建应用并申请 <em>Web 端 (JavaScript API GL)</em> 类型的 Key，然后写入环境变量 <code>NEXT_PUBLIC_TMAP_KEY</code>（本地写在 <code>.env.local</code>，线上在 EdgeOne 的构建环境变量里配置）。</p>
-        <p>记得在控制台配置 Referer 白名单，填上站点域名。</p>
+        <p><strong>地图暂时无法显示</strong></p>
+        <p>仍可在下方浏览全部探店记录。</p>
       </div>
     )
   }
 
-  if (error) return <div className="map-key-notice"><p>{error}</p></div>
+  if (error) return <div className="map-key-notice"><p>地图暂时无法显示，仍可在下方浏览全部探店记录。</p></div>
 
   return <div ref={containerRef} className="food-map" />
 }

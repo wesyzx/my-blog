@@ -21,13 +21,17 @@ export default function VisitorStats({ pageKeys }: { pageKeys: string[] }) {
     const siteName = encodeURIComponent('轨道之外')
 
     fetch(`${SERVER}/api/v2/pages/pv`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ page_key: pathname, page_title: document.title, site_name: '轨道之外' }), signal: controller.signal,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page_key: pathname, page_title: document.title, site_name: '轨道之外' }),
+      signal: controller.signal,
     }).catch(() => undefined)
 
     const keys = pageKeys.map(encodeURIComponent).join(',')
     fetch(`${SERVER}/api/v2/stats/page_pv?page_keys=${keys}&site_name=${siteName}`, { signal: controller.signal })
-      .then((response) => response.json()).then((data: unknown) => setSitePv(sumPageViews(data))).catch(() => undefined)
+      .then((response) => response.json())
+      .then((data: unknown) => setSitePv(sumPageViews(data)))
+      .catch(() => undefined)
 
     return () => controller.abort()
   }, [pageKeys, pathname])

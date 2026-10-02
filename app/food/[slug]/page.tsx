@@ -5,16 +5,9 @@ import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllFoodPosts, getFoodPostBySlug } from '@/lib/food'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
+import ImageLightbox from '@/components/ImageLightbox'
 import Icon from '@/components/Icon'
-
-function formatEditorialDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '日期待定'
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}.${month}.${day}`
-}
+import { formatItemDate } from '@/lib/format'
 
 export async function generateStaticParams() { return (await getAllFoodPosts()).map((post) => ({ slug: post.slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -35,12 +28,10 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
       <article className="article-detail food-detail">
         <header className="article-header">
           <div className="article-meta-top">
-            <Link href="/food" className="article-category editorial-meta">
-              JOURNEY / 美食地图
-            </Link>
+            <Link href="/food" className="article-category">美食地图</Link>
             <span className="editorial-meta-sep" aria-hidden="true">/</span>
-            <time className="article-date editorial-meta" dateTime={post.date}>
-              {formatEditorialDate(post.date)}
+            <time className="article-date" dateTime={post.date}>
+              {formatItemDate(post.date)}
             </time>
           </div>
 
@@ -68,18 +59,20 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
 
         {post.images.length > 1 && (
           <section className="detail-gallery">
-            <h2 className="section-title"><Icon name="image" />更多图片</h2>
-            <div>
+            <h2 className="section-title">更多图片</h2>
+            <ImageLightbox>
               {post.images.slice(1).map((src, index) => (
-                <Image key={src} src={src} alt={`${post.title} 图片 ${index + 2}`} width={360} height={270} />
+                <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
+                  <Image src={src} alt={`${post.title} 图片 ${index + 2}`} width={360} height={270} data-lightbox-src={src} />
+                </a>
               ))}
-            </div>
+            </ImageLightbox>
           </section>
         )}
       </article>
 
       <section className="comments-section">
-        <h2 className="section-title"><Icon name="comment" />评论</h2>
+        <h2 className="section-title">评论</h2>
         <ArtalkComments pageKey={`/food/${post.slug}`} pageTitle={post.title} />
       </section>
 

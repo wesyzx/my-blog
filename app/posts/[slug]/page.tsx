@@ -78,7 +78,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       <nav className="post-nav" aria-label="上一篇与下一篇">
         {prevPost ? (
           <Link href={`/posts/${encodeURIComponent(prevPost.slug)}`} className="post-nav-item prev">
-            <span className="post-nav-label editorial-meta">← PREVIOUS</span>
+            <span className="post-nav-label">← 上一篇</span>
             <span className="post-nav-title">{prevPost.title}</span>
           </Link>
         ) : (
@@ -87,7 +87,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
         {nextPost ? (
           <Link href={`/posts/${encodeURIComponent(nextPost.slug)}`} className="post-nav-item next">
-            <span className="post-nav-label editorial-meta">NEXT →</span>
+            <span className="post-nav-label">下一篇 →</span>
             <span className="post-nav-title">{nextPost.title}</span>
           </Link>
         ) : (
@@ -96,10 +96,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       </nav>
 
       <section className="comments-section">
-        <h2 className="section-title">
-          <Icon name="comment" />
-          <span>评论</span>
-        </h2>
+        <h2 className="section-title">评论</h2>
         <ArtalkComments pageKey={`/posts/${post.slug}`} pageTitle={post.title} />
       </section>
 

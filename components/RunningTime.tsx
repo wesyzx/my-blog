@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const START_DATE = new Date('2025-09-25T00:00:00+08:00')
 
@@ -14,8 +14,8 @@ function calcElapsed() {
   return { days, hours, minutes, seconds }
 }
 
-function pad(n: number) {
-  return String(n).padStart(2, '0')
+function pad(value: number) {
+  return String(value).padStart(2, '0')
 }
 
 export default function RunningTime() {
@@ -28,23 +28,8 @@ export default function RunningTime() {
 
   return (
     <span suppressHydrationWarning>
-      本站已运行{' '}
-      <strong suppressHydrationWarning>
-        {elapsed.days}
-      </strong>{' '}
-      天{' '}
-      <strong suppressHydrationWarning>
-        {pad(elapsed.hours)}
-      </strong>{' '}
-      时{' '}
-      <strong suppressHydrationWarning>
-        {pad(elapsed.minutes)}
-      </strong>{' '}
-      分{' '}
-      <strong suppressHydrationWarning>
-        {pad(elapsed.seconds)}
-      </strong>{' '}
-      秒
+      本站已运行 <strong>{elapsed.days}</strong> 天 <strong>{pad(elapsed.hours)}</strong> 时{' '}
+      <strong>{pad(elapsed.minutes)}</strong> 分 <strong>{pad(elapsed.seconds)}</strong> 秒
     </span>
   )
 }

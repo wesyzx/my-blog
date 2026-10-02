@@ -4,36 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Icon from './Icon'
-
-const mobileGroups = [
-  {
-    label: '首页',
-    items: [
-      { label: '近况', href: '/', icon: 'orbit' as const },
-    ],
-  },
-  {
-    label: '抽屉',
-    items: [
-      { label: '博文', href: '/posts', icon: 'post' as const },
-      { label: '短记', href: '/say', icon: 'say' as const },
-    ],
-  },
-  {
-    label: '途中',
-    items: [
-      { label: '美食', href: '/food', icon: 'food' as const },
-      { label: '相册', href: '/gallery', icon: 'gallery' as const },
-      { label: '运动', href: '/workouts', icon: 'activity' as const },
-    ],
-  },
-  {
-    label: '交流',
-    items: [
-      { label: '留言', href: '/message', icon: 'message' as const },
-    ],
-  },
-]
+import { SITE_NAV_ITEMS } from './siteNavigation'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -107,16 +78,6 @@ export default function Header() {
             <span className="brand-icon" aria-hidden="true" /><span>轨道之外</span>
           </Link>
 
-          <nav className="desktop-nav desktop-section-nav" aria-label="栏目导航">
-            <Link href="/" className={pathname === '/' ? 'active' : ''}>首页</Link>
-            <Link href="/posts" className={pathname.startsWith('/posts') || pathname === '/say' ? 'active' : ''}>抽屉</Link>
-            <Link href="/gallery" className={pathname.startsWith('/gallery') || pathname.startsWith('/food') || pathname.startsWith('/workouts') ? 'active' : ''}>途中</Link>
-            <Link href="/about" className={pathname === '/about' ? 'active' : ''}>关于</Link>
-            <button type="button" className="icon-button" onClick={toggleTheme} aria-label={isDark ? '切换浅色模式' : '切换深色模式'}>
-              <Icon name={isDark ? 'sun' : 'moon'} />
-            </button>
-          </nav>
-
           <button ref={menuButtonRef} type="button" className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={menuOpen ? '关闭导航' : '打开导航'}>
             <Icon name={menuOpen ? 'close' : 'menu'} />
           </button>
@@ -126,34 +87,19 @@ export default function Header() {
       {menuOpen && (
         <div ref={mobileNavRef} id="mobile-navigation" className="mobile-nav" role="dialog" aria-modal="true" aria-label="站点导航">
           <nav aria-label="移动端导航">
-            {mobileGroups.map((group) => (
-              <div key={group.label} className="mobile-nav-group">
-                <p className="mobile-group-label">{group.label}</p>
-                {group.items.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className={isActive(item.href) ? 'active' : ''}
-                    aria-current={isActive(item.href) ? 'page' : undefined}
-                  >
-                    <span className="mobile-nav-icon"><Icon name={item.icon} /></span>
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
-              </div>
-            ))}
-
-            <div className="mobile-nav-group mobile-nav-standalone">
+            <div className="mobile-nav-list">
+              {SITE_NAV_ITEMS.map((item) => (
               <Link
-                href="/about"
+                key={item.href}
+                href={item.href}
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/about') ? 'active' : ''}
-                aria-current={isActive('/about') ? 'page' : undefined}
+                className={isActive(item.href) ? 'active' : ''}
+                aria-current={isActive(item.href) ? 'page' : undefined}
               >
-                <span className="mobile-nav-icon"><Icon name="about" /></span>
-                <span>关于</span>
+                <span className="mobile-nav-icon"><Icon name={item.icon} /></span>
+                <span>{item.label}</span>
               </Link>
+              ))}
             </div>
           </nav>
           <button type="button" className="mobile-theme-button" onClick={toggleTheme}><Icon name={isDark ? 'sun' : 'moon'} />{isDark ? '使用浅色模式' : '使用深色模式'}</button>

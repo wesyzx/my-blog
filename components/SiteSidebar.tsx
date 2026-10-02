@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Icon, { type IconName } from './Icon'
+import Icon from './Icon'
+import { SITE_NAV_ITEMS } from './siteNavigation'
 
 /**
  * 侧栏品牌图：作者头像（对齐 ueno 的 .side_logo，120px 方形）。
@@ -15,17 +16,6 @@ import Icon, { type IconName } from './Icon'
  *     再走一遍 Next 的图片优化器没有收益，也少一层远程抓取。
  */
 const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9790395.png?imageMogr2/thumbnail/240x/quality/80/format/webp'
-
-const links: Array<{ label: string; href: string; icon: IconName }> = [
-  { label: '首页', href: '/', icon: 'orbit' },
-  { label: '博文', href: '/posts', icon: 'post' },
-  { label: '短记', href: '/say', icon: 'say' },
-  { label: '相册', href: '/gallery', icon: 'gallery' },
-  { label: '美食', href: '/food', icon: 'food' },
-  { label: '运动', href: '/workouts', icon: 'activity' },
-  { label: '留言', href: '/message', icon: 'message' },
-  { label: '关于', href: '/about', icon: 'about' },
-]
 
 export default function SiteSidebar() {
   const pathname = usePathname()
@@ -60,7 +50,7 @@ export default function SiteSidebar() {
 
         <nav className="sidebar-nav">
           <div className="sidebar-links">
-            {links.map((item) => {
+            {SITE_NAV_ITEMS.map((item) => {
               const active = isActive(item.href)
               return (
                 <Link
@@ -78,15 +68,6 @@ export default function SiteSidebar() {
         </nav>
 
         <div className="sidebar-foot">
-          <div className="sidebar-social">
-            <a href="https://github.com/wesyzx" target="_blank" rel="noreferrer" aria-label="GitHub">
-              <Icon name="github" />
-            </a>
-            <a href="/rss.xml" aria-label="RSS 订阅">
-              <Icon name="rss" />
-            </a>
-          </div>
-
           <p className="sidebar-verse">苔花如米小<br />也学牡丹开</p>
 
           <button

@@ -1,4 +1,5 @@
 import ContentStream from '@/components/ContentStream'
+import ArchiveHeatmap from '@/components/ArchiveHeatmap'
 import PageHeader from '@/components/PageHeader'
 import { createPageMetadata } from '@/lib/metadata'
 import { getAllSiteUpdates, type SiteUpdate } from '@/lib/site-updates'
@@ -40,6 +41,7 @@ export default async function ArchivePage() {
   return (
     <div className="home-shell archive-shell animate-fade-up">
       <PageHeader title="归档" />
+      <ArchiveHeatmap updates={updates} />
       {groups.length > 0 ? groups.map(([year, months]) => (
         <section className="archive-year" aria-labelledby={`archive-${year}`} key={year}>
           <header className="archive-year-heading">

@@ -4,21 +4,14 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Icon from './Icon'
+import ThemeToggle from './ThemeToggle'
 import { SITE_NAV_ITEMS } from './siteNavigation'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [isDark, setIsDark] = useState(false)
   const menuButtonRef = useRef<HTMLButtonElement>(null)
   const mobileNavRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setIsDark(document.documentElement.dataset.theme === 'dark')
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
@@ -62,13 +55,6 @@ export default function Header() {
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
 
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    document.documentElement.dataset.theme = next ? 'dark' : 'light'
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-  }
-
   return (
     <>
       <header className="site-header">
@@ -102,7 +88,7 @@ export default function Header() {
               ))}
             </div>
           </nav>
-          <button type="button" className="mobile-theme-button" onClick={toggleTheme}><Icon name={isDark ? 'sun' : 'moon'} />{isDark ? '使用浅色模式' : '使用深色模式'}</button>
+          <ThemeToggle variant="mobile" />
         </div>
       )}
     </>

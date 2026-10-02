@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -19,22 +18,6 @@ const AUTHOR_AVATAR = 'https://img.guanyan.me/2026/05/fa7d85a90137299c295a3cdbe9
 
 export default function SiteSidebar() {
   const pathname = usePathname()
-  const [isDark, setIsDark] = useState(false)
-
-  // 桌面端顶栏已取消，主题切换搬到这里；逻辑与 Header 保持一致
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      setIsDark(document.documentElement.dataset.theme === 'dark')
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [])
-
-  const toggleTheme = () => {
-    const next = !isDark
-    setIsDark(next)
-    document.documentElement.dataset.theme = next ? 'dark' : 'light'
-    localStorage.setItem('theme', next ? 'dark' : 'light')
-  }
 
   const isActive = (href: string) => href === '/' ? pathname === '/' : pathname.startsWith(href)
   return (
@@ -69,16 +52,6 @@ export default function SiteSidebar() {
 
         <div className="sidebar-foot">
           <p className="sidebar-verse">苔花如米小<br />也学牡丹开</p>
-
-          <button
-            type="button"
-            className="sidebar-theme"
-            onClick={toggleTheme}
-            aria-label={isDark ? '切换浅色模式' : '切换深色模式'}
-          >
-            <Icon name={isDark ? 'sun' : 'moon'} />
-            <span>{isDark ? '浅色模式' : '深色模式'}</span>
-          </button>
         </div>
       </div>
     </aside>

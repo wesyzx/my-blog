@@ -129,7 +129,7 @@ export default function WorkoutMap({ route, className = '' }: { route?: string; 
   return (
     <div className={`workout-map-shell ${className}`}>
       {TMAP_KEY_MISSING ? (
-        <div className="map-key-notice"><p>轨迹地图需要配置 <code>NEXT_PUBLIC_TMAP_KEY</code>。</p></div>
+        <div className="map-key-notice"><p>轨迹地图暂时无法显示。</p></div>
       ) : error ? (
         <div className="map-key-notice"><p>{error}</p></div>
       ) : (

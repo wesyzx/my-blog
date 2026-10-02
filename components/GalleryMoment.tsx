@@ -12,14 +12,18 @@ function previewImages(album: GalleryMeta) {
  * Ueno 的 Moments 不是相册“卡片”，而是一段段由日期、标题和照片墙组成的记录。
  * 这里保留相册详情页入口，同时让照片在列表页就成为内容本身。
  */
-export default function GalleryMoment({ album }: { album: GalleryMeta }) {
+export default function GalleryMoment({ album, headingLevel = 'h2' }: { album: GalleryMeta; headingLevel?: 'h2' | 'h3' | 'h4' }) {
   const images = previewImages(album)
   const href = `/gallery/${encodeURIComponent(album.slug)}`
+  const Heading = headingLevel
 
   return (
     <article className="moment-item">
-      <time className="item-time" dateTime={album.date}>{formatItemDate(album.date)}</time>
-      <h2 className="moment-title"><Link href={href}>{album.title}</Link></h2>
+      <span className="stream-meta">
+        <time className="item-time" dateTime={album.date}>{formatItemDate(album.date)}</time>
+        <span>相册</span>
+      </span>
+      <Heading className="moment-title"><Link href={href}>{album.title}</Link></Heading>
       {album.excerpt && <p className="moment-excerpt">{album.excerpt}</p>}
 
       {images.length > 0 && (

@@ -68,8 +68,8 @@ function Heatmap({ data, year }: { data: HeatmapNode[]; year: number }) {
   return (
     <section className="workout-section" aria-labelledby="workout-heatmap-title">
       <div className="workout-section-heading">
-        <h2 id="workout-heatmap-title">YEAR IN MOTION / 年度热力图</h2>
-        <span>{activeDays} ACTIVE DAYS</span>
+        <h2 id="workout-heatmap-title">年度足迹</h2>
+        <span>{activeDays} 个运动日</span>
       </div>
       <div className="workout-heatmap-scroll" role="img" aria-label={`${year} 年共有 ${activeDays} 个运动日`}>
         <div className="workout-heatmap-grid" aria-hidden="true">
@@ -125,17 +125,17 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
 
   if (loading && !hasData(data)) return <div className="empty-state">正在读取运动数据…</div>
   if (error && !hasData(data)) return <div className="empty-state">{error}</div>
-  if (!hasData(data)) return <div className="empty-state">运动数据接口已接入，等待首条运动记录。</div>
+  if (!hasData(data)) return <div className="empty-state">新的运动记录正在路上。</div>
 
   return (
     <div className="workouts-content">
       {summary && (
         <section className="workout-stats" aria-label={`${summary.year} 年运动汇总`}>
-          <div><span>YEAR</span><strong>{summary.year}</strong></div>
-          <div><span>DISTANCE</span><strong>{(summary.totalDistanceMeters / 1000).toLocaleString('zh-CN', { maximumFractionDigits: 1 })} <small>km</small></strong></div>
-          <div><span>ACTIVITIES</span><strong>{summary.totalActivities}</strong></div>
-          <div><span>TIME</span><strong>{Math.floor(summary.totalDurationSeconds / 3600)} <small>h</small></strong></div>
-          <div><span>ELEVATION</span><strong>{summary.totalElevationGainMeters.toLocaleString('zh-CN')} <small>m</small></strong></div>
+          <div><span>年份</span><strong>{summary.year}</strong></div>
+          <div><span>距离</span><strong>{(summary.totalDistanceMeters / 1000).toLocaleString('zh-CN', { maximumFractionDigits: 1 })} <small>km</small></strong></div>
+          <div><span>运动</span><strong>{summary.totalActivities} <small>次</small></strong></div>
+          <div><span>时长</span><strong>{Math.floor(summary.totalDurationSeconds / 3600)} <small>小时</small></strong></div>
+          <div><span>爬升</span><strong>{summary.totalElevationGainMeters.toLocaleString('zh-CN')} <small>m</small></strong></div>
         </section>
       )}
 
@@ -144,8 +144,8 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
       {latestActivityWithRoute?.route && (
         <section className="workout-section" aria-labelledby="latest-route-title">
           <div className="workout-section-heading">
-            <h2 id="latest-route-title">LATEST ROUTE / 最近路线</h2>
-            <span>{activityLabel(latestActivityWithRoute.type)} · {(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} KM</span>
+            <h2 id="latest-route-title">最近路线</h2>
+            <span>{activityLabel(latestActivityWithRoute.type)} · {(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} km</span>
           </div>
           <WorkoutMap route={latestActivityWithRoute.route} className="workout-map" />
         </section>
@@ -154,8 +154,8 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
       {recentActivities.length > 0 && (
         <section className="workout-section" aria-labelledby="recent-activities-title">
           <div className="workout-section-heading">
-            <h2 id="recent-activities-title">RECENT ACTIVITIES / 最近运动</h2>
-            <span>{recentActivities.length} RECORDS</span>
+            <h2 id="recent-activities-title">最近运动</h2>
+            <span>{recentActivities.length} 条记录</span>
           </div>
           <div className="workout-rows">
             {recentActivities.map((activity: NormalizedActivity) => (

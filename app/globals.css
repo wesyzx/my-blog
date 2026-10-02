@@ -816,9 +816,6 @@ button { font: inherit; }
 }
 .note-content .safe-markdown p:last-child { margin-bottom: 0; }
 .note-item .say-images { margin-top: 20px; }
-.note-detail-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 20px; color: var(--color-text-muted); font-size: 12px; transition: color .15s ease; }
-.note-detail-link:hover { color: var(--color-accent); }
-.note-detail-link svg { width: 14px; height: 14px; }
 .note-detail .note-content { margin-top: 14px; }
 .note-detail .note-content .safe-markdown p { font-size: 21px; line-height: 1.7; }
 .note-detail .say-images { margin-top: 28px; }

@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { getAllSays } from '@/lib/say'
 import ClickableNoteContent from '@/components/ClickableNoteContent'
 import ImageLightbox from '@/components/ImageLightbox'
-import Icon from '@/components/Icon'
 import { createPageMetadata } from '@/lib/metadata'
 import { formatItemDate } from '@/lib/format'
 import PageHeader from '@/components/PageHeader'
@@ -54,10 +53,6 @@ export default async function SayPage() {
                   </ImageLightbox>
                 )}
 
-                <Link href={href} className="note-detail-link">
-                  <span>查看短记与评论</span>
-                  <Icon name="arrow-right" />
-                </Link>
               </article>
             )
           })}

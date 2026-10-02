@@ -59,29 +59,68 @@ function daysInYear(year: number) {
   return days
 }
 
-function Heatmap({ data, year }: { data: HeatmapNode[]; year: number }) {
+function Heatmap({ data, year, lastUpdated }: { data: HeatmapNode[]; year: number; lastUpdated: string }) {
   const entries = new Map(data.filter((item) => item.date.startsWith(`${year}-`)).map((item) => [item.date, item]))
   const days = daysInYear(year)
   const leadingEmptyCells = new Date(Date.UTC(year, 0, 1)).getUTCDay()
+  const trailingEmptyCells = (7 - ((leadingEmptyCells + days.length) % 7)) % 7
+  const weekCount = (leadingEmptyCells + days.length + trailingEmptyCells) / 7
   const activeDays = days.filter((date) => (entries.get(date)?.activityCount ?? 0) > 0).length
+  // 用快照时间而不是浏览器当前时间，避免服务端与客户端渲染结果不一致。
+  const todayKey = /^\d{4}-\d{2}-\d{2}/.test(lastUpdated) ? lastUpdated.slice(0, 10) : ''
+
+  const monthLabels = days.reduce<Array<{ label: string; column: number }>>((labels, date, index) => {
+    if (date.slice(8, 10) !== '01') return labels
+    const column = Math.floor((leadingEmptyCells + index) / 7) + 1
+    if (column <= weekCount - 1 && !labels.some((item) => item.column === column)) {
+      labels.push({
+        label: new Intl.DateTimeFormat('zh-CN', { month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`)),
+        column,
+      })
+    }
+    return labels
+  }, [])
 
   return (
     <section className="workout-section" aria-labelledby="workout-heatmap-title">
       <div className="workout-section-heading">
-        <h2 id="workout-heatmap-title">年度足迹</h2>
+        <h2 id="workout-heatmap-title">{year} 年度足迹</h2>
         <span>{activeDays} 个运动日</span>
       </div>
-      <div className="workout-heatmap-scroll" role="img" aria-label={`${year} 年共有 ${activeDays} 个运动日`}>
-        <div className="workout-heatmap-grid" aria-hidden="true">
-          {Array.from({ length: leadingEmptyCells }, (_, index) => <span key={`empty-${index}`} className="is-empty" />)}
-          {days.map((date) => {
-            const entry = entries.get(date)
-            const count = entry?.activityCount ?? 0
-            const level = count >= 3 ? 3 : count
-            return <span key={date} className={`level-${level}`} title={`${date} · ${count} 次`} />
-          })}
+      <div className="workout-heatmap-scroll">
+        <div className="workout-heatmap-chart" style={{ minWidth: `${weekCount * 12 - 3}px` }}>
+          <div className="workout-heatmap-months" style={{ gridTemplateColumns: `repeat(${weekCount}, 9px)` }} aria-hidden="true">
+            {monthLabels.map((month) => (
+              <span key={`${month.label}-${month.column}`} style={{ gridColumnStart: month.column }}>{month.label}</span>
+            ))}
+          </div>
+          <div className="workout-heatmap-grid" role="img" aria-label={`${year} 年共有 ${activeDays} 个运动日`}>
+            {Array.from({ length: leadingEmptyCells }, (_, index) => <span key={`lead-${index}`} className="is-empty" />)}
+            {days.map((date) => {
+              const count = entries.get(date)?.activityCount ?? 0
+              const level = count >= 3 ? 3 : count
+              const isFuture = Boolean(todayKey) && date > todayKey
+              return (
+                <span
+                  key={date}
+                  className={`level-${isFuture ? 0 : level}${isFuture ? ' is-future' : ''}`}
+                  title={isFuture ? undefined : `${date} · ${count} 次`}
+                  aria-hidden="true"
+                />
+              )
+            })}
+            {Array.from({ length: trailingEmptyCells }, (_, index) => <span key={`trail-${index}`} className="is-empty" />)}
+          </div>
         </div>
       </div>
+      <footer className="workout-heatmap-footer">
+        <span>{year} 年 1 月 1 日 — 12 月 31 日</span>
+        <span className="workout-heatmap-legend" aria-label="颜色越深，当天运动越多">
+          少
+          {[0, 1, 2, 3].map((level) => <i key={level} className={`level-${level}`} />)}
+          多
+        </span>
+      </footer>
     </section>
   )
 }
@@ -139,7 +178,7 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
         </section>
       )}
 
-      {latestYear && <Heatmap data={data.heatmap} year={Number(latestYear)} />}
+      {latestYear && <Heatmap data={data.heatmap} year={Number(latestYear)} lastUpdated={data.lastUpdated} />}
 
       {latestActivityWithRoute?.route && (
         <section className="workout-section" aria-labelledby="latest-route-title">

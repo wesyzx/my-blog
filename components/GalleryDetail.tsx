@@ -12,6 +12,7 @@ import type { GalleryItem } from '@/lib/gallery'
 import { formatItemDate } from '@/lib/format'
 import Icon from './Icon'
 import PageHeader from './PageHeader'
+import ArtalkComments from './ArtalkComments'
 
 export default function GalleryDetail({ album }: { album: GalleryItem }) {
   const [index, setIndex] = useState(-1)
@@ -41,6 +42,10 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
         plugins={[Fullscreen, Zoom]}
         controller={{ closeOnBackdropClick: true }}
       />
+      <section className="comments-section">
+        <h2 className="section-title">评论</h2>
+        <ArtalkComments pageKey={`/gallery/${album.slug}`} pageTitle={album.title} />
+      </section>
       <div className="gallery-back">
         <Link href="/gallery" className="back-link">
           <Icon name="arrow-left" />

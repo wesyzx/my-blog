@@ -802,7 +802,12 @@ button { font: inherit; }
 .note-item { padding: 20px 0 40px; }
 .note-item:first-child { padding-top: 0; }
 .note-item + .note-item { border-top: 1px solid var(--gray-a3); }
+.note-date-link { display: inline-flex; }
+.note-date-link:hover .item-time { color: var(--color-accent); }
 .note-content { margin-top: 8px; }
+.note-content-clickable { margin-right: -10px; margin-left: -10px; padding: 4px 10px; border-radius: 3px; cursor: pointer; transition: background-color .15s ease; }
+.note-content-clickable:hover { background: var(--color-bg-surface); }
+.note-content-clickable:active { background: var(--gray-a3); }
 .note-content .safe-markdown p {
   color: var(--color-text-primary);
   font-size: 20px;
@@ -811,6 +816,14 @@ button { font: inherit; }
 }
 .note-content .safe-markdown p:last-child { margin-bottom: 0; }
 .note-item .say-images { margin-top: 20px; }
+.note-detail-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 20px; color: var(--color-text-muted); font-size: 12px; transition: color .15s ease; }
+.note-detail-link:hover { color: var(--color-accent); }
+.note-detail-link svg { width: 14px; height: 14px; }
+.note-detail .note-content { margin-top: 14px; }
+.note-detail .note-content .safe-markdown p { font-size: 21px; line-height: 1.7; }
+.note-detail .say-images { margin-top: 28px; }
+.note-detail-header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-a3); }
+.note-detail-header .page-kicker { margin-bottom: 7px; }
 
 /* 归档页按年与月分层，但条目继续沿用首页内容语法。 */
 .archive-activity { --activity-1: #a7bca3; --activity-2: #708d6c; --activity-3: #365b33; margin-bottom: 64px; padding-bottom: 32px; border-bottom: 1px solid var(--gray-a4); }

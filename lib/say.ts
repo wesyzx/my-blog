@@ -84,3 +84,20 @@ export async function getAllSays(): Promise<SayMeta[]> {
     return bundleData.says as SayMeta[]
   }
 }
+
+export async function getSayBySlug(slug: string): Promise<SayMeta | null> {
+  const says = await getAllSays()
+  return says.find((say) => say.slug === slug) ?? null
+}
+
+export function getSaySummary(content: string, maxLength = 72) {
+  const plain = content
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/[#>*_`~-]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (!plain) return '一则短记'
+  return plain.length > maxLength ? `${plain.slice(0, maxLength)}…` : plain
+}

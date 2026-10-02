@@ -1,8 +1,9 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import { getAllSays } from '@/lib/say'
-import SayCommentsToggle from '@/components/SayCommentsToggle'
-import SafeMarkdown from '@/components/SafeMarkdown'
+import ClickableNoteContent from '@/components/ClickableNoteContent'
 import ImageLightbox from '@/components/ImageLightbox'
+import Icon from '@/components/Icon'
 import { createPageMetadata } from '@/lib/metadata'
 import { formatItemDate } from '@/lib/format'
 import PageHeader from '@/components/PageHeader'
@@ -25,35 +26,41 @@ export default async function SayPage() {
         <div className="empty-state">暂时没有可显示的短记。</div>
       ) : (
         <div className="note-list">
-          {says.map((say) => (
-            <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="note-item">
-              <time className="item-time" dateTime={say.date}>{formatItemDate(say.date)}</time>
+          {says.map((say) => {
+            const href = `/say/${encodeURIComponent(say.slug)}`
+            return (
+              <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="note-item">
+                <Link href={href} className="note-date-link" aria-label={`查看 ${formatItemDate(say.date)} 的短记`}>
+                  <time className="item-time" dateTime={say.date}>{formatItemDate(say.date)}</time>
+                </Link>
 
-              <div className="note-content">
-                <SafeMarkdown source={say.content} />
-              </div>
+                <ClickableNoteContent source={say.content} href={href} />
 
-              {/* 同一则短记的多张图组成一组，点开即灯箱；data-lightbox-src 让灯箱拿原图而不是缩略图 */}
-              {say.images && say.images.length > 0 && (
-                <ImageLightbox className={`say-images count-${Math.min(say.images.length, 3)}`}>
-                  {say.images.map((src, index) => (
-                    <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
-                      <Image
-                        src={src}
-                        alt={`短记配图 ${index + 1}`}
-                        width={720}
-                        height={720}
-                        sizes="(max-width: 760px) 50vw, 240px"
-                        data-lightbox-src={src}
-                      />
-                    </a>
-                  ))}
-                </ImageLightbox>
-              )}
+                {/* 同一则短记的多张图组成一组，点开即灯箱；data-lightbox-src 让灯箱拿原图而不是缩略图 */}
+                {say.images && say.images.length > 0 && (
+                  <ImageLightbox className={`say-images count-${Math.min(say.images.length, 3)}`}>
+                    {say.images.map((src, index) => (
+                      <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
+                        <Image
+                          src={src}
+                          alt={`短记配图 ${index + 1}`}
+                          width={720}
+                          height={720}
+                          sizes="(max-width: 760px) 50vw, 240px"
+                          data-lightbox-src={src}
+                        />
+                      </a>
+                    ))}
+                  </ImageLightbox>
+                )}
 
-              <SayCommentsToggle pageKey={`/say/${say.slug}`} pageTitle={`短记 ${formatItemDate(say.date)}`} />
-            </article>
-          ))}
+                <Link href={href} className="note-detail-link">
+                  <span>查看短记与评论</span>
+                  <Icon name="arrow-right" />
+                </Link>
+              </article>
+            )
+          })}
         </div>
       )}
     </div>

@@ -2,7 +2,7 @@ import 'server-only'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems, type GalleryMeta } from '@/lib/gallery'
-import { getAllSays } from '@/lib/say'
+import { getAllSays, getSaySummary } from '@/lib/say'
 
 export interface SiteUpdate {
   id: string
@@ -18,17 +18,6 @@ export interface SiteUpdate {
 function dateValue(value: string) {
   const parsed = new Date(value).getTime()
   return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function sayTitle(content: string) {
-  const plain = content
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/[#>*_`~-]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-  if (!plain) return '一则短记'
-  return plain.length > 72 ? `${plain.slice(0, 72)}…` : plain
 }
 
 export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
@@ -49,10 +38,10 @@ export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
     ...says.map((say): SiteUpdate => ({
       id: `say-${say.slug}`,
       kind: 'say',
-      title: sayTitle(say.content),
+      title: getSaySummary(say.content),
       cover: say.images?.[0] || say.image,
       date: say.date,
-      href: `/say#say-${encodeURIComponent(say.slug)}`,
+      href: `/say/${encodeURIComponent(say.slug)}`,
     })),
     ...gallery.map((album): SiteUpdate => ({
       id: `gallery-${album.slug}`,

@@ -14,8 +14,6 @@ const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-
 const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
 const OUTPUT_PATH = path.join(process.cwd(), 'lib/data-bundle.ts')
 
-if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
-
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const n2m = new NotionToMarkdown({ notionClient: notion })
 const title = (property) => property?.title?.[0]?.plain_text || ''
@@ -39,6 +37,31 @@ function loadExistingBundle() {
   } catch {
     return { posts: [], food: [], gallery: [], says: [], about: '' }
   }
+}
+
+/** 已提交的快照里是否有可用内容。有内容就允许在同步失败时继续用旧版本，避免整站构建失败。 */
+function hasUsableSnapshot(bundle) {
+  return ['posts', 'food', 'gallery'].some((key) => Array.isArray(bundle[key]) && bundle[key].length > 0)
+}
+
+function reportNotionFailure(error, snapshotAvailable) {
+  const reason = process.env.NOTION_TOKEN
+    ? `请求失败：${error.message}`
+    : '未配置 NOTION_TOKEN —— 部署环境需要单独配置该变量'
+  const bar = '='.repeat(64)
+  const lines = [
+    '',
+    `  ${bar}`,
+    '  ! Notion 同步失败 —— 本次构建将沿用上一版内容快照',
+    `  ! 原因: ${reason}`,
+    '  ! 修复: 在部署环境配置有效的 NOTION_TOKEN，并确认构建机可访问 api.notion.com',
+    '  ! 需要让构建直接失败可设置 CONTENT_STRICT=1',
+    `  ${bar}`,
+    '',
+  ]
+  if (process.env.CONTENT_STRICT === '1') throw new Error(`Notion 同步失败（CONTENT_STRICT=1）：${reason}`)
+  if (!snapshotAvailable) throw new Error(`Notion 同步失败且没有可复用的内容快照：${reason}`)
+  console.warn(lines.join('\n'))
 }
 
 async function queryAll(dataSourceId) {
@@ -227,15 +250,7 @@ async function fetchSays(existingSays) {
   }
 }
 
-async function buildBundle() {
-  console.log('Bundling content from Notion and Memos...')
-  const existing = loadExistingBundle()
-  const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
-  // 上一版快照里各张图已量到的尺寸，抓取失败时用来兜底，避免退回错误的 1200x800
-  const previousImageSizes = new Map(
-    (existing.gallery || []).flatMap((album) => (album.images || []).filter((image) => image.src && image.width && image.height).map((image) => [image.src, { width: image.width, height: image.height }])),
-  )
-
+async function fetchNotionContent(existing, previousCoords, previousImageSizes) {
   const postPages = await queryAll(POSTS_DS_ID)
   postPages.sort((left, right) => date(right.properties?.Date).localeCompare(date(left.properties?.Date)) || left.id.localeCompare(right.id))
   const postSlugs = new Set()
@@ -328,6 +343,33 @@ async function buildBundle() {
     gallery.push({ slug: uniqueSlug(richText(props.Slug) || richText(props.slug), galleryTitle, page.id, gallerySlugs), title: galleryTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '日常', cover, images, excerpt: richText(props.Excerpt), published: true, content })
   }
   gallery.sort((a, b) => b.date.localeCompare(a.date))
+
+  return { posts, food, gallery }
+}
+
+async function buildBundle() {
+  console.log('Bundling content from Notion and Memos...')
+  const existing = loadExistingBundle()
+  const snapshotAvailable = hasUsableSnapshot(existing)
+  const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
+  // 上一版快照里各张图已量到的尺寸，抓取失败时用来兜底，避免退回错误的 1200x800
+  const previousImageSizes = new Map(
+    (existing.gallery || []).flatMap((album) => (album.images || []).filter((image) => image.src && image.width && image.height).map((image) => [image.src, { width: image.width, height: image.height }])),
+  )
+
+  let posts = []
+  let food = []
+  let gallery = []
+  try {
+    if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
+    ;({ posts, food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes))
+  } catch (error) {
+    // 构建机无法访问 Notion 时，沿用仓库里已提交的快照，避免整站部署失败。
+    reportNotionFailure(error, snapshotAvailable)
+    posts = existing.posts || []
+    food = existing.food || []
+    gallery = existing.gallery || []
+  }
 
   // 关于页只认本地 content/about.md。
   // 早期会先读 Notion 页面，但那个页面早已失联，每次都在 catch 里静默回退到本地文件 ——

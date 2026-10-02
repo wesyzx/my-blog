@@ -15,5 +15,6 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { label: '美食', href: '/food', icon: 'food' },
   { label: '运动', href: '/workouts', icon: 'activity' },
   { label: '留言', href: '/message', icon: 'message' },
+  { label: '归档', href: '/archive', icon: 'calendar' },
   { label: '关于', href: '/about', icon: 'about' },
 ]

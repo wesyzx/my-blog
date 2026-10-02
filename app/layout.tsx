@@ -12,6 +12,7 @@ import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import SiteSidebar from '@/components/SiteSidebar'
+import ThemeToggle from '@/components/ThemeToggle'
 import './globals.css'
 
 /**
@@ -71,6 +72,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
+        <ThemeToggle />
         {/* 顶部导航栏 */}
         <Header />
 

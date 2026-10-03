@@ -66,11 +66,6 @@ export default async function Footer() {
             </Link>
           </div>
         </div>
-        <nav className="footer-links" aria-label="页脚导航">
-          <Link href="https://github.com/wesyzx" target="_blank" rel="noopener noreferrer">GitHub</Link>
-          <span aria-hidden="true">·</span>
-          <Link href="/rss.xml">RSS</Link>
-        </nav>
         <div className="footer-stats" aria-label="站点运行状态">
           <RunningTime />
           <span aria-hidden="true">·</span>

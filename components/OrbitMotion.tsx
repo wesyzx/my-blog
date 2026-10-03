@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, type CSSProperties } from 'react'
 import styles from './OrbitHero.module.css'
 
 const TRACKS = Array.from({ length: 11 }, (_, index) => ({
@@ -22,8 +22,6 @@ type TrackStyle = CSSProperties & {
 
 export default function OrbitMotion() {
   const rootRef = useRef<HTMLDivElement>(null)
-  const [paused, setPaused] = useState(false)
-  const [reducedMotion, setReducedMotion] = useState(false)
 
   useEffect(() => {
     const root = rootRef.current
@@ -33,9 +31,8 @@ export default function OrbitMotion() {
     let isVisible = true
 
     const updatePlayback = () => {
-      const shouldRun = isVisible && !paused && !document.hidden && !motionPreference.matches
+      const shouldRun = isVisible && !document.hidden && !motionPreference.matches
       root.dataset.running = String(shouldRun)
-      setReducedMotion(motionPreference.matches)
     }
 
     const observer = new IntersectionObserver(
@@ -56,7 +53,7 @@ export default function OrbitMotion() {
       motionPreference.removeEventListener('change', updatePlayback)
       document.removeEventListener('visibilitychange', updatePlayback)
     }
-  }, [paused])
+  }, [])
 
   return (
     <div ref={rootRef} className={styles.motion} data-running="true">
@@ -142,21 +139,6 @@ export default function OrbitMotion() {
 
       <div className={styles.caption}>
         <span>沿着轨道，也走向轨道之外。</span>
-        {!reducedMotion && (
-          <button
-            type="button"
-            className={styles.pauseButton}
-            aria-pressed={paused}
-            aria-label={paused ? '播放轨道动画' : '暂停轨道动画'}
-            onClick={() => setPaused((value) => !value)}
-          >
-            {paused ? (
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m5 3 7 5-7 5Z" /></svg>
-            ) : (
-              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3v10M11 3v10" /></svg>
-            )}
-          </button>
-        )}
       </div>
     </div>
   )

@@ -23,6 +23,7 @@ out/
 # IDE files
 .vscode/
 .idea/
+.workbuddy-ai/
 **/xcuserdata/
 DerivedData/
 *.swp

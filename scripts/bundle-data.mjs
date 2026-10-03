@@ -371,9 +371,7 @@ async function buildBundle() {
     gallery = existing.gallery || []
   }
 
-  // 关于页只认本地 content/about.md。
-  // 早期会先读 Notion 页面，但那个页面早已失联，每次都在 catch 里静默回退到本地文件 ——
-  // 白白制造了一个「在 Notion 改了却不生效」的陷阱，所以直接去掉这条路。
+  // 关于页只认本地 content/about.md，避免 Notion 页面权限变化影响构建。
   const about = fs.readFileSync(path.join(process.cwd(), 'content/about.md'), 'utf8')
   const says = await fetchSays(existing.says || [])
   const bundle = { posts, food, gallery, says, about, updatedAt: new Date().toISOString() }

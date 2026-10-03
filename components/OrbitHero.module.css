@@ -1,0 +1,268 @@
+.hero {
+  display: grid;
+  grid-template-columns: minmax(160px, .68fr) minmax(0, 1.32fr);
+  align-items: center;
+  gap: 34px;
+  margin-bottom: 32px;
+  padding: 8px 0 26px;
+  border-bottom: 1px solid var(--gray-a4);
+}
+
+.copy {
+  max-width: 220px;
+  animation: arrive .7s ease both;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  color: var(--color-text-hint);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .16em;
+}
+
+.eyebrow::before {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: clamp(27px, 4vw, 34px);
+  font-weight: 520;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+}
+
+.intro {
+  margin: 14px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.motion {
+  position: relative;
+  width: min(100%, 410px);
+  margin-left: auto;
+  color: #6f7d73;
+  animation: arrive .82s .06s ease both;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.stopDeep { stop-color: #aeb4af; }
+.stopMid { stop-color: #727b75; }
+.stopBright { stop-color: #272b28; }
+.hazeCenter { stop-color: #a6b3a8; stop-opacity: .26; }
+.hazeEdge { stop-color: #a6b3a8; stop-opacity: 0; }
+
+:global([data-theme="dark"]) .motion { color: #d4ddd6; }
+:global([data-theme="dark"]) .stopDeep { stop-color: #4e5953; }
+:global([data-theme="dark"]) .stopMid { stop-color: #919e96; }
+:global([data-theme="dark"]) .stopBright { stop-color: #edf1ed; }
+:global([data-theme="dark"]) .hazeCenter { stop-color: #9eb2a2; stop-opacity: .28; }
+:global([data-theme="dark"]) .hazeEdge { stop-color: #9eb2a2; stop-opacity: 0; }
+
+.haze {
+  animation: haze-breathe 7s ease-in-out infinite;
+  transform-origin: 68% 48%;
+}
+
+.grain {
+  color: var(--color-text-muted);
+  opacity: .18;
+}
+
+.trackLine,
+.trackTrail,
+.escapeLine,
+.escapeTrail {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.trackLine {
+  stroke: url("#orbit-track");
+  stroke-width: 1.1;
+  opacity: var(--track-opacity);
+}
+
+.trackTrail {
+  stroke: url("#orbit-highlight");
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 13 87;
+  animation: track-travel var(--travel) linear var(--phase) infinite;
+}
+
+.wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: track-breathe 9s ease-in-out var(--phase) infinite;
+}
+
+.escapeLine {
+  stroke: url("#orbit-track");
+  stroke-width: 1.15;
+  opacity: .48;
+}
+
+.escapeTrail {
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 9 91;
+  animation: escape-travel 11s linear infinite;
+}
+
+.wanderer {
+  fill: var(--color-bg-page);
+  stroke: currentColor;
+  stroke-width: 1.4;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wanderer-pulse 3.2s ease-in-out infinite;
+}
+
+.motion[data-running="false"] .wave,
+.motion[data-running="false"] .trackTrail,
+.motion[data-running="false"] .escapeTrail,
+.motion[data-running="false"] .wanderer,
+.motion[data-running="false"] .haze {
+  animation-play-state: paused;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 24px;
+  margin-top: -14px;
+  padding-right: 5px;
+  color: var(--color-text-hint);
+  font-size: 8px;
+  line-height: 1.4;
+  letter-spacing: .08em;
+}
+
+.pauseButton {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--color-border-hairline);
+  border-radius: 50%;
+  color: var(--color-text-hint);
+  background: transparent;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.pauseButton:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+  transform: translateY(-1px);
+}
+
+.pauseButton svg {
+  width: 10px;
+  height: 10px;
+  overflow: visible;
+}
+
+.pauseButton path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pauseButton[aria-pressed="true"] path {
+  fill: currentColor;
+  stroke: none;
+}
+
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes track-breathe {
+  0%, 100% { transform: translateY(-3px) scaleY(.984); }
+  50% { transform: translateY(4px) scaleY(1.016); }
+}
+
+@keyframes track-travel {
+  to { stroke-dashoffset: -100; }
+}
+
+@keyframes escape-travel {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: -82; }
+}
+
+@keyframes wanderer-pulse {
+  0%, 100% { opacity: .52; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes haze-breathe {
+  0%, 100% { opacity: .66; transform: scale(.96); }
+  50% { opacity: 1; transform: scale(1.035); }
+}
+
+@media (max-width: 860px) {
+  .hero {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+  }
+
+  .copy { max-width: 380px; }
+  .eyebrow { margin-bottom: 11px; }
+  .intro { margin-top: 10px; }
+  .motion { width: min(100%, 360px); margin: -4px auto 0; }
+  .caption { margin-top: -12px; }
+}
+
+@media (max-width: 400px) {
+  .motion { width: calc(100% + 8px); margin-left: -4px; }
+  .caption span { letter-spacing: .04em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion,
+  .wave,
+  .trackTrail,
+  .escapeTrail,
+  .wanderer,
+  .haze {
+    animation: none !important;
+  }
+}

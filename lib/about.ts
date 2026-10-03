@@ -1,6 +1,6 @@
 /**
  * 关于页面内容管理模块
- * 现已全面接入 Notion 数据源
+ * 内容由本地 Markdown 在构建时写入数据快照
  */
 import { bundleData } from './data-bundle'
 

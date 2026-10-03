@@ -28,7 +28,7 @@ export default function SiteSidebar() {
             <Image src={AUTHOR_AVATAR} alt="" width={120} height={120} className="sidebar-avatar" unoptimized fetchPriority="high" />
           </span>
           <span className="sidebar-title">轨道之外</span>
-          <span className="sidebar-desc">把轨道之外的日子，一一收好。</span>
+          <span className="sidebar-desc">把离开的日子，一一收好。</span>
         </Link>
 
         <nav className="sidebar-nav">

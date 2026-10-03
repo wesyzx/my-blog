@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import ContentStream from '@/components/ContentStream'
 import Icon from '@/components/Icon'
+import OrbitHero from '@/components/OrbitHero'
 import { createPageMetadata } from '@/lib/metadata'
 import { getAllSiteUpdates } from '@/lib/site-updates'
 
@@ -19,7 +20,7 @@ export default async function Home() {
 
   return (
     <div className="home-shell animate-fade-up">
-      <h1 className="sr-only">轨道之外的最近更新</h1>
+      <OrbitHero />
       {latest.length > 0 ? (
         <>
           <ContentStream updates={latest} />

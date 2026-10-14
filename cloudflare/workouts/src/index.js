@@ -1,8 +1,10 @@
 import { normalizeActivity } from './domain.js'
-import { createAndStoreSnapshot, getCursor, recordSync, upsertActivities } from './storage.js'
+import { summarizeGpx } from './gpx.js'
+import { attachRoute, createAndStoreSnapshot, findActivityForRoute, getCursor, recordSync, upsertActivities } from './storage.js'
 
 const MAX_INGEST_ACTIVITIES = 500
 const MAX_JSON_BYTES = 2_000_000
+const MAX_GPX_BYTES = 5_000_000
 
 function json(data, init = {}) {
   const headers = new Headers(init.headers)
@@ -70,10 +72,99 @@ async function readBoundedJson(body, contentLength) {
 
 async function parsePayload(request) {
   const payload = await readBoundedJson(request.body, request.headers.get('content-length'))
-  const activities = Array.isArray(payload) ? payload : payload.activities
+  // A single workout is convenient for Shortcuts' Repeat with Each action.
+  // Existing bulk clients continue to send { activities: [...] } or an array.
+  const singleActivity = payload && typeof payload === 'object' && !Array.isArray(payload)
+    && !Object.hasOwn(payload, 'activities')
+    && (Object.hasOwn(payload, 'id') || Object.hasOwn(payload, 'sourceActivityId'))
+  const activities = Array.isArray(payload) ? payload : singleActivity ? [payload] : payload?.activities
   if (!Array.isArray(activities)) throw new Error('Payload must contain an activities array')
   if (activities.length > MAX_INGEST_ACTIVITIES) throw new Error(`At most ${MAX_INGEST_ACTIVITIES} activities may be ingested at once`)
   return { payload, activities }
+}
+
+async function readBoundedText(body, contentLength, limit = MAX_GPX_BYTES) {
+  if (contentLength && Number(contentLength) > limit) throw new Error('Payload exceeds the size limit')
+  if (!body) throw new Error('Payload is required')
+
+  const reader = body.getReader()
+  const chunks = []
+  let size = 0
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    size += value.byteLength
+    if (size > limit) {
+      await reader.cancel('Payload exceeds the size limit')
+      throw new Error('Payload exceeds the size limit')
+    }
+    chunks.push(value)
+  }
+  const bytes = new Uint8Array(size)
+  let offset = 0
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.byteLength
+  }
+  return new TextDecoder().decode(bytes)
+}
+
+/**
+ * Attach a GPX track exported by WorkoutGPX to a workout that was already
+ * ingested from Apple Health. The export carries no HealthKit UUID, so the
+ * caller names the workout (`?id=`) or gives the track start (`?startedAt=`).
+ *
+ * Accepts either a raw GPX body or JSON `{ gpx: "<xml>", id, startedAt }`.
+ * The JSON form lets Shortcuts reuse the same request-body transport that
+ * already uploads the workout summaries.
+ */
+async function ingestRoute(request, env) {
+  if (!await authorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const url = new URL(request.url)
+    const contentType = (request.headers.get('content-type') || '').toLowerCase()
+    const raw = await readBoundedText(request.body, request.headers.get('content-length'))
+
+    let gpx = raw
+    let body = null
+    if (contentType.includes('json')) {
+      try {
+        body = JSON.parse(raw)
+      } catch {
+        return json({ error: 'Request body is not valid JSON' }, { status: 400 })
+      }
+      gpx = typeof body === 'string' ? body : body?.gpx
+      if (typeof gpx !== 'string' || !gpx.trim()) {
+        return json({ error: 'JSON body must include a gpx string' }, { status: 400 })
+      }
+    }
+
+    const source = url.searchParams.get('source') || body?.source || 'apple-health'
+    const sourceActivityId = url.searchParams.get('id') || body?.id
+    const startedAt = url.searchParams.get('startedAt') || body?.startedAt
+    if (!sourceActivityId && !startedAt) {
+      return json({ error: 'Provide ?id= (workout UUID) or ?startedAt= (ISO time)' }, { status: 400 })
+    }
+
+    const activity = await findActivityForRoute(env.DB, { source, sourceActivityId, startedAt })
+    if (!activity) return json({ error: 'No matching workout found' }, { status: 404 })
+
+    const summary = summarizeGpx(gpx)
+    if (summary.polyline.length > 100_000) return json({ error: 'Route exceeds 100 KB' }, { status: 400 })
+
+    const applied = await attachRoute(env.DB, activity, summary)
+    const snapshot = await createAndStoreSnapshot(env)
+    return json({
+      ok: true,
+      matched: activity.sourceActivityId,
+      points: summary.points.length,
+      ...applied,
+      lastUpdated: snapshot.lastUpdated,
+    })
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : 'Invalid GPX payload' }, { status: 400 })
+  }
 }
 
 async function ingest(request, env, defaultSource = 'manual') {
@@ -164,6 +255,7 @@ const worker = {
       if (request.method === 'GET' && url.pathname === '/health') return await health(env)
       if (request.method === 'POST' && url.pathname === '/internal/ingest') return await ingest(request, env)
       if (request.method === 'POST' && url.pathname === '/internal/healthkit') return await ingest(request, env, 'apple-health')
+      if (request.method === 'POST' && url.pathname === '/internal/route') return await ingestRoute(request, env)
       if (request.method === 'POST' && url.pathname === '/internal/sync') {
         if (!await authorized(request, env)) return json({ error: 'Unauthorized' }, { status: 401 })
         try {

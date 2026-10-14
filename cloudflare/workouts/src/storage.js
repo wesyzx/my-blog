@@ -7,21 +7,36 @@ const UPSERT_SQL = `
     pace_seconds_per_km, active_energy_kcal, average_heart_rate_bpm,
     max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at
   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON CONFLICT(id) DO UPDATE SET
-    type = excluded.type,
-    started_at = excluded.started_at,
-    local_date = excluded.local_date,
-    distance_meters = excluded.distance_meters,
-    duration_seconds = excluded.duration_seconds,
-    elevation_gain_meters = excluded.elevation_gain_meters,
-    pace_seconds_per_km = excluded.pace_seconds_per_km,
-    active_energy_kcal = excluded.active_energy_kcal,
-    average_heart_rate_bpm = excluded.average_heart_rate_bpm,
-    max_heart_rate_bpm = excluded.max_heart_rate_bpm,
-    average_cadence_rpm = excluded.average_cadence_rpm,
-    route_polyline = excluded.route_polyline,
-    updated_at = excluded.updated_at
 `
+
+function updateAssignments(activity) {
+  const provided = new Set(activity.providedFields)
+  const updates = ['started_at = excluded.started_at', 'updated_at = excluded.updated_at']
+  const columns = {
+    type: 'type',
+    localDate: 'local_date',
+    distanceMeters: 'distance_meters',
+    durationSeconds: 'duration_seconds',
+    elevationGainMeters: 'elevation_gain_meters',
+    route: 'route_polyline',
+  }
+  for (const [field, column] of Object.entries(columns)) {
+    if (provided.has(field)) updates.push(`${column} = excluded.${column}`)
+  }
+  for (const column of ['active_energy_kcal', 'average_heart_rate_bpm', 'max_heart_rate_bpm', 'average_cadence_rpm']) {
+    updates.push(`${column} = COALESCE(excluded.${column}, activities.${column})`)
+  }
+
+  if (provided.has('pace')) {
+    updates.push('pace_seconds_per_km = excluded.pace_seconds_per_km')
+  } else if (provided.has('distanceMeters') || provided.has('durationSeconds')) {
+    // Recalculate using the retained distance/duration when only one is sent.
+    const distance = provided.has('distanceMeters') ? 'excluded.distance_meters' : 'activities.distance_meters'
+    const duration = provided.has('durationSeconds') ? 'excluded.duration_seconds' : 'activities.duration_seconds'
+    updates.push(`pace_seconds_per_km = CASE WHEN ${distance} > 0 AND ${duration} > 0 THEN ${duration} / (${distance} / 1000.0) ELSE NULL END`)
+  }
+  return updates.join(', ')
+}
 
 function chunks(items, size) {
   const result = []
@@ -31,7 +46,7 @@ function chunks(items, size) {
 
 export async function upsertActivities(db, activities) {
   for (const batch of chunks(activities, 50)) {
-    await db.batch(batch.map((activity) => db.prepare(UPSERT_SQL).bind(
+    await db.batch(batch.map((activity) => db.prepare(`${UPSERT_SQL} ON CONFLICT(id) DO UPDATE SET ${updateAssignments(activity)}`).bind(
       activity.id,
       activity.source,
       activity.sourceActivityId,
@@ -56,6 +71,53 @@ export async function upsertActivities(db, activities) {
 export async function getCursor(db, source) {
   const row = await db.prepare('SELECT cursor FROM sync_cursors WHERE source = ?').bind(source).first()
   return row?.cursor || null
+}
+
+/**
+ * Locate the workout a GPX file belongs to. Exports do not carry the HealthKit
+ * UUID, so the caller either names the workout or supplies the track start time.
+ */
+export async function findActivityForRoute(db, { source, sourceActivityId, startedAt, toleranceSeconds = 300 }) {
+  if (sourceActivityId) {
+    return await db.prepare(`
+      SELECT id, source_activity_id AS sourceActivityId, started_at AS startedAt,
+             distance_meters AS distanceMeters, elevation_gain_meters AS elevationGainMeters,
+             route_polyline AS route
+      FROM activities WHERE source = ? AND source_activity_id = ?
+    `).bind(source, sourceActivityId).first() ?? null
+  }
+  if (!startedAt) return null
+
+  const center = new Date(startedAt).getTime()
+  if (!Number.isFinite(center)) return null
+  const from = new Date(center - toleranceSeconds * 1000).toISOString()
+  const to = new Date(center + toleranceSeconds * 1000).toISOString()
+  return await db.prepare(`
+    SELECT id, source_activity_id AS sourceActivityId, started_at AS startedAt,
+           distance_meters AS distanceMeters, elevation_gain_meters AS elevationGainMeters,
+           route_polyline AS route
+    FROM activities WHERE source = ? AND started_at BETWEEN ? AND ?
+    ORDER BY ABS(julianday(started_at) - julianday(?)) LIMIT 1
+  `).bind(source, from, to, startedAt).first() ?? null
+}
+
+/**
+ * Attach a decoded track to an existing workout. Summary metrics already
+ * measured by Apple Health win; GPX values only fill genuine gaps.
+ */
+export async function attachRoute(db, activity, route) {
+  const distance = activity.distanceMeters > 0 ? activity.distanceMeters : route.distanceMeters
+  const elevation = activity.elevationGainMeters > 0 ? activity.elevationGainMeters : route.elevationGainMeters
+  await db.prepare(`
+    UPDATE activities SET
+      route_polyline = ?,
+      distance_meters = ?,
+      elevation_gain_meters = ?,
+      pace_seconds_per_km = CASE WHEN ? > 0 THEN duration_seconds / (? / 1000.0) ELSE pace_seconds_per_km END,
+      updated_at = ?
+    WHERE id = ?
+  `).bind(route.polyline, distance, elevation, distance, distance, new Date().toISOString(), activity.id).run()
+  return { distanceMeters: distance, elevationGainMeters: elevation }
 }
 
 export async function recordSync(db, source, { cursor = null, status, error = null, syncedAt = new Date().toISOString() }) {

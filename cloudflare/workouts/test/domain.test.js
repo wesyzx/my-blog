@@ -74,3 +74,32 @@ test('rejects an activity without an id or valid date', () => {
   assert.throws(() => normalizeActivity({ startedAt: NOW }, 'test', NOW), /id is required/)
   assert.throws(() => normalizeActivity({ id: 'x', startedAt: 'not-a-date' }, 'test', NOW), /invalid startedAt/)
 })
+
+test('rejects unit-bearing or invalid numeric metrics instead of silently writing zero', () => {
+  assert.throws(() => normalizeActivity({ id: 'x', startedAt: NOW, durationSeconds: '900 秒' }), /without units/)
+  assert.throws(() => normalizeActivity({ id: 'x', startedAt: NOW, activeEnergyKcal: -1 }), /non-negative/)
+})
+
+test('omits unmeasured optional metrics instead of publishing null', () => {
+  // D1 returns NULL for every unmeasured column; publishing those as `null`
+  // made the workouts page render a missing heart rate as "0 bpm".
+  const activity = normalizeActivity({
+    id: 'stairs-without-heart-rate',
+    type: 'Stairs',
+    startedAt: NOW,
+    durationSeconds: 900,
+    activeEnergyKcal: 120,
+    averageHeartRateBpm: null,
+    maxHeartRateBpm: null,
+    averageCadenceRpm: null,
+    distanceMeters: 0,
+  })
+  const snapshot = buildSnapshot([activity], NOW)
+  const [published] = snapshot.activities
+  assert.equal(published.activeEnergyKcal, 120)
+  assert.equal('averageHeartRateBpm' in published, false)
+  assert.equal('maxHeartRateBpm' in published, false)
+  assert.equal('averageCadenceRpm' in published, false)
+  assert.equal('pace' in published, false)
+  assert.equal('route' in published, false)
+})

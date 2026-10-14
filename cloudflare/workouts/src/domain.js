@@ -28,9 +28,15 @@ function cleanSource(value) {
   return source || 'manual'
 }
 
+function hasValue(value) {
+  return value !== undefined && value !== null && !(typeof value === 'string' && !value.trim())
+}
+
 function nonNegativeNumber(value) {
+  if (!hasValue(value)) return 0
   const number = Number(value)
-  return Number.isFinite(number) && number >= 0 ? number : 0
+  if (!Number.isFinite(number) || number < 0) throw new Error('Metrics must contain non-negative numbers without units')
+  return number
 }
 
 function optionalPositiveNumber(value) {
@@ -39,8 +45,10 @@ function optionalPositiveNumber(value) {
 }
 
 function optionalNonNegativeNumber(value) {
+  if (!hasValue(value)) return undefined
   const number = Number(value)
-  return Number.isFinite(number) && number >= 0 ? number : undefined
+  if (!Number.isFinite(number) || number < 0) throw new Error('Metrics must contain non-negative numbers without units')
+  return number
 }
 
 function dateKey(value, fallback) {
@@ -55,7 +63,8 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   const sourceActivityId = String(input.sourceActivityId ?? input.id ?? '').trim()
   if (!sourceActivityId) throw new Error('Activity id is required')
 
-  const parsedDate = new Date(input.startedAt ?? input.startTime ?? input.date)
+  const originalDate = input.startedAt ?? input.startTime ?? input.date
+  const parsedDate = new Date(originalDate)
   if (Number.isNaN(parsedDate.getTime())) throw new Error(`Activity ${sourceActivityId} has an invalid startedAt`)
   const startedAt = parsedDate.toISOString()
 
@@ -79,13 +88,29 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
     route = input.route
   }
 
+  // Keep presence separate from insert defaults so a summary-only retry cannot
+  // erase metrics or a route supplied by another import of the same workout.
+  const supplied = {
+    type: input.type,
+    localDate: input.localDate,
+    distanceMeters: input.distanceMeters ?? input.distance,
+    durationSeconds: input.durationSeconds ?? input.duration,
+    elevationGainMeters: input.elevationGainMeters ?? input.elevationGain,
+    pace: suppliedPace,
+  }
+  const providedFields = Object.keys(supplied).filter((key) => hasValue(supplied[key]))
+  if (typeof input.publishRoute === 'boolean') providedFields.push('route')
+  const dateFallback = typeof originalDate === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(originalDate)
+    ? originalDate
+    : startedAt
+
   return {
     id: `${source}:${sourceActivityId}`,
     source,
     sourceActivityId,
     type,
     startedAt,
-    localDate: dateKey(input.localDate, startedAt),
+    localDate: dateKey(input.localDate, dateFallback),
     distanceMeters,
     durationSeconds,
     elevationGainMeters,
@@ -95,8 +120,16 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
     maxHeartRateBpm,
     averageCadenceRpm,
     route,
+    providedFields,
     updatedAt: now.toISOString(),
   }
+}
+
+// D1 returns NULL for every unmeasured column, so a naive `!== undefined`
+// check would publish `"averageHeartRateBpm": null` and the page would print
+// "0 bpm" for a workout that simply has no heart-rate samples.
+function optionalNumber(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
 export function buildSnapshot(activities, now = new Date()) {
@@ -131,20 +164,27 @@ export function buildSnapshot(activities, now = new Date()) {
     lastUpdated: now.toISOString(),
     summary,
     heatmap: Array.from(heatmap.values()).sort((left, right) => left.date.localeCompare(right.date)),
-    activities: ordered.slice(0, 50).map((activity) => ({
-      id: activity.id,
-      type: activity.type,
-      startedAt: activity.startedAt,
-      distanceMeters: activity.distanceMeters,
-      durationSeconds: activity.durationSeconds,
-      elevationGainMeters: activity.elevationGainMeters,
-      ...(activity.pace ? { pace: activity.pace } : {}),
-      ...(activity.activeEnergyKcal !== undefined ? { activeEnergyKcal: activity.activeEnergyKcal } : {}),
-      ...(activity.averageHeartRateBpm !== undefined ? { averageHeartRateBpm: activity.averageHeartRateBpm } : {}),
-      ...(activity.maxHeartRateBpm !== undefined ? { maxHeartRateBpm: activity.maxHeartRateBpm } : {}),
-      ...(activity.averageCadenceRpm !== undefined ? { averageCadenceRpm: activity.averageCadenceRpm } : {}),
-      ...(activity.route ? { route: activity.route } : {}),
-    })),
+    activities: ordered.slice(0, 50).map((activity) => {
+      const pace = optionalNumber(activity.pace)
+      const activeEnergyKcal = optionalNumber(activity.activeEnergyKcal)
+      const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
+      const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
+      const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
+      return {
+        id: activity.id,
+        type: activity.type,
+        startedAt: activity.startedAt,
+        distanceMeters: activity.distanceMeters,
+        durationSeconds: activity.durationSeconds,
+        elevationGainMeters: activity.elevationGainMeters,
+        ...(pace ? { pace } : {}),
+        ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
+        ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
+        ...(maxHeartRateBpm !== undefined ? { maxHeartRateBpm } : {}),
+        ...(averageCadenceRpm !== undefined ? { averageCadenceRpm } : {}),
+        ...(activity.route ? { route: activity.route } : {}),
+      }
+    }),
   }
 }
 
@@ -152,20 +192,27 @@ export function buildRoutesSnapshot(activities, now = new Date()) {
   const routes = [...activities]
     .filter((activity) => typeof activity.route === 'string' && activity.route.length > 0)
     .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
-    .map((activity) => ({
-      id: activity.id,
-      type: activity.type,
-      startedAt: activity.startedAt,
-      distanceMeters: activity.distanceMeters,
-      durationSeconds: activity.durationSeconds,
-      elevationGainMeters: activity.elevationGainMeters,
-      ...(activity.pace ? { pace: activity.pace } : {}),
-      ...(activity.activeEnergyKcal !== undefined ? { activeEnergyKcal: activity.activeEnergyKcal } : {}),
-      ...(activity.averageHeartRateBpm !== undefined ? { averageHeartRateBpm: activity.averageHeartRateBpm } : {}),
-      ...(activity.maxHeartRateBpm !== undefined ? { maxHeartRateBpm: activity.maxHeartRateBpm } : {}),
-      ...(activity.averageCadenceRpm !== undefined ? { averageCadenceRpm: activity.averageCadenceRpm } : {}),
-      route: activity.route,
-    }))
+    .map((activity) => {
+      const pace = optionalNumber(activity.pace)
+      const activeEnergyKcal = optionalNumber(activity.activeEnergyKcal)
+      const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
+      const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
+      const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
+      return {
+        id: activity.id,
+        type: activity.type,
+        startedAt: activity.startedAt,
+        distanceMeters: activity.distanceMeters,
+        durationSeconds: activity.durationSeconds,
+        elevationGainMeters: activity.elevationGainMeters,
+        ...(pace ? { pace } : {}),
+        ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
+        ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
+        ...(maxHeartRateBpm !== undefined ? { maxHeartRateBpm } : {}),
+        ...(averageCadenceRpm !== undefined ? { averageCadenceRpm } : {}),
+        route: activity.route,
+      }
+    })
 
   return {
     schemaVersion: 1,

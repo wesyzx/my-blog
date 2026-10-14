@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { HeatmapNode, NormalizedActivity, WorkoutsDataContract } from '@/lib/workouts'
+import { normalizeWorkoutsData, type HeatmapNode, type NormalizedActivity, type WorkoutsDataContract } from '@/lib/workouts-schema'
 import WorkoutMap from '@/components/WorkoutMap'
 
 // This is a public, read-only snapshot endpoint. Keeping the browser fallback
@@ -140,10 +140,13 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
     fetch(WORKOUTS_SNAPSHOT_URL, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        return response.json() as Promise<WorkoutsDataContract>
+        return response.json() as Promise<unknown>
       })
-      .then((nextData) => {
-        if (nextData?.schemaVersion !== 1) throw new Error('数据格式不兼容')
+      .then((payload) => {
+        // The browser reads the Worker directly, so it must normalize the same
+        // way the server does; otherwise a missing heart rate renders as "0 bpm".
+        const nextData = normalizeWorkoutsData(payload)
+        if (!nextData) throw new Error('数据格式不兼容')
         setData(nextData)
         setError(null)
       })
@@ -204,9 +207,9 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
                   <time dateTime={activity.startedAt}>{formatDate(activity.startedAt)}</time>
                 </div>
                 <dl>
-                  <div><dt>距离</dt><dd>{(activity.distanceMeters / 1000).toFixed(2)} km</dd></div>
+                  {activity.distanceMeters > 0 && <div><dt>距离</dt><dd>{(activity.distanceMeters / 1000).toFixed(2)} km</dd></div>}
                   <div className="workout-duration"><dt>时间</dt><dd>{formatDuration(activity.durationSeconds)}</dd></div>
-                  <div><dt>配速</dt><dd>{formatPace(activity.pace)}</dd></div>
+                  {activity.pace !== undefined && activity.pace > 0 && <div><dt>配速</dt><dd>{formatPace(activity.pace)}</dd></div>}
                   {activity.activeEnergyKcal !== undefined && <div><dt>消耗</dt><dd>{Math.round(activity.activeEnergyKcal)} kcal</dd></div>}
                   {activity.averageHeartRateBpm !== undefined && <div><dt>平均心率</dt><dd>{Math.round(activity.averageHeartRateBpm)} bpm</dd></div>}
                 </dl>

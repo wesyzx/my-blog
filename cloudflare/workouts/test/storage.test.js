@@ -1,0 +1,304 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import test from 'node:test'
+import { normalizeActivity } from '../src/domain.js'
+import { createAndStoreSnapshot, upsertActivities } from '../src/storage.js'
+import worker from '../src/index.js'
+
+// Run the real D1 SQL against SQLite when the local Node runtime provides it.
+let DatabaseSync
+try {
+  ;({ DatabaseSync } = await import('node:sqlite'))
+} catch {
+  // Node 20 can still run the existing domain and request tests.
+}
+
+const NOW = new Date('2026-10-14T08:00:00Z')
+const BASE = {
+  id: 'stable-workout-id',
+  type: 'Run',
+  startedAt: '2026-10-14T06:30:00+08:00',
+  localDate: '2026-10-14',
+  distanceMeters: 5000,
+  durationSeconds: 1800,
+  elevationGainMeters: 32,
+  activeEnergyKcal: 350,
+  averageHeartRateBpm: 150,
+  route: 'encoded-route',
+  publishRoute: true,
+}
+
+function environment(t) {
+  const sqlite = new DatabaseSync(':memory:')
+  t.after(() => sqlite.close())
+  for (const migration of ['0001_init.sql', '0002_workout_metrics.sql']) {
+    sqlite.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'))
+  }
+  const objects = new Map()
+  return {
+    sqlite,
+    DB: {
+      prepare(sql) {
+        return {
+          bind(...values) {
+            return {
+              async run() { return sqlite.prepare(sql).run(...values) },
+              async first() { return sqlite.prepare(sql).get(...values) },
+            }
+          },
+          async all() { return { results: sqlite.prepare(sql).all() } },
+        }
+      },
+      async batch(statements) {
+        sqlite.exec('BEGIN')
+        try {
+          const result = []
+          for (const statement of statements) result.push(await statement.run())
+          sqlite.exec('COMMIT')
+          return result
+        } catch (error) {
+          sqlite.exec('ROLLBACK')
+          throw error
+        }
+      },
+    },
+    SNAPSHOTS: {
+      async put(key, body) { objects.set(key, JSON.parse(body)) },
+    },
+    objects,
+    INGEST_TOKEN: 'local-test-token',
+  }
+}
+
+async function insert(env, input) {
+  await upsertActivities(env.DB, [normalizeActivity(input, 'apple-health', NOW)])
+}
+
+test('summary retries preserve the route, absent metrics and local date', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, BASE)
+  await insert(env, {
+    id: BASE.id,
+    startedAt: '2026-10-13T22:30:00Z',
+    durationSeconds: 1900,
+    activeEnergyKcal: 360,
+  })
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities.length, 1)
+  assert.equal(snapshot.activities[0].type, 'Run')
+  assert.equal(snapshot.activities[0].distanceMeters, 5000)
+  assert.equal(snapshot.activities[0].durationSeconds, 1900)
+  assert.equal(snapshot.activities[0].elevationGainMeters, 32)
+  assert.equal(snapshot.activities[0].activeEnergyKcal, 360)
+  assert.equal(snapshot.activities[0].averageHeartRateBpm, 150)
+  assert.equal(snapshot.activities[0].route, BASE.route)
+  assert.equal(snapshot.activities[0].pace, 380)
+  assert.equal(snapshot.heatmap[0].date, '2026-10-14')
+  assert.equal(snapshot.routes.length, 1)
+  assert.equal('providedFields' in snapshot.activities[0], false)
+})
+
+test('explicit zeros update metrics and clear a no-longer-valid pace', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, BASE)
+  await insert(env, {
+    id: BASE.id,
+    startedAt: BASE.startedAt,
+    distanceMeters: 0,
+    elevationGainMeters: 0,
+    activeEnergyKcal: 0,
+  })
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].distanceMeters, 0)
+  assert.equal(snapshot.activities[0].elevationGainMeters, 0)
+  assert.equal(snapshot.activities[0].activeEnergyKcal, 0)
+  assert.equal(snapshot.activities[0].durationSeconds, 1800)
+  assert.equal('pace' in snapshot.activities[0], false)
+})
+
+test('empty optional metrics do not overwrite measured values', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, BASE)
+  await insert(env, {
+    id: BASE.id,
+    startedAt: BASE.startedAt,
+    distanceMeters: null,
+    activeEnergyKcal: null,
+    averageHeartRateBpm: '',
+  })
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].distanceMeters, 5000)
+  assert.equal(snapshot.activities[0].activeEnergyKcal, 350)
+  assert.equal(snapshot.activities[0].averageHeartRateBpm, 150)
+})
+
+test('publishRoute false explicitly withdraws a previously published route', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, BASE)
+  await insert(env, { id: BASE.id, startedAt: BASE.startedAt, publishRoute: false })
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.routes.length, 0)
+  assert.equal('route' in snapshot.activities[0], false)
+  assert.equal(snapshot.activities[0].averageHeartRateBpm, 150)
+})
+
+test('authenticated HealthKit summary imports are idempotent and rebuild snapshots', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  const activity = {
+    id: 'stairs-id',
+    type: 'Stairs',
+    startedAt: '2026-10-14T06:30:00+08:00',
+    durationSeconds: 900,
+    activeEnergyKcal: 120,
+  }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await worker.fetch(new Request('https://workouts.example/internal/healthkit', {
+      method: 'POST',
+      headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/json' },
+      body: JSON.stringify({ source: 'apple-health', activities: [activity] }),
+    }), env)
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).ingested, 1)
+  }
+  const snapshot = env.objects.get('v1/workouts.json')
+  assert.equal(snapshot.activities.length, 1)
+  assert.equal(snapshot.activities[0].type, 'Stairs')
+  assert.equal(snapshot.activities[0].activeEnergyKcal, 120)
+  assert.equal(snapshot.summary['2026'].totalActivities, 1)
+  assert.equal(snapshot.summary['2026'].totalDurationSeconds, 900)
+  assert.equal(snapshot.heatmap[0].date, '2026-10-14')
+  assert.equal(env.objects.get('v1/routes.json').routes.length, 0)
+})
+
+test('Shortcuts can send one workout object without wrapping an activities array', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  const response = await worker.fetch(new Request('https://workouts.example/internal/healthkit', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      source: 'apple-health',
+      id: 'single-stairs-id',
+      type: 'Stairs',
+      startedAt: '2026-10-14T06:30:00+08:00',
+      durationSeconds: 900,
+      activeEnergyKcal: 120,
+    }),
+  }), env)
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.ok, true)
+  assert.equal(data.ingested, 1)
+  assert.equal(env.objects.get('v1/workouts.json').activities[0].id, 'apple-health:single-stairs-id')
+})
+
+const GPX_TRACK = `<?xml version="1.0"?>
+<gpx version="1.1" creator="WorkoutGPX"><trk><trkseg>
+  <trkpt lat="39.90000" lon="116.40000"><ele>40</ele><time>2026-10-14T06:30:00Z</time></trkpt>
+  <trkpt lat="39.90100" lon="116.40100"><ele>70</ele><time>2026-10-14T06:31:00Z</time></trkpt>
+</trkseg></trk></gpx>`
+
+async function ingestWorkout(env, activity) {
+  return await worker.fetch(new Request('https://workouts.example/internal/healthkit', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/json' },
+    body: JSON.stringify({ source: 'apple-health', ...activity }),
+  }), env)
+}
+
+async function attachGpx(env, query) {
+  return await worker.fetch(new Request(`https://workouts.example/internal/route${query}`, {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/gpx+xml' },
+    body: GPX_TRACK,
+  }), env)
+}
+
+test('attaches an exported GPX track to a workout by UUID', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await ingestWorkout(env, {
+    id: 'gps-run-id',
+    type: 'Run',
+    startedAt: '2026-10-14T14:30:00+08:00',
+    durationSeconds: 1800,
+  })
+  const response = await attachGpx(env, '?id=gps-run-id')
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.ok, true)
+  assert.equal(data.matched, 'gps-run-id')
+  assert.equal(data.points, 2)
+  assert.equal(data.elevationGainMeters, 30)
+  assert.ok(data.distanceMeters > 100)
+
+  const snapshot = env.objects.get('v1/workouts.json')
+  assert.equal(snapshot.activities.length, 1)
+  assert.ok(snapshot.activities[0].route.length > 0)
+  assert.equal(snapshot.activities[0].distanceMeters, data.distanceMeters)
+  assert.equal(snapshot.activities[0].elevationGainMeters, 30)
+  assert.ok(snapshot.activities[0].pace > 0)
+  assert.equal(env.objects.get('v1/routes.json').routes.length, 1)
+})
+
+test('matches a GPX track by start time and keeps measured metrics', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await ingestWorkout(env, {
+    id: 'gps-ride-id',
+    type: 'Ride',
+    startedAt: '2026-10-14T14:30:05+08:00',
+    durationSeconds: 3600,
+    distanceMeters: 12000,
+    elevationGainMeters: 120,
+  })
+  const response = await attachGpx(env, '?startedAt=2026-10-14T06:30:00Z')
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.matched, 'gps-ride-id')
+  // HealthKit measurements are authoritative; GPX only fills the missing route.
+  assert.equal(data.distanceMeters, 12000)
+  assert.equal(data.elevationGainMeters, 120)
+  const snapshot = env.objects.get('v1/workouts.json')
+  assert.equal(snapshot.activities[0].distanceMeters, 12000)
+  assert.equal(snapshot.activities[0].pace, 300)
+})
+
+test('reports a missing workout and rejects unusable GPX bodies', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  assert.equal((await attachGpx(env, '?id=missing')).status, 404)
+  assert.equal((await attachGpx(env, '')).status, 400)
+
+  await ingestWorkout(env, { id: 'plain-id', type: 'Walk', startedAt: '2026-10-14T06:30:00Z', durationSeconds: 600 })
+  const bad = await worker.fetch(new Request('https://workouts.example/internal/route?id=plain-id', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token' },
+    body: 'not a gpx file',
+  }), env)
+  assert.equal(bad.status, 400)
+
+  const unauthenticated = await worker.fetch(new Request('https://workouts.example/internal/route?id=plain-id', {
+    method: 'POST',
+    body: GPX_TRACK,
+  }), env)
+  assert.equal(unauthenticated.status, 401)
+})
+
+test('accepts a GPX payload inside a JSON body', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await ingestWorkout(env, { id: 'json-route-id', type: 'Run', startedAt: '2026-10-14T06:30:00Z', durationSeconds: 1800 })
+  const response = await worker.fetch(new Request('https://workouts.example/internal/route', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/json' },
+    body: JSON.stringify({ id: 'json-route-id', gpx: GPX_TRACK }),
+  }), env)
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.matched, 'json-route-id')
+  assert.equal(data.points, 2)
+  assert.equal(env.objects.get('v1/routes.json').routes.length, 1)
+
+  const missingGpx = await worker.fetch(new Request('https://workouts.example/internal/route', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/json' },
+    body: JSON.stringify({ id: 'json-route-id' }),
+  }), env)
+  assert.equal(missingGpx.status, 400)
+})

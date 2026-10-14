@@ -141,7 +141,7 @@ python3 scripts/import-apple-health.py ~/Downloads/apple-health-export.zip --dry
 | 心率、爬升被覆盖 | 原 UPSERT 将缺省心率写 NULL、爬升写 0 | 已修复并部署：缺省指标保留，显式数值 0 正常更新 |
 | XML 子节点指标漏读 | `parse_workouts` 只读 Workout 顶层距离/爬升属性，没有解析 WorkoutStatistics | 增加子节点指标与单位支持，再用真实导出文件确认格式 |
 | 轨迹误配 | 当前容差默认 90 分钟；无时间戳 GPX 会按日期参与匹配 | 优先用导出文件内的明确关联，歧义拒绝自动匹配；支持人工指定目标活动 |
-| 单独 GPX 尚无入口 | 当前脚本要求 ZIP 中存在 export.xml；Worker 要求标准化活动 JSON | 添加 GPX 补轨迹流程，复用编码逻辑，并保留原摘要 |
+| 单独 GPX 尚无入口 | 当前脚本要求 ZIP 中存在 export.xml；Worker 要求标准化活动 JSON | 已新增 `/internal/route`，可直接接收 GPX 文本或文件，复用 polyline 编码并保留原摘要 |
 
 ## 本次本地验证与边界
 
@@ -149,6 +149,8 @@ python3 scripts/import-apple-health.py ~/Downloads/apple-health-export.zip --dry
 
 使用项目现有数据库迁移和原始 UPSERT SQL，在内存 SQLite 中先写入带路线、心率和爬升的记录，再重传缺少这些字段的摘要，复现路线与心率被清空、爬升被写为 0。
 
-本次已修改 Worker 的部分更新、单对象导入、指标校验和 GPX 补轨迹接口，新增 GPX 解析与真实 SQLite 存储测试；29 项 Worker 测试、语法检查和博客类型/静态检查通过。2026-10-14 已通过 Wrangler 部署，当前版本 `e775ccfe`，线上 `/health` 返回 `ok: true`。快照已重建，缺失指标不再发布 `null`；博客页面此前已在线上生效，现在空距离、空配速和空心率都不再显示。手机上的“预览最近运动上传数据 / 同步最近运动到博客”已实机跑通单条与多选两条流程，重复上传同一 UUID 不会新增记录。
+本次已修改 Worker 的部分更新、单对象导入、指标校验和 GPX 补轨迹接口，新增 GPX 解析与真实 SQLite 存储测试；30 项 Worker 测试、语法检查和博客类型/静态检查通过。2026-10-14 已通过 Wrangler 部署，当前版本 `0504b109`，线上 `/health` 返回 `ok: true`。快照已重建，缺失指标不再发布 `null`；博客页面此前已在线上生效，现在空距离、空配速和空心率都不再显示。手机上的“预览最近运动上传数据 / 同步最近运动到博客”已实机跑通单条与多选两条流程，重复上传同一 UUID 不会新增记录。
 
-快捷指令生成源码与实机导出的无敏感数据属性模板保存在 `shortcuts/`。签名安装成功与实机运行成功是两项独立验收。当前 Actions 的属性面板只暴露 `id`、`workoutType`、`startDate`、`duration`、`activeCalories`，尚未找到心率或最大心率属性；因此爬楼等运动在 Actions 路径下可能长期没有心率。GPX 补轨迹指令尚未生成，也没有带 GPS 的真实运动可验证。
+快捷指令生成源码与实机导出的无敏感数据属性模板保存在 `shortcuts/`。签名安装成功与实机运行成功是两项独立验收。当前 Actions 的属性面板只暴露 `id`、`workoutType`、`startDate`、`duration`、`activeCalories`，尚未找到心率或最大心率属性；因此爬楼等运动在 Actions 路径下可能长期没有心率。
+
+GPX 补轨迹流程已实现并部署：`build.py` 会额外生成“预览运动轨迹文件 / 上传运动轨迹到博客”两个指令，运行时用“文件”动作选择 WorkoutGPX 导出的 `.gpx`，上传动作以文件作为请求体 POST 到 `/internal/route`。因为后端能从 GPX 内第一个时间戳自动匹配运动，这两个指令不需要 UUID 或开始时间输入。两个文件已签名并保存在 `shortcuts/`；Mac 端导入尚未完成，也没有带 GPS 的真实运动做端到端验证。

@@ -2,6 +2,14 @@
 
 Sign with Apple's `shortcuts sign --mode anyone --input ... --output ...`.
 No health values or authentication token are included in these files.
+
+Two families of shortcuts are generated:
+
+* summary uploads read a workout through the Actions app's Find Workout action
+  and post calories/duration to `/internal/healthkit`;
+* the GPX upload picks a `.gpx` file exported by WorkoutGPX and posts it to
+  `/internal/route`. The Worker reads the first timestamp inside the file and
+  matches the workout itself, so the file alone is enough.
 """
 import copy
 import pathlib
@@ -122,8 +130,62 @@ def build(upload, latest=True):
     print(target)
 
 
+def build_gpx(upload=True):
+    """Pick a GPX file and post it to the route endpoint.
+
+    The Worker matches the workout from the first `<time>` inside the track,
+    so this shortcut does not need to know a UUID or start time.
+    """
+    workflow = copy.deepcopy(TEMPLATE['workflow'])
+    actions = []
+
+    def action(name, **params):
+        identifier = uid()
+        params['UUID'] = identifier
+        actions.append({'WFWorkflowActionIdentifier': 'is.workflow.actions.' + name,
+                        'WFWorkflowActionParameters': params})
+        return identifier
+
+    action('comment', WFCommentActionText=(
+        '选择 WorkoutGPX 导出的 .gpx 文件并上传到博客。'
+        'Worker 会用文件内的第一个时间戳自动匹配已有运动，只补充轨迹、距离和爬升，'
+        '不覆盖健康 App 已经测到的时长与热量。'
+        + ('令牌仅本次输入，不会写入文件。' if upload else '本指令只在本机预览，不发送数据。')))
+
+    # `WFFile` with `{Type: Ask}` opens the Files picker at run time.
+    file_id = action('file', WFFile={
+        'Value': {'Type': 'Ask'},
+        'WFSerializationType': 'WFTextTokenAttachment',
+    })
+
+    token_id = None
+    if upload:
+        token_id = action('ask', WFAskActionPrompt='输入博客运动上传令牌（仅本次使用）', WFInputType='Text')
+        response_id = action('downloadurl',
+                             WFURL='https://workouts.wesyzx.workers.dev/internal/route',
+                             WFHTTPMethod='POST', WFHTTPBodyType='File',
+                             WFRequestVariable=attachment(output(file_id, 'File')),
+                             WFHTTPHeaders=dictionary([
+                                 ('Authorization', text('Bearer ', output(token_id, 'Provided Input')), 0),
+                                 ('Content-Type', text('application/gpx+xml'), 0)]))
+        result_id, result_name = response_id, 'Contents of URL'
+    else:
+        # Preview the chosen file so the run can be verified without network.
+        result_id, result_name = file_id, 'File'
+
+    action('previewdocument', WFInput=attachment(output(result_id, result_name)))
+    workflow['WFWorkflowActions'] = actions
+    name = '上传运动轨迹到博客' if upload else '预览运动轨迹文件'
+    workflow['WFWorkflowName'] = name
+    target = pathlib.Path('/private/tmp') / (name + '-unsigned.shortcut')
+    plistlib.dump(workflow, open(target, 'wb'), fmt=plistlib.FMT_BINARY)
+    print(target)
+
+
 if __name__ == '__main__':
     build(False)
     build(True)
     build(False, latest=False)
     build(True, latest=False)
+    build_gpx(False)
+    build_gpx(True)

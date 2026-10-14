@@ -112,7 +112,8 @@ async function readBoundedText(body, contentLength, limit = MAX_GPX_BYTES) {
 /**
  * Attach a GPX track exported by WorkoutGPX to a workout that was already
  * ingested from Apple Health. The export carries no HealthKit UUID, so the
- * caller names the workout (`?id=`) or gives the track start (`?startedAt=`).
+ * caller names the workout (`?id=`), gives the track start (`?startedAt=`), or
+ * lets the Worker read the first timestamp inside the GPX itself.
  *
  * Accepts either a raw GPX body or JSON `{ gpx: "<xml>", id, startedAt }`.
  * The JSON form lets Shortcuts reuse the same request-body transport that
@@ -140,17 +141,26 @@ async function ingestRoute(request, env) {
       }
     }
 
+    const summary = summarizeGpx(gpx)
     const source = url.searchParams.get('source') || body?.source || 'apple-health'
     const sourceActivityId = url.searchParams.get('id') || body?.id
-    const startedAt = url.searchParams.get('startedAt') || body?.startedAt
+    const requestedStartedAt = url.searchParams.get('startedAt') || body?.startedAt
+    // A GPX file on its own is enough: the first track timestamp names the
+    // workout. GPS lock can lag the workout start, so allow a wider window
+    // than the explicit `?startedAt=` path and still pick the nearest match.
+    const startedAt = requestedStartedAt || summary.startedAt
     if (!sourceActivityId && !startedAt) {
-      return json({ error: 'Provide ?id= (workout UUID) or ?startedAt= (ISO time)' }, { status: 400 })
+      return json({ error: 'Provide ?id= (workout UUID), ?startedAt= (ISO time), or a GPX file that contains timestamps' }, { status: 400 })
     }
 
-    const activity = await findActivityForRoute(env.DB, { source, sourceActivityId, startedAt })
+    const activity = await findActivityForRoute(env.DB, {
+      source,
+      sourceActivityId,
+      startedAt,
+      toleranceSeconds: requestedStartedAt ? 300 : 1800,
+    })
     if (!activity) return json({ error: 'No matching workout found' }, { status: 404 })
 
-    const summary = summarizeGpx(gpx)
     if (summary.polyline.length > 100_000) return json({ error: 'Route exceeds 100 KB' }, { status: 400 })
 
     const applied = await attachRoute(env.DB, activity, summary)
@@ -158,6 +168,8 @@ async function ingestRoute(request, env) {
     return json({
       ok: true,
       matched: activity.sourceActivityId,
+      matchedBy: sourceActivityId ? 'id' : requestedStartedAt ? 'startedAt' : 'gpx-time',
+      workoutStartedAt: activity.startedAt,
       points: summary.points.length,
       ...applied,
       lastUpdated: snapshot.lastUpdated,

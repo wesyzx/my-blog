@@ -264,7 +264,15 @@ test('matches a GPX track by start time and keeps measured metrics', { skip: !Da
 test('reports a missing workout and rejects unusable GPX bodies', { skip: !DatabaseSync }, async (t) => {
   const env = environment(t)
   assert.equal((await attachGpx(env, '?id=missing')).status, 404)
-  assert.equal((await attachGpx(env, '')).status, 400)
+  // A bare GPX with timestamps now matches on its own; with an empty database
+  // there is simply nothing to attach to.
+  assert.equal((await attachGpx(env, '')).status, 404)
+  const noTime = await worker.fetch(new Request('https://workouts.example/internal/route', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/gpx+xml' },
+    body: '<gpx><trk><trkseg><trkpt lat="1" lon="2"/><trkpt lat="1.001" lon="2.001"/></trkseg></trk></gpx>',
+  }), env)
+  assert.equal(noTime.status, 400)
 
   await ingestWorkout(env, { id: 'plain-id', type: 'Walk', startedAt: '2026-10-14T06:30:00Z', durationSeconds: 600 })
   const bad = await worker.fetch(new Request('https://workouts.example/internal/route?id=plain-id', {
@@ -301,4 +309,30 @@ test('accepts a GPX payload inside a JSON body', { skip: !DatabaseSync }, async 
     body: JSON.stringify({ id: 'json-route-id' }),
   }), env)
   assert.equal(missingGpx.status, 400)
+})
+
+test('matches a bare GPX upload by the timestamp inside the file', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await ingestWorkout(env, {
+    id: 'auto-match-id',
+    type: 'Run',
+    startedAt: '2026-10-14T06:29:40Z',
+    durationSeconds: 1800,
+  })
+
+  // No ?id= or ?startedAt=; the Worker reads the first track timestamp.
+  const response = await attachGpx(env, '')
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(data.matched, 'auto-match-id')
+  assert.equal(data.matchedBy, 'gpx-time')
+  assert.equal(data.workoutStartedAt, '2026-10-14T06:29:40.000Z')
+
+  // A track far outside the widened window must not attach to anything.
+  const faraway = await worker.fetch(new Request('https://workouts.example/internal/route', {
+    method: 'POST',
+    headers: { authorization: 'Bearer local-test-token', 'content-type': 'application/gpx+xml' },
+    body: GPX_TRACK.replace(/2026-10-14T06:3\d:00Z/g, '2026-10-14T09:30:00Z'),
+  }), env)
+  assert.equal(faraway.status, 404)
 })

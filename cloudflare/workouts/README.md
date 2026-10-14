@@ -24,7 +24,7 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 - `GET /health`：快照健康状态，不返回运动详情。
 - `POST /internal/ingest`：导入标准化活动，需要 `Authorization: Bearer <INGEST_TOKEN>`。
 - `POST /internal/healthkit`：供 iPhone 快捷指令导入 Apple Health Workout，格式同上但默认来源为 `apple-health`，需要同一令牌。
-- `POST /internal/route`：为已存在的运动补一条轨迹，接受 GPX 原始文本或 `{"gpx": "...", "id": "..."}`，需要同一令牌。用 `?id=<workout UUID>` 或 `?startedAt=<ISO 时间>` 指定目标运动；`startedAt` 默认允许前后 300 秒偏差，候选不唯一时按时间最近的一条匹配。
+- `POST /internal/route`：为已存在的运动补一条轨迹，接受 GPX 原始文本或 `{"gpx": "...", "id": "..."}`，需要同一令牌。定位目标运动有三种方式：`?id=<workout UUID>` 最精确；`?startedAt=<ISO 时间>` 允许前后 300 秒偏差；两者都不给时，Worker 读取 GPX 内第一个 `<time>` 时间戳自动匹配，容差放宽到 30 分钟以吸收 GPS 首次定位延迟。候选不唯一时按时间最近的一条匹配。响应会回传 `matchedBy`（`id` / `startedAt` / `gpx-time`）便于核对。
 - `POST /internal/sync`：立即从 `SOURCE_URL` 同步，需要同一令牌。
 
 单次导入最多 500 条、2 MB。路线默认不会公开，只有活动明确包含 `"publishRoute": true` 时才写入路线快照。单条编码路线超过 100 KB 会被拒绝，避免误把异常数据写入公开存储。

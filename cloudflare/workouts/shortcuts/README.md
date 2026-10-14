@@ -52,7 +52,9 @@ shortcuts sign --mode anyone \
 
 ## 验收状态
 
-摘要类：单条与多选两条流程都已在真机跑通，重复上传同一 UUID 不新增记录。时长、动态热量、平均/最大心率都由快捷指令读取。心率动作在 Mac 上显示为需要 iOS 运行，需在 iPhone 上授权并实机验证。
+摘要类：不含心率的单条与多选上传已在真机跑通，重复上传同一 UUID 不新增记录。2026-10-15 已在健康 App 中开启“快捷指令 → 心率”读取权限，新版最近运动预览能够完成，但平均/最大心率仍为空；手机编辑器中的日期动作实际显示“添加 0 秒”。因此心率补齐尚未通过验收，不能根据空结果判断原运动没有心率。需修正日期参数、核对运动起止时间后重测；尚未用修正后的心率重新上传。
+
+2026-10-15 已检查线上 `/workouts`：10 月 14 日爬楼显示 38 分钟、248 kcal，隐藏无测量的距离、配速和心率；9 月 29 日的既有心率仍显示 134 bpm。前端隐藏缺失指标的改动已经上线。
 
 轨迹类：文件已签名，后端 `/internal/route` 已部署并有测试覆盖；Mac 端已导入，尚未在带 GPS 的真实运动上做端到端验证。上传返回内容必须包含 `ok: true`，不能仅凭流程结束判断成功。
 
@@ -61,6 +63,6 @@ shortcuts sign --mode anyone \
 - 日期动作的 `WFDate` 变量必须用 `WFTextTokenString`，用 `WFTextTokenAttachment` 会显示为空日期。
 - 时长是测量值，需用 `WFCoercionVariableAggrandizement` / `WFNumberContentItem` 取无单位数字，不能把带“秒”的文本直接发给接口。
 - 上传轨迹用 `is.workflow.actions.file`（`WFFile = {Type: Ask}`）选文件，配合 `downloadurl` 的 `WFHTTPBodyType = File` 把文件直接作为请求体。
-- `Adjust Date` 必须同时写 `WFAdjustOffsetPicker`（`WFTimeOffsetValue`）和 `WFDuration`（`WFQuantityFieldValue`）；只写前者在 iOS 导入时会变成“加 0 秒”。
+- 当前 `Adjust Date` 同时写了 `WFAdjustOffsetPicker`（`WFTimeOffsetValue`）和 `WFDuration`（`WFQuantityFieldValue`），但 2026-10-15 真机仍显示“添加 0 秒”；该编码尚未验证成功，不能作为可复用的正确模板。
 - 健康筛选器的日期区间用 `Operator = 1003`，`Values.Date` 是下界、`Values.AnotherDate` 是上界，两者都是变量引用。
 - `WFWorkflowInputContentItemClasses` 置空：这些指令不接收快捷指令输入，否则编辑器会出现无用的“快捷指令输入”。

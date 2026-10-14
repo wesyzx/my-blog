@@ -51,6 +51,16 @@ function optionalNonNegativeNumber(value) {
   return number
 }
 
+// Shortcuts' Calculate Statistics action returns 0 (or an empty string) when a
+// workout has no heart-rate samples. A real heart rate is never zero, so treat
+// anything that is not positive as unmeasured instead of publishing "0 bpm".
+function optionalHeartRate(value) {
+  if (!hasValue(value)) return undefined
+  const number = Number(value)
+  if (!Number.isFinite(number) || number < 0) throw new Error('Metrics must contain non-negative numbers without units')
+  return number > 0 ? number : undefined
+}
+
 function dateKey(value, fallback) {
   if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value
   return fallback.slice(0, 10)
@@ -75,8 +85,8 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   const elevationGainMeters = nonNegativeNumber(input.elevationGainMeters ?? input.elevationGain)
   const suppliedPace = optionalPositiveNumber(input.pace ?? input.paceSecondsPerKm)
   const activeEnergyKcal = optionalNonNegativeNumber(input.activeEnergyKcal ?? input.calories ?? input.energyKcal)
-  const averageHeartRateBpm = optionalNonNegativeNumber(input.averageHeartRateBpm ?? input.avgHeartRateBpm)
-  const maxHeartRateBpm = optionalNonNegativeNumber(input.maxHeartRateBpm)
+  const averageHeartRateBpm = optionalHeartRate(input.averageHeartRateBpm ?? input.avgHeartRateBpm)
+  const maxHeartRateBpm = optionalHeartRate(input.maxHeartRateBpm)
   const averageCadenceRpm = optionalNonNegativeNumber(input.averageCadenceRpm ?? input.avgCadenceRpm)
   const calculatedPace = distanceMeters > 0 && durationSeconds > 0
     ? durationSeconds / (distanceMeters / 1000)

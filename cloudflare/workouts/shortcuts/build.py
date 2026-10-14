@@ -49,6 +49,10 @@ def dictionary(items):
 
 def build(upload, latest=True):
     workflow = copy.deepcopy(TEMPLATE['workflow'])
+    # These shortcuts read Health and post a request; they never consume
+    # Shortcut Input, so advertising input types only produces a stale
+    # "Shortcut Input" row in the editor.
+    workflow['WFWorkflowInputContentItemClasses'] = []
     actions = []
 
     def action(name, **params):
@@ -59,7 +63,9 @@ def build(upload, latest=True):
         return identifier
 
     action('comment', WFCommentActionText=(
-        ('读取 Apple 健康中的运动摘要。' + ('读取第一条运动（当前实机为最近一条）。' if latest else '选择要处理的运动，逐条读取。') + '不读取或上传 GPS 轨迹。')
+        ('读取 Apple 健康中的运动摘要（时长、动态热量）与运动时段内的平均/最大心率。'
+         + ('读取第一条运动（当前实机为最近一条）。' if latest else '选择要处理的运动，逐条读取。')
+         + '不读取或上传 GPS 轨迹。')
         + ('上传目的地是你的博客 workouts.wesyzx.workers.dev；令牌仅本次输入。' if upload else '本指令只在本机预览，不发送数据。')))
     query = copy.deepcopy(TEMPLATE['query'])
     query_id = uid()
@@ -95,16 +101,68 @@ def build(upload, latest=True):
                         WFDateFormatStyle='Custom', WFDateFormat="yyyy-MM-dd'T'HH:mm:ssXXX")
     local_id = action('format.date', WFDate=text(ref=property_ref('startDate')),
                       WFDateFormatStyle='Custom', WFDateFormat='yyyy-MM-dd')
-    duration = property_ref('duration')
-    duration.setdefault('Aggrandizements', []).append(
-        {'Type': 'WFCoercionVariableAggrandizement', 'CoercionItemClass': 'WFNumberContentItem'})
+
+    def number_ref(name):
+        ref = property_ref(name)
+        ref.setdefault('Aggrandizements', []).append(
+            {'Type': 'WFCoercionVariableAggrandizement', 'CoercionItemClass': 'WFNumberContentItem'})
+        return ref
+
+    # The workout window is [start, start + measured duration]. Heart-rate
+    # samples are then limited to that window so the average belongs to this
+    # workout and not to the rest of the day.
+    duration_number = number_ref('duration')
+    action('comment', WFCommentActionText=(
+        '心率取自“查找健康样本”：类型为“心率”，开始时间落在本次运动的起止区间内，'
+        '再分别计算平均值与最大值。健康 App 需允许“快捷指令”读取数据，否则结果为空。'))
+    end_id = action('adjustdate',
+                    WFDate=text(ref=property_ref('startDate')),
+                    # iOS keeps the editable picker state and the legacy
+                    # quantity field in sync; supplying both avoids the
+                    # "Add 0 seconds" import bug that offset-only payloads hit.
+                    WFAdjustOffsetPicker={
+                        'Value': {'Operation': 'Add', 'Unit': 'Second', 'Value': copy.deepcopy(duration_number)},
+                        'WFSerializationType': 'WFTimeOffsetValue',
+                    },
+                    WFDuration={
+                        'Value': {'Magnitude': text(ref=copy.deepcopy(duration_number)), 'Unit': 'seconds'},
+                        'WFSerializationType': 'WFQuantityFieldValue',
+                    })
+    hr_id = action('filter.health.quantity', WFContentItemFilter={
+        'Value': {
+            'WFActionParameterFilterPrefix': 1,
+            'WFContentPredicateBoundedDate': False,
+            'WFActionParameterFilterTemplates': [
+                {'Bounded': True, 'Operator': 4, 'Property': 'Type', 'Removable': False,
+                 'Values': {'Enumeration': {'Value': 'Heart Rate',
+                                            'WFSerializationType': 'WFStringSubstitutableState'}}},
+                {'Bounded': True, 'Operator': 1003, 'Property': 'Start Date', 'Removable': False,
+                 'Values': {'Date': attachment(property_ref('startDate')),
+                            'AnotherDate': attachment(output(end_id, 'Adjusted Date'))}},
+            ],
+        },
+        'WFSerializationType': 'WFContentPredicateTableTemplate',
+    })
+    hr_values_id = action('properties.health.quantity',
+                          WFContentItemPropertyName='Value',
+                          WFInput=attachment(output(hr_id, 'Health Samples')))
+    average_id = action('statistics', WFStatisticsOperation='Average',
+                        WFInput=attachment(output(hr_values_id, 'Details of Health Sample')))
+    maximum_id = action('statistics', WFStatisticsOperation='Maximum',
+                        WFInput=attachment(output(hr_values_id, 'Details of Health Sample')))
+
+    action('comment', WFCommentActionText=(
+        '把一次运动整理成一条记录。'
+        + ('上传到博客；结果会显示服务端返回的 JSON，便于确认是否成功。' if upload else '本指令只在本机显示这条记录，不发送数据。')))
     items = [('source', text('apple-health'), 0),
              ('id', text(ref=property_ref('id')), 0),
              ('type', text(ref=property_ref('workoutType')), 0),
              ('startedAt', text(ref=output(started_id, 'Formatted Date')), 0),
              ('localDate', text(ref=output(local_id, 'Formatted Date')), 0),
-             ('durationSeconds', text(ref=duration), 0),
-             ('activeEnergyKcal', text(ref=property_ref('activeCalories')), 0)]
+             ('durationSeconds', text(ref=number_ref('duration')), 0),
+             ('activeEnergyKcal', text(ref=number_ref('activeCalories')), 0),
+             ('averageHeartRateBpm', text(ref=output(average_id, 'Statistics')), 0),
+             ('maxHeartRateBpm', text(ref=output(maximum_id, 'Statistics')), 0)]
     body = dictionary(items)
     if upload:
         response_id = action('downloadurl',
@@ -137,6 +195,7 @@ def build_gpx(upload=True):
     so this shortcut does not need to know a UUID or start time.
     """
     workflow = copy.deepcopy(TEMPLATE['workflow'])
+    workflow['WFWorkflowInputContentItemClasses'] = []
     actions = []
 
     def action(name, **params):

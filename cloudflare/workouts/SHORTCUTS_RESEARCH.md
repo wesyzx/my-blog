@@ -149,8 +149,8 @@ python3 scripts/import-apple-health.py ~/Downloads/apple-health-export.zip --dry
 
 使用项目现有数据库迁移和原始 UPSERT SQL，在内存 SQLite 中先写入带路线、心率和爬升的记录，再重传缺少这些字段的摘要，复现路线与心率被清空、爬升被写为 0。
 
-本次已修改 Worker 的部分更新、单对象导入、指标校验和 GPX 补轨迹接口，新增 GPX 解析与真实 SQLite 存储测试；30 项 Worker 测试、语法检查和博客类型/静态检查通过。2026-10-14 已通过 Wrangler 部署，当前版本 `0504b109`，线上 `/health` 返回 `ok: true`。快照已重建，缺失指标不再发布 `null`；博客页面此前已在线上生效，现在空距离、空配速和空心率都不再显示。手机上的“预览最近运动上传数据 / 同步最近运动到博客”已实机跑通单条与多选两条流程，重复上传同一 UUID 不会新增记录。
+本次已修改 Worker 的部分更新、单对象导入、指标校验和 GPX 补轨迹接口，新增 GPX 解析与真实 SQLite 存储测试；31 项 Worker 测试、语法检查和博客类型/静态检查通过。2026-10-14 已通过 Wrangler 部署，当前版本 `3e73fff5`，线上 `/health` 返回 `ok: true`。快照已重建，缺失指标不再发布 `null`；博客页面此前已在线上生效，现在空距离、空配速和空心率都不再显示。手机上的“预览最近运动上传数据 / 同步最近运动到博客”已实机跑通单条与多选两条流程，重复上传同一 UUID 不会新增记录。
 
-快捷指令生成源码与实机导出的无敏感数据属性模板保存在 `shortcuts/`。签名安装成功与实机运行成功是两项独立验收。当前 Actions 的属性面板只暴露 `id`、`workoutType`、`startDate`、`duration`、`activeCalories`，尚未找到心率或最大心率属性；因此爬楼等运动在 Actions 路径下可能长期没有心率。
+快捷指令生成源码与实机导出的无敏感数据属性模板保存在 `shortcuts/`。签名安装成功与实机运行成功是两项独立验收。当前 Actions 的属性面板只暴露 `id`、`workoutType`、`startDate`、`duration`、`activeCalories`，没有心率属性。心率改由苹果原生的 `Find Health Samples` + `Calculate Statistics` 补齐：按运动的起止时间窗筛选“心率”样本，计算平均值与最大值，与摘要一起上传。健康 App 需允许“快捷指令”读取数据；无样本时统计返回 0，后端把非正数视为未测量，页面不会显示 `0 bpm`。
 
-GPX 补轨迹流程已实现并部署：`build.py` 会额外生成“预览运动轨迹文件 / 上传运动轨迹到博客”两个指令，运行时用“文件”动作选择 WorkoutGPX 导出的 `.gpx`，上传动作以文件作为请求体 POST 到 `/internal/route`。因为后端能从 GPX 内第一个时间戳自动匹配运动，这两个指令不需要 UUID 或开始时间输入。两个文件已签名并保存在 `shortcuts/`；Mac 端导入尚未完成，也没有带 GPS 的真实运动做端到端验证。
+GPX 补轨迹流程已实现并部署：`build.py` 会额外生成“预览运动轨迹文件 / 上传运动轨迹到博客”两个指令，运行时用“文件”动作选择 WorkoutGPX 导出的 `.gpx`，上传动作以文件作为请求体 POST 到 `/internal/route`。因为后端能从 GPX 内第一个时间戳自动匹配运动，这两个指令不需要 UUID 或开始时间输入。两个文件已签名并保存在 `shortcuts/`，Mac 端已导入；尚未在带 GPS 的真实运动上做端到端验证。

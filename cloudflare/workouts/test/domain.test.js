@@ -103,3 +103,20 @@ test('omits unmeasured optional metrics instead of publishing null', () => {
   assert.equal('pace' in published, false)
   assert.equal('route' in published, false)
 })
+
+test('treats a zero heart rate from Shortcuts statistics as unmeasured', () => {
+  // Calculate Statistics returns 0 when Find Health Samples matched no
+  // heart-rate samples inside the workout window. 0 bpm is not a measurement.
+  const activity = normalizeActivity({
+    id: 'stairs-with-empty-heart-rate-window',
+    type: 'Stairs',
+    startedAt: NOW,
+    durationSeconds: 900,
+    averageHeartRateBpm: 0,
+    maxHeartRateBpm: '0',
+  })
+  const snapshot = buildSnapshot([activity], NOW)
+  const [published] = snapshot.activities
+  assert.equal('averageHeartRateBpm' in published, false)
+  assert.equal('maxHeartRateBpm' in published, false)
+})

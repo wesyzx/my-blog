@@ -138,7 +138,7 @@ export default function OrbitMotion() {
       </svg>
 
       <div className={styles.caption}>
-        <span>沿着轨道，也走向轨道之外。</span>
+        <span>走向轨道之外。</span>
       </div>
     </div>
   )

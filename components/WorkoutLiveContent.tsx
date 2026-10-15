@@ -8,6 +8,7 @@ import WorkoutMap from '@/components/WorkoutMap'
 // independent from EdgeOne's server network makes the page resilient when the
 // two providers cannot reach each other directly.
 const WORKOUTS_SNAPSHOT_URL = 'https://workouts.wesyzx.workers.dev/v1/workouts.json'
+const ACTIVITIES_PER_PAGE = 10
 
 function formatDuration(seconds: number) {
   const h = Math.floor(seconds / 3600)
@@ -133,6 +134,7 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
   const [data, setData] = useState(initialData)
   const [loading, setLoading] = useState(!hasData(initialData))
   const [error, setError] = useState<string | null>(null)
+  const [activityPage, setActivityPage] = useState(1)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -162,7 +164,10 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
   const years = Object.keys(data.summary).sort((left, right) => Number(right) - Number(left))
   const latestYear = years[0] ?? data.activities[0]?.startedAt.slice(0, 4)
   const summary = latestYear ? data.summary[latestYear] : null
-  const recentActivities = data.activities.slice(0, 10)
+  const activityPageCount = Math.ceil(data.activities.length / ACTIVITIES_PER_PAGE)
+  const currentActivityPage = Math.min(activityPage, Math.max(activityPageCount, 1))
+  const pageStart = (currentActivityPage - 1) * ACTIVITIES_PER_PAGE
+  const visibleActivities = data.activities.slice(pageStart, pageStart + ACTIVITIES_PER_PAGE)
   const latestActivityWithRoute = data.activities.find((activity) => activity.route)
 
   if (loading && !hasData(data)) return <div className="empty-state">正在读取运动数据…</div>
@@ -193,14 +198,14 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
         </section>
       )}
 
-      {recentActivities.length > 0 && (
+      {visibleActivities.length > 0 && (
         <section className="workout-section" aria-labelledby="recent-activities-title">
           <div className="workout-section-heading">
             <h2 id="recent-activities-title">最近运动</h2>
-            <span>{recentActivities.length} 条记录</span>
+            <span>{data.activities.length} 条记录</span>
           </div>
           <div className="workout-rows">
-            {recentActivities.map((activity: NormalizedActivity) => (
+            {visibleActivities.map((activity: NormalizedActivity) => (
               <article key={activity.id} className="workout-row">
                 <div className="workout-row-title">
                   <strong>{activityLabel(activity.type)}</strong>
@@ -216,6 +221,40 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
               </article>
             ))}
           </div>
+          {activityPageCount > 1 && (
+            <nav className="workout-pagination" aria-label="运动记录分页">
+              <button
+                type="button"
+                onClick={() => setActivityPage(currentActivityPage - 1)}
+                disabled={currentActivityPage === 1}
+                aria-label="上一页运动记录"
+              >
+                上一页
+              </button>
+              <div className="workout-pagination-pages">
+                {Array.from({ length: activityPageCount }, (_, index) => index + 1).map((page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={page === currentActivityPage ? 'is-active' : undefined}
+                    onClick={() => setActivityPage(page)}
+                    aria-label={`第 ${page} 页运动记录`}
+                    aria-current={page === currentActivityPage ? 'page' : undefined}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivityPage(currentActivityPage + 1)}
+                disabled={currentActivityPage === activityPageCount}
+                aria-label="下一页运动记录"
+              >
+                下一页
+              </button>
+            </nav>
+          )}
         </section>
       )}
     </div>

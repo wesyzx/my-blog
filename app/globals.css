@@ -498,6 +498,13 @@ button { font: inherit; }
 .workout-row dl div { min-width: 64px; }
 .workout-row dt { color: var(--color-text-hint); font-size: 10px; }
 .workout-row dd { margin: 2px 0 0; color: var(--color-text-primary); font-family: var(--font-mono); font-size: 12px; }
+.workout-pagination { display: flex; align-items: center; justify-content: center; gap: 18px; padding-top: 18px; }
+.workout-pagination-pages { display: flex; align-items: center; gap: 6px; }
+.workout-pagination button { min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid transparent; border-radius: 2px; color: var(--color-text-muted); background: transparent; cursor: pointer; font-family: var(--font-mono); font-size: 11px; line-height: 28px; transition: border-color .15s ease, color .15s ease, background-color .15s ease; }
+.workout-pagination button:hover:not(:disabled) { border-color: var(--color-border-default); color: var(--color-text-primary); }
+.workout-pagination button.is-active { border-color: var(--color-border-default); background: var(--color-bg-surface); color: var(--color-text-primary); }
+.workout-pagination button:disabled { cursor: default; opacity: .35; }
+.workout-pagination > button:first-child, .workout-pagination > button:last-child { min-width: auto; padding: 0; border-color: transparent; font-family: var(--font-sans); }
 
 /* 腾讯地图默认底图没有暗色版本，深色模式下用滤镜翻转画布。
    只作用于 canvas，避免把自定义标记一起翻转掉。
@@ -584,6 +591,9 @@ button { font: inherit; }
   .workout-section-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
   .workout-row dl { gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
   .workout-row dl div { min-width: 54px; }
+  .workout-pagination { justify-content: space-between; gap: 8px; }
+  .workout-pagination-pages { gap: 3px; }
+  .workout-pagination button { min-width: 28px; padding: 0 6px; }
   .latest-update-row { grid-template-columns: 42px minmax(0, 1fr) 62px; gap: 8px; }
   .latest-update-row time { font-size: 9px; }
   .about-profile { gap: 16px; }

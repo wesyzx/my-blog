@@ -1,0 +1,34 @@
+.blog-lightbox {
+  --pswp-icon-stroke-color: #171717;
+  --pswp-bg: #171717;
+}
+
+.blog-lightbox .pswp__caption {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 760px);
+  max-height: 25vh;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  padding: 16px 24px max(20px, env(safe-area-inset-bottom));
+  color: #f5f5f5;
+  background: linear-gradient(transparent, rgb(0 0 0 / 65%));
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.blog-lightbox .pswp__caption[hidden] {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .blog-lightbox .pswp__caption {
+    font-size: 13px;
+    padding-inline: 16px;
+  }
+}

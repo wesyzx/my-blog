@@ -6,6 +6,7 @@ import { getAllFoodPosts, getFoodPostBySlug } from '@/lib/food'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
 import ImageLightbox from '@/components/ImageLightbox'
+import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
 import { formatItemDate } from '@/lib/format'
 
@@ -52,9 +53,9 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
         )}
 
         {post.content && (
-          <div className="prose">
-            <MDXRemote source={post.content} />
-          </div>
+          <ImageLightbox className="prose">
+            <MDXRemote source={post.content} components={{ img: MarkdownImage }} />
+          </ImageLightbox>
         )}
 
         {post.images.length > 1 && (

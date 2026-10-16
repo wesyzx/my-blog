@@ -1,47 +1,54 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import PhotoAlbum from 'react-photo-album'
-import Lightbox from 'yet-another-react-lightbox'
-import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen'
-import Zoom from 'yet-another-react-lightbox/plugins/zoom'
-import 'yet-another-react-lightbox/styles.css'
 import 'react-photo-album/styles.css'
 import type { GalleryItem } from '@/lib/gallery'
 import { formatItemDate } from '@/lib/format'
 import Icon from './Icon'
 import PageHeader from './PageHeader'
 import ArtalkComments from './ArtalkComments'
+import ImageLightbox from './ImageLightbox'
 
 export default function GalleryDetail({ album }: { album: GalleryItem }) {
-  const [index, setIndex] = useState(-1)
   const photos = useMemo(() => album.images.map((image, photoIndex) => ({ ...image, key: `${album.slug}-${photoIndex}`, alt: `${album.title} 照片 ${photoIndex + 1}` })), [album])
 
   return (
     <div className="page-shell animate-fade-up">
       <PageHeader title={album.title} eyebrow={formatItemDate(album.date)} description={album.excerpt} />
       {photos.length > 0 ? (
-        <PhotoAlbum
-          layout="rows"
-          photos={photos}
-          targetRowHeight={360}
-          spacing={10}
-          padding={0}
-          rowConstraints={{ minPhotos: 1, maxPhotos: 4 }}
-          onClick={({ index: photoIndex }) => setIndex(photoIndex)}
-        />
+        <ImageLightbox>
+          <PhotoAlbum
+            layout="rows"
+            photos={photos}
+            targetRowHeight={360}
+            spacing={10}
+            padding={0}
+            rowConstraints={{ minPhotos: 1, maxPhotos: 4 }}
+            render={{
+              image: ({ alt, title, className, style, sizes }, { photo }) => (
+                <Image
+                  src={photo.src}
+                  alt={alt || ''}
+                  title={title}
+                  className={className}
+                  style={style}
+                  width={photo.width}
+                  height={photo.height}
+                  sizes={sizes || '(max-width: 860px) 100vw, 680px'}
+                  data-lightbox-src={photo.src}
+                  data-pswp-width={photo.width}
+                  data-pswp-height={photo.height}
+                />
+              ),
+            }}
+          />
+        </ImageLightbox>
       ) : (
         <div className="empty-state">本相册暂无照片。</div>
       )}
-      <Lightbox
-        open={index >= 0}
-        index={index}
-        close={() => setIndex(-1)}
-        slides={photos}
-        plugins={[Fullscreen, Zoom]}
-        controller={{ closeOnBackdropClick: true }}
-      />
       <section className="comments-section">
         <h2 className="section-title">评论</h2>
         <ArtalkComments pageKey={`/gallery/${album.slug}`} pageTitle={album.title} />

@@ -7,6 +7,7 @@ import { formatItemDate } from '@/lib/format'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
 import ImageLightbox from '@/components/ImageLightbox'
+import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
 
 export function generateStaticParams() { return getAllPosts().map((post) => ({ slug: post.slug })) }
@@ -69,9 +70,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </figure>
         )}
 
-        {/* 正文里的图片点开即灯箱（ueno 用 Photoswipe 挂在 .photo / .photos 上，这里等价） */}
+        {/* 保留服务端 MDX 正文，客户端只增强图片交互。 */}
         <ImageLightbox className="prose">
-          <MDXRemote source={post.content} />
+          <MDXRemote source={post.content} components={{ img: MarkdownImage }} />
         </ImageLightbox>
       </article>
 

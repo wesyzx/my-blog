@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { fetchMemos, parseMemos } from '../lib/memos.mjs'
+import { fetchMemos, fetchMemosWithFallback, parseMemos } from '../lib/memos.mjs'
 
 test('normalizes modern attachments, proxies local files and removes duplicate images', () => {
   const [memo] = parseMemos({ memos: [{
@@ -87,4 +87,65 @@ test('HTTP and network failures remain errors so callers can use their snapshot'
   await assert.rejects(fetchMemos('https://memos.example/api/v1/memos', 'token'), /HTTP 401/)
   request.mock.mockImplementation(async () => { throw new Error('offline') })
   await assert.rejects(fetchMemos('https://memos.example/api/v1/memos', 'token'), /offline/)
+})
+
+test('a live memo resolves its address without sending Memos credentials to Tencent', async (t) => {
+  const previousKey = process.env.TMAP_SERVER_KEY
+  process.env.TMAP_SERVER_KEY = 'live-address-key'
+  t.after(() => {
+    if (previousKey === undefined) delete process.env.TMAP_SERVER_KEY
+    else process.env.TMAP_SERVER_KEY = previousKey
+  })
+  const request = t.mock.method(globalThis, 'fetch', async (url) => {
+    if (new URL(url).hostname === 'memos.example') return Response.json({ memos: [{
+      name: 'memos/live-location',
+      state: 'NORMAL',
+      location: { latitude: 39.9, longitude: 116.3, placeholder: '39.9, 116.3' },
+    }] })
+    return Response.json({ status: 0, result: { address: '北京市海淀区' } })
+  })
+  const [note] = await fetchMemos('https://memos.example/api/v1/memos', 'private-memos-token')
+  assert.equal(note.location, '北京市海淀区')
+  assert.equal(request.mock.callCount(), 2)
+  const [url, options] = request.mock.calls[1].arguments
+  assert.equal(new URL(url).hostname, 'apis.map.qq.com')
+  assert.equal(new URL(url).searchParams.get('key'), 'live-address-key')
+  assert.equal(options.headers?.Authorization, undefined)
+})
+
+for (const failure of ['missing-token', 'unauthorized', 'offline']) {
+  test(`snapshot coordinates are resolved after ${failure}, without modifying the snapshot`, async (t) => {
+    const previousKey = process.env.TMAP_SERVER_KEY
+    process.env.TMAP_SERVER_KEY = `snapshot-${failure}-key`
+    t.after(() => {
+      if (previousKey === undefined) delete process.env.TMAP_SERVER_KEY
+      else process.env.TMAP_SERVER_KEY = previousKey
+    })
+    const snapshot = [{ slug: 'saved-location', date: '', content: 'Saved note', latitude: 39.9, longitude: 116.3, location: '39.9, 116.3' }]
+    const request = t.mock.method(globalThis, 'fetch', async (url) => {
+      if (new URL(url).hostname === 'memos.example') {
+        if (failure === 'offline') throw new Error('offline')
+        return new Response(null, { status: 401 })
+      }
+      return Response.json({ status: 0, result: { address: '北京市海淀区' } })
+    })
+    const fallback = t.mock.fn(() => snapshot)
+    const [note] = await fetchMemosWithFallback(
+      'https://memos.example/api/v1/memos',
+      failure === 'missing-token' ? undefined : 'expired-token',
+      { cache: 'no-store' },
+      fallback,
+    )
+    assert.equal(fallback.mock.callCount(), 1)
+    assert.equal(note.location, '北京市海淀区')
+    assert.equal(snapshot[0].location, '39.9, 116.3')
+    assert.equal(request.mock.callCount(), failure === 'missing-token' ? 1 : 2)
+  })
+}
+
+test('the fallback loader never restores snapshot notes after a successful empty response', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ memos: [] }))
+  const fallback = t.mock.fn(() => [{ slug: 'deleted-note', date: '', content: 'Deleted' }])
+  assert.deepEqual(await fetchMemosWithFallback('https://memos.example/api/v1/memos', 'token', {}, fallback), [])
+  assert.equal(fallback.mock.callCount(), 0)
 })

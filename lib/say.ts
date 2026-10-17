@@ -1,6 +1,6 @@
 import 'server-only'
 import { bundleData } from './data-bundle'
-import { fetchMemos, type SayMeta } from './memos.mjs'
+import { fetchMemosWithFallback, type SayMeta } from './memos.mjs'
 
 export type { SayMeta } from './memos.mjs'
 
@@ -8,13 +8,11 @@ const MEMOS_BASE_URL = process.env.MEMOS_BASE_URL || 'https://memos.guanyan.me'
 const MEMOS_API_URL = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
 
 export async function getAllSays(): Promise<SayMeta[]> {
-  try {
-    return await fetchMemos(MEMOS_API_URL, process.env.MEMOS_TOKEN, {
-      // 不缓存：短记的增删都要求立刻反映到页面上。
-      // 之前用 next: { revalidate: 60 }，加上页面本身的 ISR，最坏要等两分钟还得刷两次。
-      cache: 'no-store',
-    })
-  } catch (error) {
+  return fetchMemosWithFallback(MEMOS_API_URL, process.env.MEMOS_TOKEN, {
+    // 不缓存：短记的增删都要求立刻反映到页面上。
+    // 之前用 next: { revalidate: 60 }，加上页面本身的 ISR，最坏要等两分钟还得刷两次。
+    cache: 'no-store',
+  }, (error) => {
     const reason = process.env.MEMOS_TOKEN
       ? `请求失败：${(error as Error).message}`
       : '未配置 MEMOS_TOKEN —— 请求以匿名身份发出，Memos 会直接返回 401'
@@ -27,7 +25,7 @@ export async function getAllSays(): Promise<SayMeta[]> {
       '',
     ].join('\n'))
     return bundleData.says as SayMeta[]
-  }
+  })
 }
 
 export async function getSayBySlug(slug: string): Promise<SayMeta | null> {

@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
-import { fetchMemos } from '../lib/memos.mjs'
+import { fetchMemosWithFallback } from '../lib/memos.mjs'
 
 dotenv.config({ path: '.env.local' })
 
@@ -198,12 +198,8 @@ function reportMemosFailure(error, existingSays) {
 }
 
 async function fetchSays(existingSays) {
-  try {
-    const endpoint = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
-    return await fetchMemos(endpoint, process.env.MEMOS_TOKEN)
-  } catch (error) {
-    return reportMemosFailure(error, existingSays)
-  }
+  const endpoint = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
+  return fetchMemosWithFallback(endpoint, process.env.MEMOS_TOKEN, {}, (error) => reportMemosFailure(error, existingSays))
 }
 
 async function fetchNotionContent(existing, previousCoords, previousImageSizes) {

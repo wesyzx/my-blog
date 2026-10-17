@@ -48,9 +48,12 @@ test('fills coordinate-only memo locations from Tencent reverse geocoding', asyn
   assert.equal(enriched[1].location, '宁波市鄞州区首南街道和众社区')
   assert.equal(enriched[2].location, '天一阁')
   assert.equal(enriched[3].location, '29.7989°, 121.5234°')
+  assert.deepEqual(await enrichSayLocations(says, { key: TEST_KEY, fetcher }), enriched)
+  assert.equal(fetcher.mock.callCount(), 1)
 })
 
 test('keeps coordinates when no server key or lookup fails', async (t) => {
+  t.mock.method(console, 'warn', () => {})
   const memo = { slug: 'unnamed', location: '30.1234°, 120.5678°', latitude: 30.1234, longitude: 120.5678 }
   assert.deepEqual(await enrichSayLocations([memo], { key: '' }), [memo])
 
@@ -73,4 +76,17 @@ test('keeps coordinates when no server key or lookup fails', async (t) => {
   } finally {
     console.warn = originalWarn
   }
+})
+
+test('an authorization failure explains the server key setting without exposing credentials', async (t) => {
+  const warnings = t.mock.method(console, 'warn', () => {})
+  const key = 'private-server-key'
+  const memo = { slug: 'unauthorized', date: '', content: '', latitude: 39.8, longitude: 116.2 }
+  const fetcher = t.mock.fn(async () => Response.json({ status: 110, message: `blocked: ${key}` }))
+  assert.deepEqual(await enrichSayLocations([memo], { key, fetcher }), [memo])
+  const message = warnings.mock.calls[0].arguments[0]
+  assert.match(message, /110/)
+  assert.match(message, /TMAP_SERVER_KEY/)
+  assert.match(message, /域名白名单/)
+  assert.ok(!message.includes(key))
 })

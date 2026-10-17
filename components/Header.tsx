@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { AUTHOR_AVATAR } from '@/lib/site-branding'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
 import { SITE_NAV_ITEMS } from './siteNavigation'
@@ -60,8 +62,8 @@ export default function Header() {
       <header className="site-header">
         <div className="site-header-inner">
           <Link href="/" className="site-brand" aria-label="轨道之外首页">
-            {/* 品牌图标用 CSS mask + currentColor 上色，自动跟随 --color-accent，深浅色模式自适应 */}
-            <span className="brand-icon" aria-hidden="true" /><span>轨道之外</span>
+            <Image src={AUTHOR_AVATAR} alt="" width={28} height={28} className="brand-avatar" unoptimized fetchPriority="high" />
+            <span>轨道之外</span>
           </Link>
 
           <button ref={menuButtonRef} type="button" className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={menuOpen ? '关闭导航' : '打开导航'}>

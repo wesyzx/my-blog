@@ -125,7 +125,7 @@ button { font: inherit; }
 .site-header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--color-border-hairline); background: var(--color-bg-nav); backdrop-filter: blur(10px); }
 .site-header-inner { max-width: 1200px; height: 60px; margin: auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
 .site-brand { display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: .04em; }
-.brand-icon { display: block; width: 25px; height: 25px; color: var(--color-accent); background-color: currentColor; border: none; -webkit-mask-image: url('/logo-mask.png'); mask-image: url('/logo-mask.png'); -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+.brand-avatar { display: block; flex-shrink: 0; width: 28px; height: 28px; border-radius: 3px; object-fit: cover; }
 .desktop-nav { display: flex; align-items: center; gap: 4px; }
 .nav-link { position: relative; display: flex; align-items: center; gap: 3px; padding: 18px 11px; color: var(--color-text-secondary); font-size: 13px; transition: color .2s ease; }
 .nav-link::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 0; height: 1.5px; background: var(--color-accent); transform: scaleX(0); transition: transform .2s ease; }
@@ -401,7 +401,6 @@ button { font: inherit; }
 /* 侧栏品牌区 —— 对齐 ueno 的 .side_logo / .side_title / .side_description */
 .sidebar-brand { display: flex; flex-direction: column; color: inherit; }
 .sidebar-logo { display: block; width: 120px; height: 120px; overflow: hidden; border-radius: 3px; background: var(--color-bg-surface); }
-/* 注意：不要复用 .brand-icon —— 那个类带 logo 的 mask，会把照片裁成图标形状 */
 .sidebar-avatar { display: block; width: 100%; height: 100%; object-fit: cover; }
 .sidebar-title { margin: 20px 0 10px; color: var(--color-text-primary); font-size: 1.625rem; font-weight: 600; line-height: 1.2; letter-spacing: .02em; }
 .sidebar-desc { margin: 0 0 18px; color: var(--color-text-muted); font-size: 1.05rem; font-weight: 300; line-height: 1.4; }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { FoodMeta } from '@/lib/food'
-import { wgs84ToGcj02 } from '@/lib/geo'
+import { wgs84ToGcj02 } from '@/lib/geo.mjs'
 import {
   boundsOf,
   loadTMap,

@@ -88,3 +88,35 @@ test('compares a configured ingest token without accepting the wrong value', asy
   }), testEnv)
   assert.equal(response.status, 401)
 })
+
+for (const [path, limit, message] of [
+  ['/internal/ingest', 2_000_000, 'Payload exceeds 2 MB'],
+  ['/internal/route', 5_000_000, 'Payload exceeds the size limit'],
+]) {
+  test(`${path} rejects an oversized declared body before reading it`, async () => {
+    const response = await worker.fetch(new Request(`https://workouts.example${path}`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer test-token', 'content-length': String(limit + 1) },
+      body: '{}',
+    }), { ...env(), INGEST_TOKEN: 'test-token' })
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error, message)
+  })
+
+  test(`${path} cancels a stream exceeding its limit without a content-length header`, async () => {
+    let cancelled = false
+    const body = new ReadableStream({
+      start(controller) { controller.enqueue(new Uint8Array(limit + 1)) },
+      cancel() { cancelled = true },
+    })
+    const response = await worker.fetch(new Request(`https://workouts.example${path}`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer test-token' },
+      body,
+      duplex: 'half',
+    }), { ...env(), INGEST_TOKEN: 'test-token' })
+    assert.equal(response.status, 400)
+    assert.equal((await response.json()).error, message)
+    assert.equal(cancelled, true)
+  })
+}

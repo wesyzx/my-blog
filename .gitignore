@@ -47,7 +47,6 @@ pip-delete-this-directory.txt
 nosetests.xml
 coverage.xml
 *.cover
-*.log
 .git/modules/
 .DS_Store
 Thumbs.db
@@ -84,13 +83,8 @@ Thumbs.db
 # Coverage and testing
 coverage/
 htmlcov/
-.coverage
 *.coverage
 .nyc_output/
-
-# Gradle
-.gradle/
-build/
 
 # MyPy
 .mypy_cache/

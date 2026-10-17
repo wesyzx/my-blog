@@ -3,6 +3,8 @@ import { NotionToMarkdown } from 'notion-to-md'
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
+import { gcj02ToWgs84 } from '../lib/geo.mjs'
+import { fetchMemos } from '../lib/memos.mjs'
 
 dotenv.config({ path: '.env.local' })
 
@@ -162,23 +164,6 @@ async function fetchImageMeta(imageUrl, lastKnown) {
   }
 }
 
-const PI = Math.PI
-const AXIS = 6378245
-const ECCENTRICITY = 0.006693421622965943
-function transformLat(x, y) { return -100 + 2*x + 3*y + .2*y*y + .1*x*y + .2*Math.sqrt(Math.abs(x)) + (20*Math.sin(6*x*PI)+20*Math.sin(2*x*PI))*2/3 + (20*Math.sin(y*PI)+40*Math.sin(y/3*PI))*2/3 + (160*Math.sin(y/12*PI)+320*Math.sin(y*PI/30))*2/3 }
-function transformLng(x, y) { return 300 + x + 2*y + .1*x*x + .1*x*y + .1*Math.sqrt(Math.abs(x)) + (20*Math.sin(6*x*PI)+20*Math.sin(2*x*PI))*2/3 + (20*Math.sin(x*PI)+40*Math.sin(x/3*PI))*2/3 + (150*Math.sin(x/12*PI)+300*Math.sin(x/30*PI))*2/3 }
-function gcj02ToWgs84(lng, lat) {
-  if (lng < 72.004 || lng > 137.8347 || lat < .8293 || lat > 55.8271) return [lng, lat]
-  let dLat = transformLat(lng - 105, lat - 35)
-  let dLng = transformLng(lng - 105, lat - 35)
-  const radLat = lat / 180 * PI
-  let magic = 1 - ECCENTRICITY * Math.sin(radLat) ** 2
-  const sqrtMagic = Math.sqrt(magic)
-  dLat = dLat * 180 / ((AXIS * (1 - ECCENTRICITY)) / (magic * sqrtMagic) * PI)
-  dLng = dLng * 180 / (AXIS / sqrtMagic * Math.cos(radLat) * PI)
-  return [lng * 2 - (lng + dLng), lat * 2 - (lat + dLat)]
-}
-
 async function geocode(address) {
   if (!address || !process.env.AMAP_KEY) return { lng: 0, lat: 0 }
   const cleanAddress = address.replace(/\(.*?\)|（.*?）/g, '').trim()
@@ -192,30 +177,6 @@ async function geocode(address) {
 }
 
 const MEMOS_BASE_URL = process.env.MEMOS_BASE_URL || 'https://memos.guanyan.me'
-const MEMOS_PROXY_PREFIX = '/api/memos/file'
-
-function toProxyUrl(url) {
-  if (!url) return ''
-  const match = String(url).match(/^https?:\/\/memos\.guanyan\.me\/file\/(.+)$/)
-  return match ? `${MEMOS_PROXY_PREFIX}/${match[1]}` : url
-}
-
-function memoAttachmentUrl(attachment) {
-  if (attachment.externalLink) return attachment.externalLink
-  const id = attachment.name ? attachment.name.split('/').pop() : attachment.id
-  return id && attachment.filename ? `${MEMOS_PROXY_PREFIX}/attachments/${id}/${attachment.filename}` : ''
-}
-
-function parseMemos(data) {
-  return (data.memos || []).filter((memo) => memo.state === 'NORMAL').map((memo) => {
-    // Memos v0.25 起把 memo.resources 改名为 memo.attachments，两种字段都兼容
-    const attachments = memo.attachments || memo.resources || []
-    const fromAttachments = attachments.filter((item) => !item.type || item.type.startsWith('image/')).map(memoAttachmentUrl).filter(Boolean)
-    const images = Array.from(new Set([...fromAttachments, ...imageLinks(memo.content || '').map(toProxyUrl)]))
-    return { slug: memo.name?.split('/').pop() || memo.uid || memo.id, date: memo.createTime || memo.displayTime || '', content: (memo.content || '').replace(/!\[.*?\]\((.*?)\)/g, '').trim(), image: images[0], images }
-  }).filter((memo) => memo.slug)
-}
-
 function reportMemosFailure(error, existingSays) {
   const reason = process.env.MEMOS_TOKEN
     ? `请求失败：${error.message}`
@@ -238,13 +199,8 @@ function reportMemosFailure(error, existingSays) {
 
 async function fetchSays(existingSays) {
   try {
-    if (!process.env.MEMOS_TOKEN) throw new Error('MEMOS_TOKEN 未设置')
-    const headers = { Accept: 'application/json', Authorization: `Bearer ${process.env.MEMOS_TOKEN}` }
     const endpoint = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
-    const response = await fetch(`${endpoint}?pageSize=20`, { headers })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const says = parseMemos(await response.json())
-    return says.length ? says : existingSays
+    return await fetchMemos(endpoint, process.env.MEMOS_TOKEN)
   } catch (error) {
     return reportMemosFailure(error, existingSays)
   }

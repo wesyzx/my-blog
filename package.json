@@ -14,6 +14,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
     "check": "npm run typecheck && npm run lint",
+    "test": "node --test test/*.test.mjs",
     "deploy": "dotenv -e .env.local -- node scripts/trigger-deploy.mjs"
   },
   "dependencies": {

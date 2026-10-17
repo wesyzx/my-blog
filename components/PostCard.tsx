@@ -3,7 +3,7 @@ import PostCover from '@/components/PostCover'
 import type { PostMeta } from '@/lib/posts'
 import { formatItemDate } from '@/lib/format'
 
-export default function PostCard({ post }: { post: PostMeta; index?: number }) {
+export default function PostCard({ post }: { post: PostMeta }) {
   const href = `/posts/${encodeURIComponent(post.slug)}`
   const dateLabel = formatItemDate(post.date)
 

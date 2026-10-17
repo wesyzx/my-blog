@@ -50,8 +50,8 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
 
       <section className="post-list" aria-label="文章列表">
         {pagedPosts.length > 0 ? (
-          pagedPosts.map((post, index) => (
-            <PostCard key={`${post.slug}-${index}`} post={post} index={(page - 1) * POSTS_PER_PAGE + index} />
+          pagedPosts.map((post) => (
+            <PostCard key={post.slug} post={post} />
           ))
         ) : (
           <div className="empty-state">这个分类还没有文章。</div>

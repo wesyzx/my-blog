@@ -2,20 +2,20 @@
 
 这个 Worker 为博客的 `/workouts` 页面提供一个稳定、公开、只读的 JSON 快照。
 
-从自建 iOS App 迁移到免费快捷指令工作流的可行性、候选 App 和待解决问题，见 [快捷指令研究与试验方案](./SHORTCUTS_RESEARCH.md)。接口示例表示服务端的数据格式，手机端仍需通过可用的运动读取动作取得并转换数据。
+日常使用 iPhone 快捷指令上传 Apple 健康的运动摘要，由 WorkoutGPX 导出室外运动轨迹。三个正式指令、安装与使用说明见 [运动快捷指令](./shortcuts/README.md)。原自建 iOS App 工程已退出维护并从当前目录移除，旧代码可从 Git 历史恢复；试验过程保留在 [研究记录](./SHORTCUTS_RESEARCH.md)。
 
 ## 数据流
 
 ```text
-运动平台或适配器
-  -> Cron / 手动同步
+iPhone 快捷指令（Apple 健康摘要 + WorkoutGPX 轨迹）
+  -> Worker 写入接口
   -> D1（标准化活动 + 同步游标）
   -> R2（v1/workouts.json + v1/routes.json）
   -> GET /v1/workouts.json
   -> 博客 WORKOUTS_API_URL
 ```
 
-Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14:17、20:17）。未配置 `SOURCE_URL` 时，Cron 仅从 D1 重建 R2 快照，不会自动获取运动平台数据。
+Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14:17、20:17），作为快照重建与可选来源同步的后备机制。未配置 `SOURCE_URL` 时，Cron 仅从 D1 重建 R2 快照，不会自动从 Apple 健康获取运动数据。
 
 ## API
 
@@ -50,7 +50,7 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 }
 ```
 
-HealthKit App 还可以附带 `activeEnergyKcal`、`averageHeartRateBpm`、`maxHeartRateBpm` 和 `averageCadenceRpm`；Worker 会将这些指标保存在 D1 并返回给博客。
+写入接口还支持 `activeEnergyKcal`、`averageHeartRateBpm`、`maxHeartRateBpm` 和 `averageCadenceRpm`；Worker 会将这些指标保存在 D1 并返回给博客。当前快捷指令提供的指标与限制见快捷指令说明。
 
 将请求发往 `https://workouts.wesyzx.workers.dev/internal/healthkit`，添加 `Authorization: Bearer <INGEST_TOKEN>` 和 `Content-Type: application/json`。服务端按活动 ID 幂等更新，重复运行不会产生重复记录。
 

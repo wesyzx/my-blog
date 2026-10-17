@@ -44,30 +44,7 @@ async function authorized(request, env) {
 }
 
 async function readBoundedJson(body, contentLength) {
-  if (contentLength && Number(contentLength) > MAX_JSON_BYTES) throw new Error('Payload exceeds 2 MB')
-  if (!body) throw new Error('Payload is required')
-
-  const reader = body.getReader()
-  const chunks = []
-  let size = 0
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    size += value.byteLength
-    if (size > MAX_JSON_BYTES) {
-      await reader.cancel('Payload exceeds 2 MB')
-      throw new Error('Payload exceeds 2 MB')
-    }
-    chunks.push(value)
-  }
-
-  const bytes = new Uint8Array(size)
-  let offset = 0
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return JSON.parse(new TextDecoder().decode(bytes))
+  return JSON.parse(await readBoundedText(body, contentLength, MAX_JSON_BYTES, 'Payload exceeds 2 MB'))
 }
 
 async function parsePayload(request) {
@@ -83,8 +60,8 @@ async function parsePayload(request) {
   return { payload, activities }
 }
 
-async function readBoundedText(body, contentLength, limit = MAX_GPX_BYTES) {
-  if (contentLength && Number(contentLength) > limit) throw new Error('Payload exceeds the size limit')
+async function readBoundedText(body, contentLength, limit = MAX_GPX_BYTES, sizeError = 'Payload exceeds the size limit') {
+  if (contentLength && Number(contentLength) > limit) throw new Error(sizeError)
   if (!body) throw new Error('Payload is required')
 
   const reader = body.getReader()
@@ -95,8 +72,8 @@ async function readBoundedText(body, contentLength, limit = MAX_GPX_BYTES) {
     if (done) break
     size += value.byteLength
     if (size > limit) {
-      await reader.cancel('Payload exceeds the size limit')
-      throw new Error('Payload exceeds the size limit')
+      await reader.cancel(sizeError)
+      throw new Error(sizeError)
     }
     chunks.push(value)
   }

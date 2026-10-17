@@ -2,8 +2,6 @@ import 'server-only'
 import { cache } from 'react'
 import { emptyWorkoutsData, normalizeWorkoutsData, type WorkoutsDataContract } from '@/lib/workouts-schema'
 
-export type { HeatmapNode, NormalizedActivity, WorkoutsDataContract, YearlySummary } from '@/lib/workouts-schema'
-
 export const getWorkoutsData = cache(async (): Promise<WorkoutsDataContract> => {
   const url = process.env.WORKOUTS_API_URL
   if (!url) {

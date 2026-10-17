@@ -58,8 +58,8 @@ function nonNegativeNumber(value: unknown): number {
 
 // The Worker omits unmeasured fields, but older snapshots and D1 nulls can
 // still arrive as `null`; treat anything non-numeric as "not measured".
-function optionalNonNegativeNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value > 0 ? value : undefined
+function optionalPositiveNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
 }
 
 export function normalizeWorkoutsData(value: unknown): WorkoutsDataContract | null {
@@ -80,11 +80,11 @@ export function normalizeWorkoutsData(value: unknown): WorkoutsDataContract | nu
       distanceMeters: nonNegativeNumber(item.distanceMeters),
       durationSeconds: nonNegativeNumber(item.durationSeconds),
       elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
-      pace: optionalNonNegativeNumber(item.pace),
-      activeEnergyKcal: optionalNonNegativeNumber(item.activeEnergyKcal),
-      averageHeartRateBpm: optionalNonNegativeNumber(item.averageHeartRateBpm),
-      maxHeartRateBpm: optionalNonNegativeNumber(item.maxHeartRateBpm),
-      averageCadenceRpm: optionalNonNegativeNumber(item.averageCadenceRpm),
+      pace: optionalPositiveNumber(item.pace),
+      activeEnergyKcal: optionalPositiveNumber(item.activeEnergyKcal),
+      averageHeartRateBpm: optionalPositiveNumber(item.averageHeartRateBpm),
+      maxHeartRateBpm: optionalPositiveNumber(item.maxHeartRateBpm),
+      averageCadenceRpm: optionalPositiveNumber(item.averageCadenceRpm),
       route: typeof item.route === 'string' && item.route.length > 0 ? item.route : undefined,
     }]
   }).sort((left, right) => right.startedAt.localeCompare(left.startedAt))

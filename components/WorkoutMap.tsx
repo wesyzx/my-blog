@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import polyline from '@mapbox/polyline'
-import { wgs84ToGcj02 } from '@/lib/geo'
+import { wgs84ToGcj02 } from '@/lib/geo.mjs'
 import { boundsOf, loadTMap, TMAP_KEY_MISSING, type TMapLatLng, type TMapMap } from '@/lib/tmap'
 
 /** 起终点圆点，白描边保证在任何底图上都看得清 */

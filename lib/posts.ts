@@ -1,15 +1,14 @@
 /**
  * 文章内容管理模块
  *
- * 负责读取 content/posts/ 目录下的 Markdown 文件，
- * 使用 gray-matter 解析 Frontmatter（标题、日期、分类、标签等），
+ * 从构建时生成的 Notion 快照读取已发布文章，
  * 为博客的文章列表和详情页提供数据。
  */
 import { bundleData } from './data-bundle'
 
 /** 文章元数据（不含正文，用于列表页） */
 export interface PostMeta {
-  slug: string // 文章唯一标识，取自文件名
+  slug: string // 文章唯一标识，来自 Notion Slug 或标题
   title: string
   date: string
   category: string // 博文分类：生活 / 技术 / 摄影 / 学习

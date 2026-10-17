@@ -3,8 +3,7 @@ import type { ReactNode, SVGProps } from 'react'
 export type IconName =
   | 'orbit' | 'post' | 'say' | 'food' | 'gallery' | 'message' | 'about'
   | 'sun' | 'moon' | 'menu' | 'close' | 'rss' | 'github' | 'mail' | 'x'
-  | 'location' | 'calendar' | 'comment' | 'eye' | 'arrow-left' | 'arrow-right'
-  | 'chevron-down' | 'image' | 'map' | 'activity'
+  | 'location' | 'calendar' | 'arrow-left' | 'arrow-right' | 'activity'
 
 const paths: Record<IconName, ReactNode> = {
   orbit: <><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-28 12 12)"/><circle cx="19.2" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></>,
@@ -24,13 +23,8 @@ const paths: Record<IconName, ReactNode> = {
   x: <path d="M5 4h4.2l10 16H15L5 4Zm1 16 6.2-6.8M12.8 10.7 19 4"/>,
   location: <><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></>,
   calendar: <><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></>,
-  comment: <path d="M4 4.5h16v12H9l-5 3.5z"/>,
-  eye: <><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></>,
   'arrow-left': <><path d="m10 6-6 6 6 6M4 12h16"/></>,
   'arrow-right': <><path d="m14 6 6 6-6 6M20 12H4"/></>,
-  'chevron-down': <path d="m7 9 5 5 5-5"/>,
-  image: <><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m5 17 5-5 3 3 2-2 4 4"/></>,
-  map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></>,
   activity: <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>,
 }
 

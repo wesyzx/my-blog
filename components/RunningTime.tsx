@@ -19,17 +19,22 @@ function pad(value: number) {
 }
 
 export default function RunningTime() {
-  const [elapsed, setElapsed] = useState(calcElapsed)
+  const [elapsed, setElapsed] = useState<ReturnType<typeof calcElapsed> | null>(null)
 
   useEffect(() => {
+    // Keep the server and first client render identical before starting the clock.
+    const frame = window.requestAnimationFrame(() => setElapsed(calcElapsed()))
     const timer = setInterval(() => setElapsed(calcElapsed), 1000)
-    return () => clearInterval(timer)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      clearInterval(timer)
+    }
   }, [])
 
   return (
-    <span suppressHydrationWarning>
-      本站已运行 <strong>{elapsed.days}</strong> 天 <strong>{pad(elapsed.hours)}</strong> 时{' '}
-      <strong>{pad(elapsed.minutes)}</strong> 分 <strong>{pad(elapsed.seconds)}</strong> 秒
+    <span>
+      本站已运行 <strong>{elapsed?.days ?? '—'}</strong> 天 <strong>{elapsed ? pad(elapsed.hours) : '—'}</strong> 时{' '}
+      <strong>{elapsed ? pad(elapsed.minutes) : '—'}</strong> 分 <strong>{elapsed ? pad(elapsed.seconds) : '—'}</strong> 秒
     </span>
   )
 }

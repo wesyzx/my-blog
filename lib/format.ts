@@ -11,10 +11,3 @@ export function formatItemDate(value: string): string {
   if (Number.isNaN(date.getTime())) return value || '—'
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date)
 }
-
-/** 编辑部风格：2026.09.08 */
-export function formatEditorialDate(value: string): string {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value || '—'
-  return date.toISOString().slice(0, 10).replaceAll('-', '.')
-}

@@ -33,23 +33,20 @@ export default async function PostsPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="home-shell posts-shell animate-fade-up">
-      <PageHeader title="博文" className="posts-page-header" />
-
-      {categories.length > 1 && (
+      <PageHeader title="博文" className="posts-page-header" actions={categories.length > 1 && (
         <nav className="category-filter" aria-label="文章分类">
-          <span className="category-label">分类</span>
           <div className="category-links">
             {categories.map((item) => {
               const value = item === '全部' ? '' : item
               return (
-                <Link key={item} href={value ? `/posts?category=${encodeURIComponent(value)}` : '/posts'} className={category === value ? 'active' : ''}>
+                <Link key={item} href={value ? `/posts?category=${encodeURIComponent(value)}` : '/posts'} className={category === value ? 'active' : ''} aria-current={category === value ? 'page' : undefined}>
                   {item}
                 </Link>
               )
             })}
           </div>
         </nav>
-      )}
+      )} />
 
       <section className="post-list" aria-label="文章列表">
         {pagedPosts.length > 0 ? (

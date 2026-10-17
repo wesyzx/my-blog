@@ -30,7 +30,7 @@ export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
       id: `post-${post.slug}`,
       kind: 'post',
       title: post.title,
-      detail: post.excerpt || post.category,
+      detail: post.excerpt || undefined,
       cover: post.cover || undefined,
       date: post.date,
       href: `/posts/${encodeURIComponent(post.slug)}`,

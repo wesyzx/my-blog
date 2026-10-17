@@ -25,9 +25,11 @@ function canOpen(image: HTMLImageElement) {
 export default function ImageLightbox({
   children,
   className,
+  triggerSelector,
 }: {
   children: React.ReactNode
   className?: string
+  triggerSelector?: string
 }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState('')
@@ -41,9 +43,10 @@ export default function ImageLightbox({
     let viewer: PhotoSwipe | undefined
     const restorations = new Map<HTMLImageElement, () => void>()
     const images = () => Array.from(host.querySelectorAll<HTMLImageElement>('img'))
-      .filter((image) => image.closest('[data-image-lightbox]') === host && canOpen(image))
+      .filter((image) => image.closest('[data-image-lightbox]') === host && (triggerSelector || canOpen(image)))
 
     const enhance = () => {
+      if (triggerSelector) return
       const currentImages = new Set(images())
       restorations.forEach((restore, image) => {
         if (!currentImages.has(image)) {
@@ -73,11 +76,15 @@ export default function ImageLightbox({
 
     const findImage = (target: EventTarget | null) => {
       if (!(target instanceof Element)) return
+      if (triggerSelector) {
+        const trigger = target.closest(triggerSelector)
+        return trigger?.closest('[data-image-lightbox]') === host ? images()[0] : undefined
+      }
       const image = target instanceof HTMLImageElement ? target : target.closest('a')?.querySelector('img')
       return image && images().includes(image) ? image : undefined
     }
 
-    const open = async (image: HTMLImageElement) => {
+    const open = async (image: HTMLImageElement, trigger?: HTMLElement) => {
       if (opening || viewer || document.querySelector('.pswp')) return
       opening = true
       setError('')
@@ -88,7 +95,7 @@ export default function ImageLightbox({
         const currentImages = images()
         const index = currentImages.indexOf(image)
         if (index < 0) return
-        ;(image.closest('a') || image).focus({ preventScroll: true })
+        ;(trigger || image.closest('a') || image).focus({ preventScroll: true })
         viewer = openPhotoSwipe(currentImages, index)
         viewer.on('destroy', () => { viewer = undefined })
       } catch {
@@ -105,9 +112,13 @@ export default function ImageLightbox({
       if (!image) return
       event.preventDefault()
       event.stopPropagation()
-      void open(image)
+      const trigger = triggerSelector && event.target instanceof Element
+        ? event.target.closest<HTMLElement>(triggerSelector) || undefined
+        : undefined
+      void open(image, trigger)
     }
     const onKeyDown = (event: KeyboardEvent) => {
+      if (triggerSelector) return
       if (event.key !== 'Enter' && event.key !== ' ') return
       const image = findImage(event.target)
       if (!image || image.closest('a')) return
@@ -141,7 +152,7 @@ export default function ImageLightbox({
         activeViewer?.destroy()
       }
     }
-  }, [])
+  }, [triggerSelector])
 
   return (
     <div ref={hostRef} className={className} data-image-lightbox="">

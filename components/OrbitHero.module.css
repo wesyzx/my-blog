@@ -3,8 +3,8 @@
   grid-template-columns: minmax(160px, .68fr) minmax(0, 1.32fr);
   align-items: center;
   gap: 34px;
-  margin-bottom: 32px;
-  padding: 8px 0 26px;
+  margin-bottom: 24px;
+  padding: 8px 0 20px;
   border-bottom: 1px solid var(--gray-a4);
 }
 
@@ -52,7 +52,7 @@
 
 .motion {
   position: relative;
-  width: min(100%, 410px);
+  width: min(100%, 340px);
   margin-left: auto;
   color: #6f7d73;
   animation: arrive .82s .06s ease both;
@@ -199,8 +199,8 @@
   .hero {
     grid-template-columns: 1fr;
     gap: 8px;
-    margin-bottom: 28px;
-    padding-bottom: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
   }
 
   .copy { max-width: 380px; }

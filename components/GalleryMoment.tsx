@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import ImageLightbox from '@/components/ImageLightbox'
 import type { GalleryMeta } from '@/lib/gallery'
 import { formatItemDate } from '@/lib/format'
 
@@ -27,22 +28,24 @@ export default function GalleryMoment({ album, headingLevel = 'h2' }: { album: G
       {album.excerpt && <p className="moment-excerpt">{album.excerpt}</p>}
 
       {images.length > 0 && (
-        <Link
-          href={href}
+        <ImageLightbox
           className={`moment-grid moment-count-${images.length}`}
-          aria-label={`查看相册：${album.title}，共 ${album.images.length || images.length} 张照片`}
         >
           {images.map((image, index) => (
-            <span className="moment-photo" key={`${image.src}-${index}`}>
+            <a href={image.src} className="moment-photo" key={`${image.src}-${index}`} aria-label={`放大照片：${album.title}，第 ${index + 1} 张`} aria-haspopup="dialog">
               <Image
                 src={image.src}
-                alt=""
+                alt={`${album.title}，第 ${index + 1} 张`}
                 fill
                 sizes="(max-width: 560px) 50vw, (max-width: 860px) 33vw, 220px"
+                unoptimized={process.env.NODE_ENV === 'development'}
+                data-lightbox-src={image.src}
+                data-pswp-width={image.width}
+                data-pswp-height={image.height}
               />
-            </span>
+            </a>
           ))}
-        </Link>
+        </ImageLightbox>
       )}
     </article>
   )

@@ -50,8 +50,8 @@ export function openPhotoSwipe(images: HTMLImageElement[], index: number) {
     showAnimationDuration: 280,
     hideAnimationDuration: 240,
     paddingFn: (viewport) => ({
-      top: 60,
-      bottom: viewport.x < 600 ? 100 : 80,
+      top: 48,
+      bottom: 64,
       left: viewport.x < 600 ? 12 : 48,
       right: viewport.x < 600 ? 12 : 48,
     }),

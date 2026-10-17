@@ -1,6 +1,7 @@
-import Image from 'next/image'
 import Link from 'next/link'
+import ContentImage from '@/components/ContentImage'
 import GalleryMoment from '@/components/GalleryMoment'
+import PostCover from '@/components/PostCover'
 import { formatItemDate } from '@/lib/format'
 import type { SiteUpdate } from '@/lib/site-updates'
 
@@ -22,68 +23,33 @@ function StreamItem({ update, headingLevel }: { update: SiteUpdate; headingLevel
 
   if (update.kind === 'post' && update.cover) {
     return (
-      <article className="item item-cover stream-item stream-post">
-        <Link href={update.href} className="item-cover_link">
-          <span className="item-cover_image">
-            <Image src={update.cover} alt="" fill sizes="(max-width: 860px) 100vw, 680px" />
-          </span>
-          <span className="item-cover_inner">
-            <span className="stream-meta">
-              <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
-              <span>{LABELS[update.kind]}</span>
-            </span>
-            <Heading className="item-title">{update.title}</Heading>
-          </span>
-        </Link>
-      </article>
-    )
-  }
-
-  if (update.kind === 'food') {
-    return (
-      <article className="item stream-item stream-food">
-        {update.cover && (
-          <Link href={update.href} className="stream-food-image" aria-label={`查看美食记录：${update.title}`}>
-            <Image src={update.cover} alt="" fill sizes="(max-width: 560px) 100vw, 260px" />
-          </Link>
-        )}
-        <div className="stream-food-main">
-          <span className="stream-meta">
-            <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
-            <span>{LABELS[update.kind]}</span>
-          </span>
-          <Heading className="item-title"><Link href={update.href}>{update.title}</Link></Heading>
-          {update.detail && <p className="item-subtitle">{update.detail}</p>}
-        </div>
-      </article>
-    )
-  }
-
-  if (update.kind === 'say') {
-    return (
-      <article className="item stream-item stream-note">
-        <span className="stream-meta">
-          <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
-          <span>{LABELS[update.kind]}</span>
-        </span>
-        <Heading className="stream-note-title"><Link href={update.href}>{update.title}</Link></Heading>
-        {update.cover && (
-          <Link href={update.href} className="stream-note-image" aria-label="查看这则短记">
-            <Image src={update.cover} alt="" fill sizes="(max-width: 860px) 100vw, 680px" />
-          </Link>
-        )}
+      <article className="item stream-item stream-post">
+        <PostCover
+          src={update.cover}
+          title={update.title}
+          date={update.date}
+          href={update.href}
+          label={LABELS.post}
+          headingLevel={headingLevel}
+        />
+        {update.detail && <p className="item-subtitle">{update.detail}</p>}
       </article>
     )
   }
 
   return (
-    <article className="item stream-item">
+    <article className={`item stream-item stream-${update.kind}`}>
       <span className="stream-meta">
         <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
         <span>{LABELS[update.kind]}</span>
       </span>
-      <Heading className="item-title"><Link href={update.href}>{update.title}</Link></Heading>
+      <Heading className={update.kind === 'say' ? 'stream-note-title' : 'item-title'}>
+        <Link href={update.href}>{update.title}</Link>
+      </Heading>
       {update.detail && <p className="item-subtitle">{update.detail}</p>}
+      {update.cover && (
+        <ContentImage src={update.cover} alt={update.title} fit={update.kind === 'food' ? 'cover' : 'contain'} />
+      )}
     </article>
   )
 }

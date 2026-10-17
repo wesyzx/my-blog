@@ -171,7 +171,7 @@ final class HealthKitManager: ObservableObject {
         case .swimming: return "Swim"
         case .hiking: return "Hike"
         case .walking: return "Walk"
-        case .stairClimbing: return "Stairs"
+        case .stairClimbing, .stairs, .stepTraining: return "Stairs"
         default: return "Workout"
         }
     }

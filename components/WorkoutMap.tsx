@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import polyline from '@mapbox/polyline'
 import { wgs84ToGcj02 } from '@/lib/geo.mjs'
-import { boundsOf, loadTMap, TMAP_KEY_MISSING, type TMapLatLng, type TMapMap } from '@/lib/tmap'
+import { boundsOf, loadTMap, mapOptions, TMAP_KEY_MISSING, TMAP_STYLE_ID, type TMapLatLng, type TMapMap } from '@/lib/tmap'
 
 /** 起终点圆点，白描边保证在任何底图上都看得清 */
 function endpointDot(fill: string) {
@@ -37,13 +37,7 @@ export default function WorkoutMap({ route, className = '' }: { route?: string; 
       .then((TMap) => {
         if (disposed) return
 
-        map = new TMap.Map(container, {
-          center: new TMap.LatLng(path[0].lat, path[0].lng),
-          zoom: 14,
-          pitch: 0,
-          rotation: 0,
-          viewMode: '2D',
-        })
+        map = new TMap.Map(container, mapOptions(new TMap.LatLng(path[0].lat, path[0].lng), 14, TMAP_STYLE_ID))
         if (disposed) return
 
         new TMap.MultiPolyline({

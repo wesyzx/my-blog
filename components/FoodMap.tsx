@@ -6,6 +6,7 @@ import { wgs84ToGcj02 } from '@/lib/geo.mjs'
 import {
   boundsOf,
   loadTMap,
+  mapOptions,
   TMAP_KEY_MISSING,
   type TMapInfoWindow,
   type TMapLatLng,
@@ -62,13 +63,7 @@ export default function FoodMap({ posts }: { posts: FoodMeta[] }) {
         if (disposed) return
         const start = spots[0]?.position ?? DEFAULT_CENTER
 
-        map = new TMap.Map(container, {
-          center: new TMap.LatLng(start.lat, start.lng),
-          zoom: 13,
-          pitch: 0,
-          rotation: 0,
-          viewMode: '2D',
-        })
+        map = new TMap.Map(container, mapOptions(new TMap.LatLng(start.lat, start.lng), 13))
         if (disposed) return
 
         const infoWindow: TMapInfoWindow = new TMap.InfoWindow({

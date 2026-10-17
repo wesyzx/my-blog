@@ -8,6 +8,11 @@
 
 export const TMAP_KEY = process.env.NEXT_PUBLIC_TMAP_KEY || ''
 export const TMAP_KEY_MISSING = TMAP_KEY.length === 0
+/**
+ * 运动地图使用的绑定样式 ID；美食和短记保持 SDK 默认底图。
+ * 在 Key 管理 → 设置绑定样式里确认 ID，未绑定时留空。
+ */
+export const TMAP_STYLE_ID = (process.env.NEXT_PUBLIC_TMAP_STYLE_ID || '').trim()
 
 export interface TMapLatLng { lat: number; lng: number }
 export interface TMapBounds { __bounds?: never }
@@ -95,4 +100,16 @@ export function boundsOf(points: TMapLatLng[]) {
     if (point.lng > maxLng) maxLng = point.lng
   }
   return { southWest: { lat: minLat, lng: minLng }, northEast: { lat: maxLat, lng: maxLng } }
+}
+
+/** 默认使用原始底图，需要个性化样式的地图显式传入样式 ID。 */
+export function mapOptions(center: TMapLatLng, zoom: number, styleId = '') {
+  return {
+    center,
+    zoom,
+    pitch: 0,
+    rotation: 0,
+    viewMode: '2D',
+    ...(styleId ? { mapStyleId: styleId } : {}),
+  }
 }

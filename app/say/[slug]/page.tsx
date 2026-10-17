@@ -8,6 +8,7 @@ import SafeMarkdown from '@/components/SafeMarkdown'
 import ImageLightbox from '@/components/ImageLightbox'
 import ArtalkComments from '@/components/ArtalkComments'
 import Icon from '@/components/Icon'
+import NoteMap from '@/components/NoteMap'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +41,18 @@ export default async function SayDetailPage({ params }: { params: Promise<{ slug
         <div className="note-content">
           <SafeMarkdown source={say.content} />
         </div>
+
+        {say.latitude !== undefined && say.longitude !== undefined && (
+          <section className="note-location-block" aria-label="短记地点">
+            {say.location && (
+              <div className="note-location">
+                <Icon name="location" />
+                {say.location}
+              </div>
+            )}
+            <NoteMap latitude={say.latitude} longitude={say.longitude} label={say.location || pageTitle} />
+          </section>
+        )}
 
         {say.images && say.images.length > 0 && (
           <ImageLightbox className={`say-images count-${Math.min(say.images.length, 3)}`}>

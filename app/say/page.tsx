@@ -6,6 +6,8 @@ import ImageLightbox from '@/components/ImageLightbox'
 import { createPageMetadata } from '@/lib/metadata'
 import { formatItemDate } from '@/lib/format'
 import PageHeader from '@/components/PageHeader'
+import NoteMap from '@/components/NoteMap'
+import Icon from '@/components/Icon'
 
 export const metadata = createPageMetadata({ title: '短记', description: '零碎的思考、瞬间的感悟，以及生活的日常。', path: '/say' })
 
@@ -28,12 +30,28 @@ export default async function SayPage() {
           {says.map((say) => {
             const href = `/say/${encodeURIComponent(say.slug)}`
             return (
-              <article key={say.slug} id={`say-${encodeURIComponent(say.slug)}`} className="note-item">
+              <article
+                key={say.slug}
+                id={`say-${encodeURIComponent(say.slug)}`}
+                className={`note-item${say.latitude !== undefined && say.longitude !== undefined ? ' has-location' : ''}`}
+              >
                 <Link href={href} className="note-date-link" aria-label={`查看 ${formatItemDate(say.date)} 的短记`}>
                   <time className="item-time" dateTime={say.date}>{formatItemDate(say.date)}</time>
                 </Link>
 
                 <ClickableNoteContent source={say.content} href={href} />
+
+                {say.latitude !== undefined && say.longitude !== undefined && (
+                  <>
+                    {say.location && (
+                      <span className="note-location">
+                        <Icon name="location" />
+                        {say.location}
+                      </span>
+                    )}
+                    <NoteMap latitude={say.latitude} longitude={say.longitude} label={say.location || `${formatItemDate(say.date)} 的短记`} />
+                  </>
+                )}
 
                 {/* 同一则短记的多张图组成一组，点开即灯箱；data-lightbox-src 让灯箱拿原图而不是缩略图 */}
                 {say.images && say.images.length > 0 && (

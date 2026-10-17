@@ -35,6 +35,31 @@ test('supports legacy resources and memo identifiers', () => {
   assert.equal(memo.image, '/api/memos/file/attachments/photo/old.jpg')
 })
 
+test('keeps valid memo locations and drops invalid coordinates', () => {
+  const [withLocation, invalidLocation] = parseMemos({ memos: [
+    {
+      name: 'memos/place-1',
+      state: 'NORMAL',
+      createTime: '2026-10-17T00:00:00Z',
+      content: 'A place',
+      location: { placeholder: '天一阁', latitude: 29.8733, longitude: 121.5426 },
+    },
+    {
+      name: 'memos/place-2',
+      state: 'NORMAL',
+      createTime: '2026-10-16T00:00:00Z',
+      content: 'Nowhere',
+      location: { placeholder: '0,0', latitude: 0, longitude: 181 },
+    },
+  ] })
+  assert.equal(withLocation.location, '天一阁')
+  assert.equal(withLocation.latitude, 29.8733)
+  assert.equal(withLocation.longitude, 121.5426)
+  assert.equal(invalidLocation.location, undefined)
+  assert.equal(invalidLocation.latitude, undefined)
+  assert.equal(invalidLocation.longitude, undefined)
+})
+
 test('omits archived notes and records without identifiers', () => {
   assert.deepEqual(parseMemos({ memos: [
     { id: 'archived', state: 'ARCHIVED', content: 'hidden' },

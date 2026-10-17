@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { normalizeWorkoutsData, type HeatmapNode, type NormalizedActivity, type WorkoutsDataContract } from '@/lib/workouts-schema'
 import WorkoutMap from '@/components/WorkoutMap'
 
@@ -9,6 +10,10 @@ import WorkoutMap from '@/components/WorkoutMap'
 // two providers cannot reach each other directly.
 const WORKOUTS_SNAPSHOT_URL = 'https://workouts.wesyzx.workers.dev/v1/workouts.json'
 const ACTIVITIES_PER_PAGE = 10
+const WorkoutRouteAtlas = dynamic(() => import('@/components/WorkoutRouteAtlas'), {
+  ssr: false,
+  loading: () => <div className="workout-route-loading">正在读取全部轨迹…</div>,
+})
 
 function formatDuration(seconds: number) {
   const h = Math.floor(seconds / 3600)
@@ -187,6 +192,16 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
       )}
 
       {latestYear && <Heatmap data={data.heatmap} year={Number(latestYear)} lastUpdated={data.lastUpdated} />}
+
+      {data.activities.some((activity) => activity.route) && (
+        <section className="workout-section" aria-labelledby="workout-route-atlas-title">
+          <div className="workout-section-heading">
+            <h2 id="workout-route-atlas-title">全部轨迹</h2>
+            <span>所有公开路线 · 按类型与年份查看</span>
+          </div>
+          <WorkoutRouteAtlas className="workout-route-map" />
+        </section>
+      )}
 
       {latestActivityWithRoute?.route && (
         <section className="workout-section" aria-labelledby="latest-route-title">

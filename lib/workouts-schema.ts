@@ -20,6 +20,10 @@ export interface NormalizedActivity {
   route?: string
 }
 
+export interface NormalizedRouteActivity extends Omit<NormalizedActivity, 'route'> {
+  route: string
+}
+
 export interface YearlySummary {
   year: number
   totalActivities: number
@@ -42,6 +46,12 @@ export interface WorkoutsDataContract {
   activities: NormalizedActivity[]
 }
 
+export interface RoutesDataContract {
+  schemaVersion: 1
+  lastUpdated: string
+  routes: NormalizedRouteActivity[]
+}
+
 const ACTIVITY_TYPES = new Set<NormalizedActivity['type']>(['Run', 'Ride', 'Swim', 'Hike', 'Walk', 'Stairs', 'Workout'])
 
 export function emptyWorkoutsData(): WorkoutsDataContract {
@@ -62,31 +72,36 @@ function optionalPositiveNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
 }
 
+function normalizeActivityRecord(item: unknown): NormalizedActivity | null {
+  if (!isRecord(item) || (typeof item.id !== 'string' && typeof item.id !== 'number') || typeof item.startedAt !== 'string') return null
+  if (Number.isNaN(new Date(item.startedAt).getTime())) return null
+
+  const type = typeof item.type === 'string' && ACTIVITY_TYPES.has(item.type as NormalizedActivity['type'])
+    ? item.type as NormalizedActivity['type']
+    : 'Workout'
+  return {
+    id: String(item.id),
+    type,
+    startedAt: item.startedAt,
+    distanceMeters: nonNegativeNumber(item.distanceMeters),
+    durationSeconds: nonNegativeNumber(item.durationSeconds),
+    elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
+    pace: optionalPositiveNumber(item.pace),
+    activeEnergyKcal: optionalPositiveNumber(item.activeEnergyKcal),
+    averageHeartRateBpm: optionalPositiveNumber(item.averageHeartRateBpm),
+    maxHeartRateBpm: optionalPositiveNumber(item.maxHeartRateBpm),
+    averageCadenceRpm: optionalPositiveNumber(item.averageCadenceRpm),
+    route: typeof item.route === 'string' && item.route.length > 0 ? item.route : undefined,
+  }
+}
+
 export function normalizeWorkoutsData(value: unknown): WorkoutsDataContract | null {
   if (!isRecord(value) || value.schemaVersion !== 1) return null
 
   const rawActivities = Array.isArray(value.activities) ? value.activities : []
   const activities = rawActivities.flatMap<NormalizedActivity>((item) => {
-    if (!isRecord(item) || (typeof item.id !== 'string' && typeof item.id !== 'number') || typeof item.startedAt !== 'string') return []
-    if (Number.isNaN(new Date(item.startedAt).getTime())) return []
-
-    const type = typeof item.type === 'string' && ACTIVITY_TYPES.has(item.type as NormalizedActivity['type'])
-      ? item.type as NormalizedActivity['type']
-      : 'Workout'
-    return [{
-      id: String(item.id),
-      type,
-      startedAt: item.startedAt,
-      distanceMeters: nonNegativeNumber(item.distanceMeters),
-      durationSeconds: nonNegativeNumber(item.durationSeconds),
-      elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
-      pace: optionalPositiveNumber(item.pace),
-      activeEnergyKcal: optionalPositiveNumber(item.activeEnergyKcal),
-      averageHeartRateBpm: optionalPositiveNumber(item.averageHeartRateBpm),
-      maxHeartRateBpm: optionalPositiveNumber(item.maxHeartRateBpm),
-      averageCadenceRpm: optionalPositiveNumber(item.averageCadenceRpm),
-      route: typeof item.route === 'string' && item.route.length > 0 ? item.route : undefined,
-    }]
+    const activity = normalizeActivityRecord(item)
+    return activity ? [activity] : []
   }).sort((left, right) => right.startedAt.localeCompare(left.startedAt))
 
   const heatmap = (Array.isArray(value.heatmap) ? value.heatmap : []).flatMap<HeatmapNode>((item) => {
@@ -120,5 +135,22 @@ export function normalizeWorkoutsData(value: unknown): WorkoutsDataContract | nu
     summary,
     heatmap,
     activities,
+  }
+}
+
+export function normalizeRoutesData(value: unknown): RoutesDataContract | null {
+  if (!isRecord(value) || value.schemaVersion !== 1) return null
+
+  const rawRoutes = Array.isArray(value.routes) ? value.routes : []
+  const routes = rawRoutes.flatMap<NormalizedRouteActivity>((item) => {
+    const activity = normalizeActivityRecord(item)
+    if (!activity?.route) return []
+    return [{ ...activity, route: activity.route }]
+  }).sort((left, right) => right.startedAt.localeCompare(left.startedAt))
+
+  return {
+    schemaVersion: 1,
+    lastUpdated: typeof value.lastUpdated === 'string' ? value.lastUpdated : new Date().toISOString(),
+    routes,
   }
 }

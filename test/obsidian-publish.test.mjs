@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
-const publisher = fileURLToPath(new URL('../scripts/obsidian-publish.mjs', import.meta.url))
+const publisher = process.env.PUBLISHER_TEST_SCRIPT || fileURLToPath(new URL('../scripts/obsidian-publish.mjs', import.meta.url))
 
 function fixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), 'blog-publisher-'))

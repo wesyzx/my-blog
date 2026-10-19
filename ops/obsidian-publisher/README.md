@@ -11,6 +11,17 @@ The installed reader bundle pins LiveSync tag `1.0.38` (commit
 `DirectFileManipulatorV2` is an internal API: rebuild and validate before updating.
 Runtime: verified official Node.js 24.10.0 Linux x64.
 
+After installing dependencies with the official checkout's lockfile and this
+repository's lockfile, build and test the actual deployment bundles:
+
+```sh
+LIVESYNC_SOURCE_DIR=/path/to/pinned/livesync \
+PUBLISHER_BUILD_DIR=/private/build-output \
+node ops/obsidian-publisher/build.mjs
+PUBLISHER_TEST_SCRIPT=/private/build-output/publish.mjs \
+node --test test/obsidian-publish.test.mjs
+```
+
 ## Installation layout
 
 - `/opt/obsidian-blog-publisher`: root-owned reader and publisher bundles, Python

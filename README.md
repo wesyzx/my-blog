@@ -5,7 +5,7 @@
 ## 项目结构
 
 - `app/`、`components/`、`lib/`：Next.js 主站，部署于 EdgeOne。
-- `scripts/bundle-data.mjs`：生成内容快照；博文默认来自 Obsidian Markdown，美食与相册继续读取 Notion。`content/about.md` 管理关于页。
+- `scripts/bundle-data.mjs`：生成内容快照；博文、美食与相册均来自同一 Obsidian Vault。`content/about.md` 管理关于页。
 - `cloudflare/workouts/`：运动数据 Worker、D1 迁移与测试，是运动页面的数据服务。
 - `cloudflare/workouts/shortcuts/`：三个正式运动快捷指令及生成器，日常使用见该目录的 README。
 - `scripts/import-apple-health.py`：Apple 健康历史数据批量导入工具。
@@ -43,14 +43,17 @@ npm run build
 
 运动服务部署、接口与导入说明见 `cloudflare/workouts/README.md`；图片放大交互见 `docs/lightbox.md`。
 
-## Obsidian 博文
+## Obsidian 内容发布
 
 发布区只允许是 Obsidian Vault 内的 `Blog/`，不要指向整个私人 Vault：
 
 ```text
 Blog/
   posts/*.md
+  food/*.md
+  gallery/*.md
   attachments/
+  templates/       # 草稿模板，不对外发布
 ```
 
 文章的 frontmatter：
@@ -76,8 +79,9 @@ OBSIDIAN_BLOG_DIR="/path/to/Obsidian/Blog" \
 npm run obsidian:preview
 ```
 
-仓库的 `content/source.json` 已将博文设为 Obsidian；部署环境的 `CONTENT_SOURCE` 优先级更高，
-留空时使用仓库配置。需要回退时可显式设置 `CONTENT_SOURCE=notion`。
+仓库的 `content/source.json` 已将博文、美食和相册设为 Obsidian；`CONTENT_SOURCE` 可覆盖博文来源，
+`FOOD_CONTENT_SOURCE` 和 `GALLERY_CONTENT_SOURCE` 可分别覆盖美食与相册来源，留空使用仓库配置。
+三个板块全部使用 Obsidian 时，构建不再请求 Notion。短记继续使用 Memos。
 默认读取仓库内 `content/obsidian`，该目录只保存已批准发布的副本，不包含私人 Vault 或草稿。
 构建时只复制已发布文章实际引用到的附件到 `public/obsidian`，正文中的本地附件会改写成
 `/obsidian/attachments/...`。未发布的文章和未被引用的附件不会进入博客仓库。该目录会镜像同步：
@@ -85,13 +89,22 @@ npm run obsidian:preview
 
 ### 服务器自动发布
 
-服务器每分钟只读检查现有 LiveSync 数据库。`Blog/posts/*.md` 中 `published: true` 的文章
-及其引用的 `Blog/attachments/` 附件稳定 90 秒后，自动提交到 GitHub `main`，
+服务器每分钟只读检查同一 LiveSync 数据库。`Blog/posts/*.md`、`Blog/food/*.md` 和
+`Blog/gallery/*.md` 中 `published: true` 的内容及其引用的 `Blog/attachments/` 附件稳定 90 秒后，
+自动提交到 GitHub `main`，
 由现有 EdgeOne Git 集成构建。Mac 关机不影响此流程；iPhone 需保持 Obsidian 打开，直到 LiveSync 上传完成。
 同一数据库的解密密钥保存在服务器受限配置目录，具备读取整个 Vault 的能力；
 发布白名单由只读导出器执行，未发布文章和私人文件不会进入公开仓库。
 
 任务、权限、通知与恢复说明见 `ops/obsidian-publisher/README.md`。
+
+美食与相册也使用 `published`、`slug`、`title`、`date`、`excerpt`、`cover`。
+美食增加 `location`、`address`、`tags`，坐标为 WGS84 的 `lng` 与 `lat`，需要成对填写，
+也可同时留空（优先复用已有坐标，配置高德 Key 后可查询新地点）。
+相册增加 `category`（默认「日常」），直接把图片插入正文即可，也支持 frontmatter
+中的 `images` 地址列表。本地图片自动读取真实尺寸；未指定封面时使用第一张图片。
+同名文件可分别放在不同板块中，链接和 slug 分别按板块处理。
+每个板块撤下最后一条已发布内容时会停止自动发布，需要人工检查，避免误清空整个板块。
 
 ### 本地手动发布（维护用途）
 
@@ -102,7 +115,7 @@ OBSIDIAN_BLOG_DIR="$HOME/Library/Application Support/Obsidian-Local/Vaults/Obsid
 npm run obsidian:publish
 ```
 
-发布器只读取 `Blog/posts` 和 `Blog/attachments`，先校验所有已发布文章的 frontmatter 与附件引用，
+发布器只读取三个发布目录和 `Blog/attachments`，先校验所有已发布内容的 frontmatter 与附件引用，
 再把文章和实际引用的附件镜像到 `content/obsidian`。它不会提交草稿、私人笔记或未被引用的附件。
 有变化时自动提交并推送到 `main`；仓库在工作区不干净、来源不是 `Blog` 或没有已发布文章时会拒绝运行。
 可用 `-- --dry-run` 只做校验，用 `-- --no-push` 只提交不推送。

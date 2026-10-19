@@ -1,6 +1,6 @@
 /**
  * 美食探店内容管理模块
- * 现已全面接入 Notion 数据源
+ * 从构建时生成的内容快照读取
  */
 import { bundleData } from './data-bundle'
 

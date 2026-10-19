@@ -1,8 +1,9 @@
 # Server publishing
 
 The existing LiveSync database remains the source. The exporter uses the existing
-encryption key, so the server can decrypt the Vault. Only `Blog/posts/*.md` with
-boolean `published: true` and their referenced files in `Blog/attachments/` are
+encryption key, so the server can decrypt the Vault. Only `Blog/posts/*.md`,
+`Blog/food/*.md`, and `Blog/gallery/*.md` with boolean `published: true` and their
+referenced files in `Blog/attachments/` are
 exported. A transport guard blocks database writes and cross-origin redirects.
 No mirror writes back to CouchDB.
 
@@ -37,13 +38,15 @@ are read-only. The timer checks once per minute and requires 90 seconds of stabl
 article content before publishing. Git commits include only `content/obsidian`.
 Unrelated changes, conflicts, invalid metadata, missing attachments, or a snapshot
 changing during export stop publication and preserve the previous site.
-Empty publication is rejected to prevent accidental mass deletion.
+Empty publication and emptying an existing section are rejected to prevent
+accidental mass deletion. Templates and nested directories are not exported.
 
 The publisher notices article changes, commits and pushes them to `main`.
 EdgeOne must use this repository's `main` branch and must not force
-`CONTENT_SOURCE=notion`. Its build and deployment are separate from Git delivery.
-The checked-in source configuration selects Obsidian only for posts; other data
-sources retain their existing behavior.
+`CONTENT_SOURCE=notion`, `FOOD_CONTENT_SOURCE=notion`, or
+`GALLERY_CONTENT_SOURCE=notion`. Its build and deployment are separate from Git
+delivery. The checked-in source configuration selects Obsidian for all three
+sections; short notes still use Memos.
 
 ## Alerts
 

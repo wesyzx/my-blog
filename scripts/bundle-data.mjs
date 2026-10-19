@@ -4,21 +4,25 @@ import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
+import { readImageSize } from '../lib/image-size.mjs'
 import { fetchMemosWithFallback } from '../lib/memos.mjs'
-import { loadObsidianPosts, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
+import { loadObsidianContent, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
 
 dotenv.config({ path: '.env.local' })
 
 const POSTS_DS_ID = process.env.NOTION_DB_POSTS || '6bff5b12-623c-4404-9e80-66c4b77f82eb'
 const FOOD_DS_ID = process.env.NOTION_DB_FOOD || '3806b772-5d3c-8046-88b8-000b3b624968'
 const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-1232e3590807'
-let repositoryContentSource = 'notion'
+let repositoryContentSources = {}
 try {
-  repositoryContentSource = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'content/source.json'), 'utf8')).posts || 'notion'
+  repositoryContentSources = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'content/source.json'), 'utf8'))
 } catch (error) {
   if (error.code !== 'ENOENT') throw error
 }
-const CONTENT_SOURCE = (process.env.CONTENT_SOURCE || repositoryContentSource).trim().toLowerCase()
+const CONTENT_SOURCES = Object.fromEntries(['posts', 'food', 'gallery'].map((section) => {
+  const override = section === 'posts' ? process.env.CONTENT_SOURCE : process.env[`${section.toUpperCase()}_CONTENT_SOURCE`]
+  return [section, (override || repositoryContentSources[section] || 'notion').trim().toLowerCase()]
+}))
 const OBSIDIAN_BLOG_DIR = process.env.OBSIDIAN_BLOG_DIR || path.join(process.cwd(), 'content/obsidian')
 
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
@@ -108,48 +112,6 @@ function imageLinks(content) {
   return Array.from(content.matchAll(/!\[.*?\]\((https?:\/\/.*?)\)/g), (match) => match[1])
 }
 
-/** 从图片文件头解析尺寸，支持 JPEG / PNG / WebP / GIF */
-function readImageSize(buffer) {
-  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
-
-  // PNG：8 字节签名后紧跟 IHDR
-  if (buffer.length > 24 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) {
-    return { width: view.getUint32(16), height: view.getUint32(20) }
-  }
-
-  // GIF
-  if (buffer.length > 10 && buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) {
-    return { width: view.getUint16(6, true), height: view.getUint16(8, true) }
-  }
-
-  // WebP（RIFF 容器，三种子格式）
-  if (buffer.length > 30 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') {
-    const format = buffer.toString('ascii', 12, 16)
-    if (format === 'VP8X') return { width: (view.getUint32(24, true) & 0xffffff) + 1, height: (view.getUint32(27, true) & 0xffffff) + 1 }
-    if (format === 'VP8 ') return { width: view.getUint16(26, true) & 0x3fff, height: view.getUint16(28, true) & 0x3fff }
-    if (format === 'VP8L') {
-      const bits = view.getUint32(21, true)
-      return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 }
-    }
-  }
-
-  // JPEG：逐段扫描，找到 SOFn 帧头
-  if (buffer.length > 4 && buffer[0] === 0xff && buffer[1] === 0xd8) {
-    let offset = 2
-    while (offset + 9 < buffer.length) {
-      if (buffer[offset] !== 0xff) { offset += 1; continue }
-      const marker = buffer[offset + 1]
-      if (marker === 0xff) { offset += 1; continue }
-      if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { offset += 2; continue }
-      const segmentLength = view.getUint16(offset + 2)
-      const isFrameHeader = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc
-      if (isFrameHeader) return { width: view.getUint16(offset + 7), height: view.getUint16(offset + 5) }
-      offset += 2 + segmentLength
-    }
-  }
-
-  return null
-}
 
 async function fetchImageMeta(imageUrl, lastKnown) {
   if (!imageUrl.includes('guanyan.me')) return lastKnown || { width: 1200, height: 800 }
@@ -211,7 +173,9 @@ async function fetchSays(existingSays) {
   return fetchMemosWithFallback(endpoint, process.env.MEMOS_TOKEN, {}, (error) => reportMemosFailure(error, existingSays))
 }
 
-async function fetchNotionContent(existing, previousCoords, previousImageSizes, { includePosts = true } = {}) {
+async function fetchNotionContent(existing, previousCoords, previousImageSizes, {
+  includePosts = true, includeFood = true, includeGallery = true,
+} = {}) {
   const posts = []
   if (includePosts) {
     const postPages = await queryAll(POSTS_DS_ID)
@@ -264,7 +228,7 @@ async function fetchNotionContent(existing, previousCoords, previousImageSizes, 
     }
   }
 
-  const foodPages = await queryAll(FOOD_DS_ID)
+  const foodPages = includeFood ? await queryAll(FOOD_DS_ID) : []
   const foodSlugs = new Set()
   const food = []
   for (const page of foodPages) {
@@ -289,7 +253,7 @@ async function fetchNotionContent(existing, previousCoords, previousImageSizes, 
   }
   food.sort((a, b) => b.date.localeCompare(a.date))
 
-  const galleryPages = await queryAll(GALLERY_DS_ID)
+  const galleryPages = includeGallery ? await queryAll(GALLERY_DS_ID) : []
   const gallerySlugs = new Set()
   const gallery = []
   for (const page of galleryPages) {
@@ -311,10 +275,10 @@ async function fetchNotionContent(existing, previousCoords, previousImageSizes, 
 }
 
 async function buildBundle() {
-  if (!['notion', 'obsidian'].includes(CONTENT_SOURCE)) {
-    throw new Error(`CONTENT_SOURCE 只能是 notion 或 obsidian，当前为 "${CONTENT_SOURCE}"`)
+  if (Object.values(CONTENT_SOURCES).some((source) => !['notion', 'obsidian'].includes(source))) {
+    throw new Error('内容源只能是 notion 或 obsidian')
   }
-  console.log(`Bundling content from ${CONTENT_SOURCE === 'obsidian' ? 'Obsidian' : 'Notion'} and Memos...`)
+  console.log(`Bundling content: ${JSON.stringify(CONTENT_SOURCES)} and Memos...`)
   const existing = loadExistingBundle()
   const snapshotAvailable = hasUsableSnapshot(existing)
   const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
@@ -323,45 +287,52 @@ async function buildBundle() {
     (existing.gallery || []).flatMap((album) => (album.images || []).filter((image) => image.src && image.width && image.height).map((image) => [image.src, { width: image.width, height: image.height }])),
   )
 
-  let posts = []
-  let food = []
-  let gallery = []
-  if (CONTENT_SOURCE === 'obsidian') {
+  const selected = { posts: [], food: [], gallery: [] }
+  const notionSections = Object.keys(selected).filter((section) => CONTENT_SOURCES[section] === 'notion')
+  if (notionSections.length) {
+    let remote
+    try {
+      if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
+      remote = await fetchNotionContent(existing, previousCoords, previousImageSizes, {
+        includePosts: notionSections.includes('posts'),
+        includeFood: notionSections.includes('food'),
+        includeGallery: notionSections.includes('gallery'),
+      })
+    } catch (error) {
+      reportNotionFailure(error, snapshotAvailable)
+      remote = existing
+    }
+    for (const section of notionSections) selected[section] = remote[section] || []
+  }
+  const obsidianSections = Object.keys(selected).filter((section) => CONTENT_SOURCES[section] === 'obsidian')
+  if (obsidianSections.length) {
     const blogDirectory = path.resolve(OBSIDIAN_BLOG_DIR)
-    posts = await loadObsidianPosts({
+    const local = await loadObsidianContent({
       blogRoot: blogDirectory,
+      sections: obsidianSections,
       attachmentBaseUrl: process.env.OBSIDIAN_ATTACHMENT_BASE_URL || '/obsidian',
       attachmentRoots: ['attachments'],
+      previousImageSizes,
     })
-    if (!posts.length && existing.posts?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
-      throw new Error('Obsidian 发布区没有已发布文章。若确实要清空博文，请设置 CONTENT_ALLOW_EMPTY=1')
+    for (const section of obsidianSections) {
+      if (!local[section].length && existing[section]?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
+        throw new Error(`Obsidian ${section} 发布区没有已发布文章或条目。若确实要清空，请设置 CONTENT_ALLOW_EMPTY=1`)
+      }
+      selected[section] = local[section]
+    }
+    for (const item of selected.food) {
+      if (CONTENT_SOURCES.food === 'obsidian' && !item.lng && !item.lat) {
+        Object.assign(item, previousCoords.get(item.slug) || await geocode(item.location || item.address))
+      }
     }
     await mirrorPublishedAttachments({
       blogRoot: blogDirectory,
-      posts,
+      posts: obsidianSections.flatMap((section) => local[section]),
       destinationRoot: path.join(process.cwd(), 'public/obsidian'),
       attachmentRoots: ['attachments'],
     })
-    try {
-      if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
-      ;({ food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes, { includePosts: false }))
-    } catch (error) {
-      reportNotionFailure(error, snapshotAvailable)
-      food = existing.food || []
-      gallery = existing.gallery || []
-    }
-  } else {
-    try {
-      if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
-      ;({ posts, food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes))
-    } catch (error) {
-      // 构建机无法访问 Notion 时，沿用仓库里已提交的快照，避免整站部署失败。
-      reportNotionFailure(error, snapshotAvailable)
-      posts = existing.posts || []
-      food = existing.food || []
-      gallery = existing.gallery || []
-    }
   }
+  const { posts, food, gallery } = selected
 
   // 关于页只认本地 content/about.md，避免 Notion 页面权限变化影响构建。
   const about = fs.readFileSync(path.join(process.cwd(), 'content/about.md'), 'utf8')

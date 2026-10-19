@@ -73,3 +73,24 @@ test('publisher rejects unrelated staged changes, wrong branches, and unrelated 
   f.git(['switch', '-c', 'other'])
   assert.throws(() => f.publish(), /requires the main branch/)
 })
+
+test('publisher exports all three sections and refuses accidental collection erasure', (t) => {
+  const f = fixture(t)
+  for (const section of ['food', 'gallery']) {
+    mkdirSync(path.join(f.source, section))
+    writeFileSync(path.join(f.source, section, '文章.md'),
+      '---\npublished: true\ntitle: Collection\nslug: collection\ndate: 2026-10-19\nimages: [../attachments/图片 1.jpg]\n---\n')
+    writeFileSync(path.join(f.source, section, '草稿.md'), '---\npublished: false\n---\nPRIVATE')
+  }
+  f.publish()
+  const files = f.git(['ls-tree', '-r', '--name-only', '-z', 'HEAD', 'content/obsidian']).split('\0').filter(Boolean)
+  assert.equal(files.length, 4)
+  for (const section of ['posts', 'food', 'gallery']) {
+    assert.equal(readFileSync(path.join(f.repo, 'content/obsidian', section, '文章.md'), 'utf8').includes('PRIVATE'), false)
+  }
+  const commit = f.git(['rev-parse', 'HEAD'])
+  rmSync(path.join(f.source, 'gallery/文章.md'))
+  assert.throws(() => f.publish(), /empty the existing gallery/)
+  assert.equal(f.git(['rev-parse', 'HEAD']), commit)
+  assert.equal(f.git(['status', '--porcelain']), '')
+})

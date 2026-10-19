@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { localAttachmentTargets, readOnlyFetch, resolveAttachment, safeBlogPath } from '../ops/obsidian-publisher/read-policy.mjs'
+import { localAttachmentTargets, publishSection, readOnlyFetch, resolveAttachment, safeBlogPath } from '../ops/obsidian-publisher/read-policy.mjs'
 
 test('remote transport rejects every database write and credentials cannot follow redirects', async () => {
   const calls = []
@@ -41,4 +41,15 @@ test('collects Unicode, spaced and encoded attachment paths from published conte
   ].join('\n'), { cover: 'attachments/cover.jpg' }), [
     '../attachments/图片 1.jpg', '../attachments/another one.png', 'attachments/cover.jpg',
   ])
+})
+
+test('only three direct publication directories are eligible and image-list attachments are collected', () => {
+  for (const section of ['posts', 'food', 'gallery']) assert.equal(publishSection(`Blog/${section}/same.md`), section)
+  for (const file of ['Blog/templates/food.md', 'Blog/private.md', 'Blog/gallery/nested/private.md', 'Private/food/a.md']) {
+    assert.equal(publishSection(file), null)
+  }
+  assert.deepEqual(localAttachmentTargets('', { images: [
+    '../attachments/图.jpg', { src: 'attachments/another.jpg', width: 10, height: 20 }, 'https://example.com/image.jpg',
+  ] }), ['../attachments/图.jpg', 'attachments/another.jpg'])
+  assert.throws(() => localAttachmentTargets('', { images: 'secret' }), /Invalid image list/)
 })

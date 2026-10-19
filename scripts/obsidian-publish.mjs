@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { loadObsidianPosts, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
+import { loadObsidianContent, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = path.resolve(process.env.OBSIDIAN_PUBLISH_REPO || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'))
@@ -98,13 +98,23 @@ function assertOnlyPublishPathsChanged(lines) {
 }
 
 async function stagePublish(source) {
-  const posts = await loadObsidianPosts({
+  const content = await loadObsidianContent({
     blogRoot: source,
     attachmentBaseUrl: '/obsidian',
     attachmentRoots: ['attachments'],
   })
+  const posts = Object.values(content).flat()
   if (posts.length === 0) {
-    throw new Error('The Vault Blog directory has no published posts; refusing to erase the published copy')
+    throw new Error('The Vault Blog directory has no published content; refusing to erase the published copy')
+  }
+  for (const section of ['posts', 'food', 'gallery']) {
+    const previous = await fs.readdir(path.join(DESTINATION_ROOT, section)).catch((error) => {
+      if (error.code === 'ENOENT') return []
+      throw error
+    })
+    if (!content[section].length && previous.some((file) => file.endsWith('.md'))) {
+      throw new Error(`Refusing to empty the existing ${section} publication without manual review`)
+    }
   }
 
   await fs.mkdir(TEMP_ROOT, { recursive: true })
@@ -116,13 +126,13 @@ async function stagePublish(source) {
       destinationRoot: staging,
       attachmentRoots: ['attachments'],
     })
-    // The attachment mirror prunes everything it does not own, so create posts afterwards.
-    await fs.mkdir(path.join(staging, 'posts'), { recursive: true })
+    // The attachment mirror prunes everything it does not own, so create content afterwards.
+    for (const section of ['posts', 'food', 'gallery']) await fs.mkdir(path.join(staging, section), { recursive: true })
     for (const post of posts) {
       if (!post.sourceFile) throw new Error(`Missing source file metadata for ${post.slug}`)
-      await fs.copyFile(post.sourceFile, path.join(staging, 'posts', path.basename(post.sourceFile)))
+      await fs.copyFile(post.sourceFile, path.join(staging, path.relative(source, post.sourceFile)))
     }
-    return { posts, attachments, staging }
+    return { posts, content, attachments, staging }
   } catch (error) {
     await fs.rm(staging, { recursive: true, force: true })
     throw error
@@ -155,7 +165,7 @@ async function commitAndPush(postCount, { noPush = false } = {}) {
   if (stagedPaths.length === 0) return false
   assertOnlyPublishPathsChanged(stagedPaths)
 
-  const message = `publish: sync Obsidian blog (${postCount} ${postCount === 1 ? 'post' : 'posts'})`
+  const message = `publish: sync Obsidian content (${postCount} ${postCount === 1 ? 'entry' : 'entries'})`
   await git(['commit', '-m', message])
   if (noPush) {
     console.log(`Committed ${message}; push skipped by --no-push`)
@@ -210,7 +220,7 @@ async function main() {
     console.log(`Publishing Obsidian Blog from ${source}`)
     const result = await stagePublish(source)
     staging = result.staging
-    console.log(`Validated ${result.posts.length} published posts and ${result.attachments.length} referenced attachments`)
+    console.log(`Validated ${result.posts.length} published entries and ${result.attachments.length} referenced attachments`)
 
     if (dryRun) {
       console.log('Dry run complete; repository was not changed')

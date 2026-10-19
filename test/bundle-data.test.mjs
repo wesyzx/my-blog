@@ -111,3 +111,35 @@ test('the Obsidian source refuses to erase existing posts unless explicitly allo
     timeout: 10_000,
   }), /没有已发布文章/)
 })
+
+test('all three Obsidian sources build without contacting Notion and preserve collection fields', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-all-obsidian-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  mkdirSync(path.join(cwd, 'lib'))
+  mkdirSync(path.join(cwd, 'content/obsidian/attachments'), { recursive: true })
+  writeFileSync(path.join(cwd, 'content/about.md'), 'About\n')
+  writeFileSync(path.join(cwd, 'content/source.json'), JSON.stringify({
+    posts: 'obsidian', food: 'obsidian', gallery: 'obsidian',
+  }))
+  const snapshot = { posts: [], food: [], gallery: [], says: [], about: '' }
+  writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(snapshot)};`)
+  for (const section of ['posts', 'food', 'gallery']) {
+    mkdirSync(path.join(cwd, 'content/obsidian', section))
+    writeFileSync(path.join(cwd, 'content/obsidian', section, 'one.md'),
+      `---\npublished: true\nslug: ${section}\ntitle: Example\ndate: 2026-10-19\nlng: 121.5\nlat: 29.8\nimages: [https://example.com/photo.jpg]\n---\nBody\n`)
+  }
+  const output = execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
+    cwd,
+    env: { ...process.env, NOTION_TOKEN: 'deliberately-invalid', CONTENT_STRICT: '1', MEMOS_TOKEN: '', CONTENT_SOURCE: '', MEMOS_STRICT: '' },
+    stdio: 'pipe', timeout: 10_000, encoding: 'utf8',
+  })
+  assert.equal(output.includes('Notion 同步失败'), false)
+  const source = readFileSync(path.join(cwd, 'lib/data-bundle.ts'), 'utf8')
+  const bundle = JSON.parse(source.split('export const bundleData = ')[1].trim().replace(/;$/, ''))
+  assert.deepEqual(['posts', 'food', 'gallery'].map((section) => bundle[section].length), [1, 1, 1])
+  assert.equal(bundle.food[0].lng, 121.5)
+  assert.equal(bundle.food[0].lat, 29.8)
+  assert.equal(bundle.food[0].images[0], 'https://example.com/photo.jpg')
+  assert.deepEqual(bundle.gallery[0].images[0], { src: 'https://example.com/photo.jpg', width: 1200, height: 800 })
+  assert.equal(bundle.gallery[0].cover, 'https://example.com/photo.jpg')
+})

@@ -6,7 +6,7 @@ import YAML from 'yaml'
 import { DirectFileManipulator } from '@livesync/direct'
 import { readContent } from '@livesync/content'
 import { setGlobalLogFunction } from 'octagonal-wheels/common/logger'
-import { localAttachmentTargets, readOnlyFetch, resolveAttachment, safeBlogPath } from './read-policy.mjs'
+import { localAttachmentTargets, publishSection, readOnlyFetch, resolveAttachment, safeBlogPath } from './read-policy.mjs'
 
 setGlobalLogFunction(() => {})
 const counters = { reads: 0, blocked: 0 }
@@ -40,7 +40,7 @@ async function main() {
     if (process.argv.includes('--audit')) {
       const documents = []
       for (const [filePath, meta] of metadata) {
-        if (!/^Blog\/posts\/[^/]+\.md$/.test(filePath)) continue
+        if (!publishSection(filePath)) continue
         const entry = await connection.getByMeta(meta)
         const text = readContent(entry)
         const match = typeof text === 'string' ? text.match(FRONTMATTER) : null
@@ -54,10 +54,10 @@ async function main() {
     const root = path.resolve(outputRoot)
     await fs.mkdir(root, { recursive: true, mode: 0o700 })
     staging = await fs.mkdtemp(path.join(root, '.snapshot-'))
-    await fs.mkdir(path.join(staging, 'Blog/posts'), { recursive: true })
+    const counts = { posts: 0, food: 0, gallery: 0 }
+    for (const section of Object.keys(counts)) await fs.mkdir(path.join(staging, 'Blog', section), { recursive: true })
     const files = []
     const attachments = new Set()
-    let posts = 0
     const read = async (meta) => {
       if (meta._conflicts?.length) throw new Error('An article or attachment has unresolved revisions')
       const raw = await database.get(meta._id, { conflicts: true })
@@ -75,7 +75,8 @@ async function main() {
       files.push({ path: filePath, sha256: createHash('sha256').update(buffer).digest('hex'), bytes: buffer.length })
     }
     for (const [filePath, meta] of [...metadata].sort(([left], [right]) => left.localeCompare(right))) {
-      if (!/^Blog\/posts\/[^/]+\.md$/.test(filePath)) continue
+      const section = publishSection(filePath)
+      if (!section) continue
       const buffer = await read(meta)
       const source = buffer.toString('utf8')
       const match = source.match(FRONTMATTER)
@@ -87,9 +88,9 @@ async function main() {
         attachments.add(resolveAttachment(target, filePath, metadata))
       }
       await save(filePath, buffer)
-      posts += 1
+      counts[section] += 1
     }
-    if (!posts) throw new Error('No published articles found; preserving the current site')
+    if (!Object.values(counts).some(Boolean)) throw new Error('No published content found; preserving the current site')
     for (const attachment of [...attachments].sort()) {
       const meta = metadata.get(attachment)
       if (meta.size > MAX_ATTACHMENT_SIZE) throw new Error('A referenced attachment exceeds the 50 MiB publishing limit')
@@ -102,7 +103,7 @@ async function main() {
     if (counters.blocked) throw new Error('The official reader attempted a blocked write')
     const fingerprint = createHash('sha256').update(JSON.stringify(files)).digest('hex')
     await fs.writeFile(path.join(staging, 'manifest.json'), JSON.stringify({
-      posts, attachments: attachments.size, fingerprint, files, counters,
+      ...counts, attachments: attachments.size, fingerprint, files, counters,
       observedAt: new Date().toISOString(),
     }, null, 2), { mode: 0o600 })
     const current = path.join(root, 'current')
@@ -112,7 +113,7 @@ async function main() {
     await fs.rename(staging, current)
     staging = null
     await fs.rm(previous, { force: true, recursive: true })
-    console.log(JSON.stringify({ posts, attachments: attachments.size, fingerprint, counters }))
+    console.log(JSON.stringify({ ...counts, attachments: attachments.size, fingerprint, counters }))
   } finally {
     if (staging) await fs.rm(staging, { recursive: true, force: true })
     await Promise.race([connection.close(), new Promise((resolve) => setTimeout(resolve, 3000))])

@@ -7,6 +7,10 @@ export function safeBlogPath(value) {
   return normalized
 }
 
+export function publishSection(value) {
+  return safeBlogPath(value)?.match(/^Blog\/(posts|food|gallery)\/[^/]+\.md$/)?.[1] || null
+}
+
 export function readOnlyFetch(baseUrl, counters, transport = globalThis.fetch) {
   const database = new URL(baseUrl)
   return async (input, init = {}) => {
@@ -42,6 +46,14 @@ export function localAttachmentTargets(source, data) {
     targets.push(decodeURIComponent(value))
   }
   if (data.cover) targets.push(String(data.cover))
+  if (data.images !== undefined) {
+    if (!Array.isArray(data.images)) throw new Error('Invalid image list')
+    for (const image of data.images) {
+      const src = typeof image === 'string' ? image : image?.src
+      if (typeof src !== 'string' || !src.trim()) throw new Error('Invalid image source')
+      targets.push(src)
+    }
+  }
   return [...new Set(targets.map((value) => value.trim()).filter((value) => {
     return value && !/^(?:https?:|data:|\/)/i.test(value)
   }))]

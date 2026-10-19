@@ -55,7 +55,8 @@ def main():
         run([str(BIN / "bin/node"), str(BIN / "reader.cjs")], environment, 120)
         manifest = json.loads((ROOT / "export/current/manifest.json").read_text())
         fingerprint = manifest["fingerprint"]
-        state.update({"posts": manifest["posts"], "attachments": manifest["attachments"],
+        state.update({"posts": manifest["posts"], "food": manifest.get("food", 0),
+                      "gallery": manifest.get("gallery", 0), "attachments": manifest["attachments"],
                       "remote_writes": manifest["counters"]["blocked"]})
         if fingerprint != state.get("candidate"):
             state.update({"candidate": fingerprint, "candidate_since": time.time()})
@@ -72,7 +73,7 @@ def main():
                           "commit": commit,
                           "published_at": datetime.datetime.now(datetime.timezone.utc).isoformat()})
         write_state(state)
-        print(json.dumps({key: state[key] for key in ["phase", "posts", "attachments", "remote_writes"]}))
+        print(json.dumps({key: state[key] for key in ["phase", "posts", "food", "gallery", "attachments", "remote_writes"]}))
         return 0
     except Exception:
         state.update({"healthy": False, "phase": stage})

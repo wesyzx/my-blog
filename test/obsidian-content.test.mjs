@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, 
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
-import { copyPublishedAttachments, loadObsidianPosts, mirrorPublishedAttachments, parseBundle, serializeBundle } from '../lib/obsidian-content.mjs'
+import { copyPublishedAttachments, loadObsidianContent, loadObsidianPosts, mirrorPublishedAttachments, parseBundle, serializeBundle } from '../lib/obsidian-content.mjs'
 
 function fixture(t) {
   const root = mkdtempSync(path.join(tmpdir(), 'obsidian-blog-test-'))
@@ -186,4 +186,76 @@ test('rejects an attachment symlink pointing outside Blog', async (t) => {
   symlinkSync(path.join(privateRoot, 'secret.txt'), path.join(root, 'attachments/escape.txt'))
   writePost(root, 'post.md', 'published: true\ntitle: Post\ndate: 2026-10-19', '![[attachments/escape.txt]]')
   await assert.rejects(loadObsidianPosts({ blogRoot: root, attachmentBaseUrl: '/obsidian' }), /不在 Blog 发布区内/)
+})
+
+test('food and gallery retain their metadata, share attachments, and use their own routes', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'first.md', 'published: true\ntitle: Post\ndate: 2026-10-19')
+  for (const section of ['food', 'gallery']) mkdirSync(path.join(root, section))
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1yQAAAAASUVORK5CYII=', 'base64')
+  writeFileSync(path.join(root, 'attachments/photo.png'), png)
+  writeFileSync(path.join(root, 'food/first.md'), `---
+published: true
+title: Restaurant
+date: 2026-10-19
+location: Shop
+address: Road
+lng: 121.5
+lat: 29.8
+tags: [dinner]
+images: [../attachments/photo.png]
+---
+[[Restaurant|Self]]
+`)
+  writeFileSync(path.join(root, 'gallery/first.md'), `---
+published: true
+title: Album
+date: 2026-10-19
+images:
+  - src: ../attachments/photo.png
+    width: 1200
+    height: 800
+  - src: https://example.com/photo.jpg
+    width: 640
+    height: 480
+---
+![[../attachments/photo.png]]
+[[Album|Self]]
+`)
+  writeFileSync(path.join(root, 'gallery/draft.md'), '---\npublished: false\n---\n![[missing.png]]')
+  const content = await loadObsidianContent({ blogRoot: root })
+  assert.equal(content.posts.length, 1)
+  assert.equal(content.food.length, 1)
+  assert.equal(content.gallery.length, 1)
+  const [food] = content.food
+  assert.deepEqual([food.location, food.address, food.lng, food.lat], ['Shop', 'Road', 121.5, 29.8])
+  assert.deepEqual(food.tags, ['dinner'])
+  assert.deepEqual(food.images, ['/obsidian/attachments/photo.png'])
+  assert.match(food.content, /\[Self\]\(\/food\/first\)/)
+  const [album] = content.gallery
+  assert.equal(album.category, '日常')
+  assert.deepEqual(album.images, [
+    { src: '/obsidian/attachments/photo.png', width: 1, height: 1 },
+    { src: 'https://example.com/photo.jpg', width: 640, height: 480 },
+  ])
+  assert.equal(album.cover, '/obsidian/attachments/photo.png')
+  assert.match(album.content, /\[Self\]\(\/gallery\/first\)/)
+  assert.deepEqual(await mirrorPublishedAttachments({
+    blogRoot: root, posts: Object.values(content).flat(), destinationRoot: path.join(root, 'public'),
+  }), ['attachments/photo.png'])
+})
+
+test('collection image lists cannot expose private files and invalid food coordinates are rejected', async (t) => {
+  const root = fixture(t)
+  mkdirSync(path.join(root, 'food'))
+  writeFileSync(path.join(root, 'food/test.md'), '---\npublished: true\ntitle: Food\ndate: 2026-10-19\nlng: 181\nlat: 20\n---\n')
+  await assert.rejects(loadObsidianContent({ blogRoot: root }), /坐标超出/)
+  writeFileSync(path.join(root, 'food/test.md'), '---\npublished: true\ntitle: Food\ndate: 2026-10-19\nlng: 121\n---\n')
+  await assert.rejects(loadObsidianContent({ blogRoot: root }), /同时填写/)
+  const privateRoot = mkdtempSync(path.join(tmpdir(), 'private-image-'))
+  t.after(() => rmSync(privateRoot, { recursive: true, force: true }))
+  writeFileSync(path.join(privateRoot, 'secret.png'), 'PRIVATE')
+  symlinkSync(path.join(privateRoot, 'secret.png'), path.join(root, 'attachments/escape.png'))
+  writeFileSync(path.join(root, 'food/test.md'), '---\npublished: true\ntitle: Food\ndate: 2026-10-19\nimages: [../attachments/escape.png]\n---\n')
+  await assert.rejects(loadObsidianContent({ blogRoot: root }), /不在 Blog 发布区内/)
 })

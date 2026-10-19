@@ -51,6 +51,14 @@ date: 2026-10-20
   assert.equal(posts[1].content, '正文')
 })
 
+test('ignores incomplete drafts without reserving their titles or slugs', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'draft.md', 'published: false\nslug: same')
+  writePost(root, 'published.md', 'published: true\nslug: same\ntitle: 已发布\ndate: 2026-10-19')
+  const posts = await loadObsidianPosts({ blogRoot: root })
+  assert.deepEqual(posts.map((post) => post.slug), ['same'])
+})
+
 test('accepts the date and time format produced by the Obsidian template', async (t) => {
   const root = fixture(t)
   writePost(root, 'dated.md', `

@@ -82,6 +82,34 @@ npm run obsidian:preview
 `/obsidian/attachments/...`。未发布的文章和未被引用的附件不会进入博客仓库。该目录会镜像同步：
 删除或取消发布文章后，下次构建会清理对应副本。
 
+### Mac 自动发布
+
+将 Vault 的 `Blog` 目录作为唯一来源，运行一次手动同步：
+
+```bash
+OBSIDIAN_BLOG_DIR="$HOME/Library/Application Support/Obsidian-Local/Vaults/Obsidian LiveSync/Blog" \
+npm run obsidian:publish
+```
+
+发布器只读取 `Blog/posts` 和 `Blog/attachments`，先校验所有已发布文章的 frontmatter 与附件引用，
+再把文章和实际引用的附件镜像到 `content/obsidian`。它不会提交草稿、私人笔记或未被引用的附件。
+有变化时自动提交并推送到 `main`；仓库在工作区不干净、来源不是 `Blog` 或没有已发布文章时会拒绝运行。
+可用 `-- --dry-run` 只做校验，用 `-- --no-push` 只提交不推送。
+
+在 Mac 上安装每 5 分钟运行一次的后台任务：
+
+```bash
+OBSIDIAN_BLOG_DIR="$HOME/Library/Application Support/Obsidian-Local/Vaults/Obsidian LiveSync/Blog" \
+node scripts/install-obsidian-publisher.mjs
+```
+
+卸载后台任务：
+
+```bash
+launchctl bootout "gui/$(id -u)/com.wesyzx.obsidian-blog-publisher"
+rm "$HOME/Library/LaunchAgents/com.wesyzx.obsidian-blog-publisher.plist"
+```
+
 若附件已经放在其他 HTTPS 静态存储中，可用 `OBSIDIAN_ATTACHMENT_BASE_URL` 覆盖 `/obsidian`；
 该地址只用于生成文章中的 URL；构建仍会镜像已发布文章引用的附件，避免站点资源与文章指向脱节。
 LiveSync 在服务器上保存的是端到端加密块，不能直接作为图片目录公开。

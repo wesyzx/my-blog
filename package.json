@@ -16,6 +16,7 @@
     "check": "npm run typecheck && npm run lint",
     "test": "node --test test/*.test.mjs",
     "obsidian:preview": "node scripts/obsidian-preview.mjs",
+    "obsidian:publish": "node scripts/obsidian-publish.mjs",
     "deploy": "dotenv -e .env.local -- node scripts/trigger-deploy.mjs"
   },
   "dependencies": {

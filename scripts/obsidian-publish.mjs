@@ -110,13 +110,14 @@ async function stagePublish(source) {
   await fs.mkdir(TEMP_ROOT, { recursive: true })
   const staging = await fs.mkdtemp(path.join(TEMP_ROOT, 'obsidian-publish-'))
   try {
-    await fs.mkdir(path.join(staging, 'posts'), { recursive: true })
     const attachments = await mirrorPublishedAttachments({
       blogRoot: source,
       posts,
       destinationRoot: staging,
       attachmentRoots: ['attachments'],
     })
+    // The attachment mirror prunes everything it does not own, so create posts afterwards.
+    await fs.mkdir(path.join(staging, 'posts'), { recursive: true })
     for (const post of posts) {
       if (!post.sourceFile) throw new Error(`Missing source file metadata for ${post.slug}`)
       await fs.copyFile(post.sourceFile, path.join(staging, 'posts', path.basename(post.sourceFile)))

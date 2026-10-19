@@ -1,7 +1,7 @@
 ---
 published: true
-slug: test
-title: "2026.10.17"
+slug: test01
+title: 2026.10.17
 date: 2026-10-17
 category: 想法
 tags: []

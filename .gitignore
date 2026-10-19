@@ -7,6 +7,9 @@ build/
 .next/
 out/
 
+# Generated public mirror of Obsidian publish attachments
+public/obsidian/
+
 # TypeScript build info
 *.tsbuildinfo
 

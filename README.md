@@ -5,7 +5,7 @@
 ## 项目结构
 
 - `app/`、`components/`、`lib/`：Next.js 主站，部署于 EdgeOne。
-- `scripts/bundle-data.mjs`：生成 Notion 与 Memos 内容快照；`content/about.md` 管理关于页。
+- `scripts/bundle-data.mjs`：生成内容快照；博文默认来自 Notion，也可显式切换为 Obsidian Markdown。`content/about.md` 管理关于页。
 - `cloudflare/workouts/`：运动数据 Worker、D1 迁移与测试，是运动页面的数据服务。
 - `cloudflare/workouts/shortcuts/`：三个正式运动快捷指令及生成器，日常使用见该目录的 README。
 - `scripts/import-apple-health.py`：Apple 健康历史数据批量导入工具。
@@ -42,3 +42,50 @@ npm run build
 仅验证现有内容快照的生产构建时，使用 `npm run build --ignore-scripts` 跳过内容同步。
 
 运动服务部署、接口与导入说明见 `cloudflare/workouts/README.md`；图片放大交互见 `docs/lightbox.md`。
+
+## Obsidian 博文（预览阶段）
+
+发布区只允许是 Obsidian Vault 内的 `Blog/`，不要指向整个私人 Vault：
+
+```text
+Blog/
+  posts/*.md
+  attachments/
+```
+
+文章的 frontmatter：
+
+```yaml
+---
+published: true
+slug: example
+title: 示例文章
+date: 2026-10-19
+category: 技术
+tags:
+  - Obsidian
+excerpt: 摘要
+cover: ""
+---
+```
+
+先用隔离预览验证，不会覆盖 `lib/data-bundle.ts`：
+
+```bash
+OBSIDIAN_BLOG_DIR="/path/to/Obsidian/Blog" \
+npm run obsidian:preview
+```
+
+生产切换必须显式设置 `CONTENT_SOURCE=obsidian`；不设置时仍使用 Notion，可随时回退。
+默认读取仓库内 `content/obsidian`，该目录只保存已批准发布的副本，不包含私人 Vault 或草稿。
+构建时只复制已发布文章实际引用到的附件到 `public/obsidian`，正文中的本地附件会改写成
+`/obsidian/attachments/...`。未发布的文章和未被引用的附件不会进入博客仓库。该目录会镜像同步：
+删除或取消发布文章后，下次构建会清理对应副本。
+
+若附件已经放在其他 HTTPS 静态存储中，可用 `OBSIDIAN_ATTACHMENT_BASE_URL` 覆盖 `/obsidian`；
+该地址只用于生成文章中的 URL；构建仍会镜像已发布文章引用的附件，避免站点资源与文章指向脱节。
+LiveSync 在服务器上保存的是端到端加密块，不能直接作为图片目录公开。
+
+日常在 Obsidian 中写作时，可把本地的 `OBSIDIAN_BLOG_DIR` 临时指向 Vault 内的 `Blog/`。
+发布到 Git/EdgeOne 时只同步 `content/obsidian` 这一份发布副本；不要把完整的私人 Vault
+或草稿提交到仓库。

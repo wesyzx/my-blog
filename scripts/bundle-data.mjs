@@ -5,12 +5,15 @@ import fs from 'fs'
 import path from 'path'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
 import { fetchMemosWithFallback } from '../lib/memos.mjs'
+import { loadObsidianPosts, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
 
 dotenv.config({ path: '.env.local' })
 
 const POSTS_DS_ID = process.env.NOTION_DB_POSTS || '6bff5b12-623c-4404-9e80-66c4b77f82eb'
 const FOOD_DS_ID = process.env.NOTION_DB_FOOD || '3806b772-5d3c-8046-88b8-000b3b624968'
 const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-1232e3590807'
+const CONTENT_SOURCE = (process.env.CONTENT_SOURCE || 'notion').trim().toLowerCase()
+const OBSIDIAN_BLOG_DIR = process.env.OBSIDIAN_BLOG_DIR || path.join(process.cwd(), 'content/obsidian')
 
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
 const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
@@ -202,55 +205,57 @@ async function fetchSays(existingSays) {
   return fetchMemosWithFallback(endpoint, process.env.MEMOS_TOKEN, {}, (error) => reportMemosFailure(error, existingSays))
 }
 
-async function fetchNotionContent(existing, previousCoords, previousImageSizes) {
-  const postPages = await queryAll(POSTS_DS_ID)
-  postPages.sort((left, right) => date(right.properties?.Date).localeCompare(date(left.properties?.Date)) || left.id.localeCompare(right.id))
-  const postSlugs = new Set()
+async function fetchNotionContent(existing, previousCoords, previousImageSizes, { includePosts = true } = {}) {
   const posts = []
-  let missingPublishFlag = 0
-  for (const page of postPages) {
-    const props = page.properties
-    const publishFlag = property(props, PUBLISH_KEYS)
-    // 勾选列找不到时按「不发布」处理：宁可少发几篇，也不能把草稿误发到线上。
-    if (!publishFlag) { missingPublishFlag += 1; continue }
-    if (!checkbox(publishFlag)) continue
-    const postTitle = title(props.Name)
-    if (!postTitle) continue
-    posts.push({ slug: uniqueSlug(richText(props.Slug), postTitle, page.id, postSlugs), title: postTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '未分类', tags: multiSelect(props.Tags), excerpt: richText(props.Excerpt), cover: url(props.Cover), published: true, content: await markdown(page.id) })
-  }
-  posts.sort((a, b) => b.date.localeCompare(a.date))
+  if (includePosts) {
+    const postPages = await queryAll(POSTS_DS_ID)
+    postPages.sort((left, right) => date(right.properties?.Date).localeCompare(date(left.properties?.Date)) || left.id.localeCompare(right.id))
+    const postSlugs = new Set()
+    let missingPublishFlag = 0
+    for (const page of postPages) {
+      const props = page.properties
+      const publishFlag = property(props, PUBLISH_KEYS)
+      // 勾选列找不到时按「不发布」处理：宁可少发几篇，也不能把草稿误发到线上。
+      if (!publishFlag) { missingPublishFlag += 1; continue }
+      if (!checkbox(publishFlag)) continue
+      const postTitle = title(props.Name)
+      if (!postTitle) continue
+      posts.push({ slug: uniqueSlug(richText(props.Slug), postTitle, page.id, postSlugs), title: postTitle, date: date(props.Date), category: select(props.Category) || richText(props.Category) || '未分类', tags: multiSelect(props.Tags), excerpt: richText(props.Excerpt), cover: url(props.Cover), published: true, content: await markdown(page.id) })
+    }
+    posts.sort((a, b) => b.date.localeCompare(a.date))
 
-  if (missingPublishFlag) {
-    console.warn([
-      '',
-      '  ' + '='.repeat(64),
-      `  ! 有 ${missingPublishFlag} 条记录找不到「发布」勾选列，已全部按未发布处理`,
-      `  ! 请检查 Notion 里这一列的名字，支持：${PUBLISH_KEYS.join(' / ')}`,
-      '  ' + '='.repeat(64),
-      '',
-    ].join('\n'))
-  }
+    if (missingPublishFlag) {
+      console.warn([
+        '',
+        '  ' + '='.repeat(64),
+        `  ! 有 ${missingPublishFlag} 条记录找不到「发布」勾选列，已全部按未发布处理`,
+        `  ! 请检查 Notion 里这一列的名字，支持：${PUBLISH_KEYS.join(' / ')}`,
+        '  ' + '='.repeat(64),
+        '',
+      ].join('\n'))
+    }
 
-  const previousPosts = existing.posts || []
-  const allowEmpty = process.env.CONTENT_ALLOW_EMPTY === '1'
-  // 「空」分两种，必须区别对待，否则勾选框就管不住发布：
-  //   Notion 一条都没返回 / 勾选列整个不见了 → 更像故障或配置错误 → 沿用旧快照
-  //   Notion 有记录但全都没勾选            → 是明确的意图       → 尊重它，线上就是空的
-  const looksLikeFailure = postPages.length === 0 || missingPublishFlag === postPages.length
-  if (!posts.length && previousPosts.length && !allowEmpty && looksLikeFailure) {
-    console.warn([
-      '',
-      '  ' + '='.repeat(64),
-      `  ! ${postPages.length === 0 ? 'Notion 没有返回任何博文记录' : '找不到「发布」勾选列'}，继续沿用上一版快照里的 ${previousPosts.length} 篇`,
-      '  ! 确实要清空线上文章，请用 CONTENT_ALLOW_EMPTY=1 重新构建',
-      '  ' + '='.repeat(64),
-      '',
-    ].join('\n'))
-    posts.push(...previousPosts)
-  } else if (!posts.length && !looksLikeFailure) {
-    console.warn('\n  ! 所有博文都取消了「发布」勾选，本次构建的博文列表为空（这是预期结果）。\n')
-  } else if (!posts.length) {
-    console.warn('\n  ! Notion 当前没有任何已发布文章，本次构建的博文列表为空。\n')
+    const previousPosts = existing.posts || []
+    const allowEmpty = process.env.CONTENT_ALLOW_EMPTY === '1'
+    // 「空」分两种，必须区别对待，否则勾选框就管不住发布：
+    //   Notion 一条都没返回 / 勾选列整个不见了 → 更像故障或配置错误 → 沿用旧快照
+    //   Notion 有记录但全都没勾选            → 是明确的意图       → 尊重它，线上就是空的
+    const looksLikeFailure = postPages.length === 0 || missingPublishFlag === postPages.length
+    if (!posts.length && previousPosts.length && !allowEmpty && looksLikeFailure) {
+      console.warn([
+        '',
+        '  ' + '='.repeat(64),
+        `  ! ${postPages.length === 0 ? 'Notion 没有返回任何博文记录' : '找不到「发布」勾选列'}，继续沿用上一版快照里的 ${previousPosts.length} 篇`,
+        '  ! 确实要清空线上文章，请用 CONTENT_ALLOW_EMPTY=1 重新构建',
+        '  ' + '='.repeat(64),
+        '',
+      ].join('\n'))
+      posts.push(...previousPosts)
+    } else if (!posts.length && !looksLikeFailure) {
+      console.warn('\n  ! 所有博文都取消了「发布」勾选，本次构建的博文列表为空（这是预期结果）。\n')
+    } else if (!posts.length) {
+      console.warn('\n  ! Notion 当前没有任何已发布文章，本次构建的博文列表为空。\n')
+    }
   }
 
   const foodPages = await queryAll(FOOD_DS_ID)
@@ -300,7 +305,10 @@ async function fetchNotionContent(existing, previousCoords, previousImageSizes) 
 }
 
 async function buildBundle() {
-  console.log('Bundling content from Notion and Memos...')
+  if (!['notion', 'obsidian'].includes(CONTENT_SOURCE)) {
+    throw new Error(`CONTENT_SOURCE 只能是 notion 或 obsidian，当前为 "${CONTENT_SOURCE}"`)
+  }
+  console.log(`Bundling content from ${CONTENT_SOURCE === 'obsidian' ? 'Obsidian' : 'Notion'} and Memos...`)
   const existing = loadExistingBundle()
   const snapshotAvailable = hasUsableSnapshot(existing)
   const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
@@ -312,15 +320,41 @@ async function buildBundle() {
   let posts = []
   let food = []
   let gallery = []
-  try {
-    if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
-    ;({ posts, food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes))
-  } catch (error) {
-    // 构建机无法访问 Notion 时，沿用仓库里已提交的快照，避免整站部署失败。
-    reportNotionFailure(error, snapshotAvailable)
-    posts = existing.posts || []
-    food = existing.food || []
-    gallery = existing.gallery || []
+  if (CONTENT_SOURCE === 'obsidian') {
+    const blogDirectory = path.resolve(OBSIDIAN_BLOG_DIR)
+    posts = await loadObsidianPosts({
+      blogRoot: blogDirectory,
+      attachmentBaseUrl: process.env.OBSIDIAN_ATTACHMENT_BASE_URL || '/obsidian',
+      attachmentRoots: ['attachments'],
+    })
+    if (!posts.length && existing.posts?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
+      throw new Error('Obsidian 发布区没有已发布文章。若确实要清空博文，请设置 CONTENT_ALLOW_EMPTY=1')
+    }
+    await mirrorPublishedAttachments({
+      blogRoot: blogDirectory,
+      posts,
+      destinationRoot: path.join(process.cwd(), 'public/obsidian'),
+      attachmentRoots: ['attachments'],
+    })
+    try {
+      if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
+      ;({ food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes, { includePosts: false }))
+    } catch (error) {
+      reportNotionFailure(error, snapshotAvailable)
+      food = existing.food || []
+      gallery = existing.gallery || []
+    }
+  } else {
+    try {
+      if (!process.env.NOTION_TOKEN) throw new Error('NOTION_TOKEN is missing')
+      ;({ posts, food, gallery } = await fetchNotionContent(existing, previousCoords, previousImageSizes))
+    } catch (error) {
+      // 构建机无法访问 Notion 时，沿用仓库里已提交的快照，避免整站部署失败。
+      reportNotionFailure(error, snapshotAvailable)
+      posts = existing.posts || []
+      food = existing.food || []
+      gallery = existing.gallery || []
+    }
   }
 
   // 关于页只认本地 content/about.md，避免 Notion 页面权限变化影响构建。

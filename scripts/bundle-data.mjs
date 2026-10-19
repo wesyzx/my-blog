@@ -12,7 +12,13 @@ dotenv.config({ path: '.env.local' })
 const POSTS_DS_ID = process.env.NOTION_DB_POSTS || '6bff5b12-623c-4404-9e80-66c4b77f82eb'
 const FOOD_DS_ID = process.env.NOTION_DB_FOOD || '3806b772-5d3c-8046-88b8-000b3b624968'
 const GALLERY_DS_ID = process.env.NOTION_DB_GALLERY || '64bd6b1e-26f0-4994-9c11-1232e3590807'
-const CONTENT_SOURCE = (process.env.CONTENT_SOURCE || 'notion').trim().toLowerCase()
+let repositoryContentSource = 'notion'
+try {
+  repositoryContentSource = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'content/source.json'), 'utf8')).posts || 'notion'
+} catch (error) {
+  if (error.code !== 'ENOENT') throw error
+}
+const CONTENT_SOURCE = (process.env.CONTENT_SOURCE || repositoryContentSource).trim().toLowerCase()
 const OBSIDIAN_BLOG_DIR = process.env.OBSIDIAN_BLOG_DIR || path.join(process.cwd(), 'content/obsidian')
 
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。

@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Obsidian Blog for changes once per minute
+
+[Timer]
+OnBootSec=90s
+OnUnitInactiveSec=60s
+AccuracySec=5s
+Unit=obsidian-blog-publisher.service
+
+[Install]
+WantedBy=timers.target

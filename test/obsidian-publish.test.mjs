@@ -1,0 +1,75 @@
+import assert from 'node:assert/strict'
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import path from 'node:path'
+import { tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
+import test from 'node:test'
+
+const publisher = fileURLToPath(new URL('../scripts/obsidian-publish.mjs', import.meta.url))
+
+function fixture(t) {
+  const root = mkdtempSync(path.join(tmpdir(), 'blog-publisher-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const repo = path.join(root, 'repository')
+  const source = path.join(root, 'Blog')
+  const remote = path.join(root, 'remote.git')
+  mkdirSync(repo)
+  mkdirSync(path.join(source, 'posts'), { recursive: true })
+  mkdirSync(path.join(source, 'attachments'), { recursive: true })
+  const git = (args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: 'pipe' }).trim()
+  git(['init', '-b', 'main'])
+  git(['config', 'user.name', 'Publisher test'])
+  git(['config', 'user.email', 'test@example.invalid'])
+  writeFileSync(path.join(repo, '.gitignore'), '.tmp/\n')
+  git(['add', '.gitignore'])
+  git(['commit', '-m', 'initial'])
+  git(['init', '--bare', remote])
+  git(['remote', 'add', 'origin', remote])
+  git(['push', '-u', 'origin', 'main'])
+  writeFileSync(path.join(source, 'posts/文章.md'), '---\npublished: true\ntitle: Test\nslug: test\ndate: 2026-10-19\n---\n![[../attachments/图片 1.jpg]]\n')
+  writeFileSync(path.join(source, 'posts/草稿.md'), '---\npublished: false\n---\nPRIVATE DRAFT')
+  writeFileSync(path.join(source, 'attachments/图片 1.jpg'), 'approved image')
+  writeFileSync(path.join(source, 'attachments/private.txt'), 'PRIVATE ATTACHMENT')
+  const publish = (...args) => execFileSync(process.execPath, [publisher, ...args], {
+    encoding: 'utf8', stdio: 'pipe', timeout: 10_000,
+    env: { ...process.env, OBSIDIAN_BLOG_DIR: source, OBSIDIAN_PUBLISH_REPO: repo },
+  })
+  return { repo, source, remote, git, publish }
+}
+
+test('publisher commits and pushes only approved Unicode articles and referenced attachments', async (t) => {
+  const f = fixture(t)
+  f.publish()
+  assert.equal(f.git(['status', '--porcelain']), '')
+  assert.equal(f.git(['rev-parse', 'HEAD']), f.git(['rev-parse', 'origin/main']))
+  assert.equal(f.git(['ls-tree', '-r', '--name-only', '-z', 'HEAD', 'content/obsidian']).split('\0').filter(Boolean).length, 2)
+  assert.equal(readFileSync(path.join(f.repo, 'content/obsidian/posts/文章.md'), 'utf8').includes('PRIVATE'), false)
+  assert.equal(readFileSync(path.join(f.repo, 'content/obsidian/attachments/图片 1.jpg'), 'utf8'), 'approved image')
+  const commit = f.git(['rev-parse', 'HEAD'])
+  f.publish()
+  assert.equal(f.git(['rev-parse', 'HEAD']), commit)
+})
+
+test('dry run never pushes a pending publication; the next normal run retries it', (t) => {
+  const f = fixture(t)
+  f.publish('--no-push')
+  assert.notEqual(f.git(['rev-parse', 'HEAD']), f.git(['rev-parse', 'origin/main']))
+  const remote = f.git(['rev-parse', 'origin/main'])
+  f.publish('--dry-run')
+  assert.equal(f.git(['rev-parse', 'origin/main']), remote)
+  f.publish()
+  assert.equal(f.git(['rev-parse', 'HEAD']), f.git(['rev-parse', 'origin/main']))
+})
+
+test('publisher rejects unrelated staged changes, wrong branches, and unrelated pending commits', (t) => {
+  const f = fixture(t)
+  writeFileSync(path.join(f.repo, 'private.txt'), 'not for publication')
+  f.git(['add', 'private.txt'])
+  assert.throws(() => f.publish(), /other repository files are dirty/)
+  f.git(['commit', '-m', 'unrelated work'])
+  assert.throws(() => f.publish(), /other repository files are dirty/)
+  f.git(['push', 'origin', 'main'])
+  f.git(['switch', '-c', 'other'])
+  assert.throws(() => f.publish(), /requires the main branch/)
+})

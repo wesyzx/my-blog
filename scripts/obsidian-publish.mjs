@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { loadObsidianPosts, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
 
 const execFileAsync = promisify(execFile)
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const REPO_ROOT = path.resolve(process.env.OBSIDIAN_PUBLISH_REPO || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'))
 const DESTINATION_ROOT = path.join(REPO_ROOT, 'content/obsidian')
 const TEMP_ROOT = path.join(REPO_ROOT, '.tmp')
 const LOCK_PATH = path.join(TEMP_ROOT, 'obsidian-publish.lock')
@@ -17,6 +17,7 @@ const git = async (args, options = {}) => {
       cwd: REPO_ROOT,
       encoding: 'utf8',
       maxBuffer: 10 * 1024 * 1024,
+      timeout: 90_000,
       ...options,
     })
   } catch (error) {
@@ -88,8 +89,7 @@ async function repositoryStatus() {
 }
 
 function assertOnlyPublishPathsChanged(lines) {
-  const unexpected = lines.filter((line) => {
-    const changedPath = line.slice(3)
+  const unexpected = lines.filter((changedPath) => {
     return changedPath !== 'content/obsidian' && !changedPath.startsWith('content/obsidian/')
   })
   if (unexpected.length > 0) {
@@ -130,6 +130,7 @@ async function stagePublish(source) {
 }
 
 async function replaceDestination(staging) {
+  await fs.mkdir(path.dirname(DESTINATION_ROOT), { recursive: true })
   const backup = `${staging}-previous`
   const hadDestination = await pathExists(DESTINATION_ROOT)
   if (hadDestination) await fs.rename(DESTINATION_ROOT, backup)
@@ -149,8 +150,8 @@ async function commitAndPush(postCount, { noPush = false } = {}) {
   }
   assertOnlyPublishPathsChanged(status)
   await git(['add', '--', 'content/obsidian'])
-  const { stdout: staged } = await git(['diff', '--cached', '--name-only'])
-  const stagedPaths = staged.split('\n').filter(Boolean)
+  const { stdout: staged } = await git(['diff', '--cached', '--name-only', '-z'])
+  const stagedPaths = staged.split('\0').filter(Boolean)
   if (stagedPaths.length === 0) return false
   assertOnlyPublishPathsChanged(stagedPaths)
 
@@ -176,12 +177,23 @@ async function commitAndPush(postCount, { noPush = false } = {}) {
 }
 
 async function pushExistingCommit() {
-  const { stdout } = await git(['rev-list', '--count', '@{upstream}..HEAD'])
+  const { stdout } = await git(['rev-list', '--count', 'origin/main..HEAD'])
   if (Number.parseInt(stdout.trim(), 10) === 0) return
-  const { stdout: branch } = await git(['symbolic-ref', '--short', 'HEAD'])
-  if (branch.trim() !== 'main') throw new Error(`Automatic publishing only supports main, current branch is ${branch.trim()}`)
+  const { stdout: changes } = await git(['log', '--format=', '--name-only', '-z', 'origin/main..HEAD'])
+  assertOnlyPublishPathsChanged(changes.split('\0').flatMap((value) => value.split('\n')).filter(Boolean))
   await git(['push', 'origin', 'HEAD:main'])
   console.log('Pushed previously committed Obsidian changes')
+}
+
+async function updateRepository() {
+  const { stdout: branch } = await git(['symbolic-ref', '--short', 'HEAD'])
+  if (branch.trim() !== 'main') throw new Error('Automatic publishing requires the main branch')
+  await git(['fetch', 'origin', 'main'])
+  const { stdout: counts } = await git(['rev-list', '--left-right', '--count', 'HEAD...origin/main'])
+  const [ahead, behind] = counts.trim().split(/\s+/).map(Number)
+  if (ahead && behind) throw new Error('Repository diverged; manual reconciliation required')
+  if (behind) await git(['merge', '--ff-only', 'origin/main'])
+  await pushExistingCommit()
 }
 
 async function main() {
@@ -193,7 +205,7 @@ async function main() {
   try {
     const before = await repositoryStatus()
     assertOnlyPublishPathsChanged(before)
-    if (!noPush) await pushExistingCommit()
+    if (!noPush && !dryRun) await updateRepository()
 
     console.log(`Publishing Obsidian Blog from ${source}`)
     const result = await stagePublish(source)

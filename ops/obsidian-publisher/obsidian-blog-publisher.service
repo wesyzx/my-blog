@@ -1,0 +1,30 @@
+[Unit]
+Description=Publish approved Obsidian Blog articles from the existing LiveSync database
+Wants=network-online.target
+After=network-online.target docker.service
+OnFailure=obsidian-blog-notify.service
+OnSuccess=obsidian-blog-notify.service
+
+[Service]
+Type=oneshot
+User=obsidian-publisher
+Group=obsidian-publisher
+WorkingDirectory=/var/lib/obsidian-blog-publisher
+Environment=HOME=/var/lib/obsidian-blog-publisher
+Environment=PATH=/opt/obsidian-blog-publisher/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 /opt/obsidian-blog-publisher/run-cycle.py
+TimeoutStartSec=400
+UMask=0077
+MemoryMax=256M
+CPUQuota=35%
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/obsidian-blog-publisher
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true

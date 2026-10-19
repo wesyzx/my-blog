@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import test from 'node:test'
@@ -163,4 +163,27 @@ test('mirrors attachments and removes copies no longer referenced', async (t) =>
   await mirrorPublishedAttachments({ blogRoot: root, posts, destinationRoot: destination })
   assert.equal(readFileSync(path.join(destination, 'attachments/trip/photo one.jpg'), 'utf8'), 'image')
   assert.equal(existsSync(path.join(destination, 'attachments/stale.jpg')), false)
+})
+
+test('encoded and angle-bracket attachment links are both rewritten and copied', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'post.md', 'published: true\ntitle: Post\ndate: 2026-10-19', [
+    '![a](<../attachments/trip/photo one.jpg>)',
+    '![b](../attachments/trip/photo%20one.jpg)',
+  ].join('\n'))
+  const posts = await loadObsidianPosts({ blogRoot: root, attachmentBaseUrl: '/obsidian' })
+  assert.equal((posts[0].content.match(/\/obsidian\/attachments\/trip\/photo%20one.jpg/g) || []).length, 2)
+  const destination = path.join(root, 'public')
+  const copied = await mirrorPublishedAttachments({ blogRoot: root, posts, destinationRoot: destination })
+  assert.deepEqual(copied, ['attachments/trip/photo one.jpg'])
+})
+
+test('rejects an attachment symlink pointing outside Blog', async (t) => {
+  const root = fixture(t)
+  const privateRoot = mkdtempSync(path.join(tmpdir(), 'private-note-'))
+  t.after(() => rmSync(privateRoot, { recursive: true, force: true }))
+  writeFileSync(path.join(privateRoot, 'secret.txt'), 'PRIVATE')
+  symlinkSync(path.join(privateRoot, 'secret.txt'), path.join(root, 'attachments/escape.txt'))
+  writePost(root, 'post.md', 'published: true\ntitle: Post\ndate: 2026-10-19', '![[attachments/escape.txt]]')
+  await assert.rejects(loadObsidianPosts({ blogRoot: root, attachmentBaseUrl: '/obsidian' }), /不在 Blog 发布区内/)
 })

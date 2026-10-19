@@ -37,9 +37,11 @@ test('collects Unicode, spaced and encoded attachment paths from published conte
     '![[../attachments/图片 1.jpg|200]]',
     '![a](<../attachments/图片 1.jpg>)',
     '![b](../attachments/another%20one.png)',
+    '![c](../attachments/100% image.jpg)',
     '![c](https://example/photo.jpg)',
   ].join('\n'), { cover: 'attachments/cover.jpg' }), [
-    '../attachments/图片 1.jpg', '../attachments/another one.png', 'attachments/cover.jpg',
+    '../attachments/图片 1.jpg', '../attachments/another one.png',
+    '../attachments/100% image.jpg', 'attachments/cover.jpg',
   ])
 })
 
@@ -51,5 +53,6 @@ test('only three direct publication directories are eligible and image-list atta
   assert.deepEqual(localAttachmentTargets('', { images: [
     '../attachments/图.jpg', { src: 'attachments/another.jpg', width: 10, height: 20 }, 'https://example.com/image.jpg',
   ] }), ['../attachments/图.jpg', 'attachments/another.jpg'])
+  assert.deepEqual(localAttachmentTargets('', { cover: 'attachments/photo%20one.jpg' }), ['attachments/photo one.jpg'])
   assert.throws(() => localAttachmentTargets('', { images: 'secret' }), /Invalid image list/)
 })

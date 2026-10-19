@@ -186,11 +186,12 @@ async function commitAndPush(postCount, { noPush = false } = {}) {
   throw lastError
 }
 
-async function pushExistingCommit() {
+async function pushExistingCommit({ checkOnly = false } = {}) {
   const { stdout } = await git(['rev-list', '--count', 'origin/main..HEAD'])
   if (Number.parseInt(stdout.trim(), 10) === 0) return
   const { stdout: changes } = await git(['log', '--format=', '--name-only', '-z', 'origin/main..HEAD'])
   assertOnlyPublishPathsChanged(changes.split('\0').flatMap((value) => value.split('\n')).filter(Boolean))
+  if (checkOnly) return
   await git(['push', 'origin', 'HEAD:main'])
   console.log('Pushed previously committed Obsidian changes')
 }
@@ -203,7 +204,7 @@ async function updateRepository() {
   const [ahead, behind] = counts.trim().split(/\s+/).map(Number)
   if (ahead && behind) throw new Error('Repository diverged; manual reconciliation required')
   if (behind) await git(['merge', '--ff-only', 'origin/main'])
-  await pushExistingCommit()
+  await pushExistingCommit({ checkOnly: true })
 }
 
 async function main() {
@@ -230,6 +231,7 @@ async function main() {
     await replaceDestination(staging)
     staging = null
     await commitAndPush(result.posts.length, { noPush })
+    if (!noPush) await pushExistingCommit()
   } finally {
     if (staging) await fs.rm(staging, { recursive: true, force: true })
     await release()

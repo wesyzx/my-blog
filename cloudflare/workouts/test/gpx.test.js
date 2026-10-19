@@ -33,6 +33,20 @@ test('rejects payloads that are not a usable GPX track', () => {
   assert.throws(() => parseGpx('<gpx><trk><trkseg><trkpt lat="1" lon="2"/></trkseg></trk></gpx>'), /usable track/)
 })
 
+test('missing coordinates never become zero and absent elevation does not create a false climb', () => {
+  const points = parseGpx(`<gpx><trk><trkseg>
+    <trkpt lon="116.4"/>
+    <trkpt lat="" lon="116.4"/>
+    <trkpt data-lat="39.9" lon="116.4"/>
+    <trkpt lat='39.9' lon='116.4'><ele>100</ele></trkpt>
+    <trkpt lat="39.901" lon="116.401"/>
+    <trkpt lat="39.902" lon="116.402"><ele>110</ele></trkpt>
+  </trkseg></trk></gpx>`)
+  assert.equal(points.length, 3)
+  assert.equal(points[1].elevation, undefined)
+  assert.equal(elevationGainMeters(points), 10)
+})
+
 test('encoded polyline round-trips through the frontend decoder', () => {
   const points = parseGpx(GPX)
   const decoded = polyline.decode(encodePolyline(points))

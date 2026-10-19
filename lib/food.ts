@@ -3,6 +3,7 @@
  * 从构建时生成的内容快照读取
  */
 import { bundleData } from './data-bundle'
+import { decodeRouteSlug } from './slug'
 
 export interface FoodMeta {
   slug: string
@@ -34,6 +35,6 @@ export async function getAllFoodPosts(): Promise<FoodMeta[]> {
  * 根据 slug 获取单篇探店详情
  */
 export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> {
-  const decodedSlug = decodeURIComponent(slug);
+  const decodedSlug = decodeRouteSlug(slug)
   return (bundleData.food as FoodPost[]).find(p => p.slug === decodedSlug) || null;
 }

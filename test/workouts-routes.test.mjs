@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { normalizeRoutesData } from '../lib/workouts-schema.ts'
+import { importTypeScript } from './helpers/import-typescript.mjs'
+
+const { normalizeRoutesData } = await importTypeScript(new URL('../lib/workouts-schema.ts', import.meta.url))
 
 test('normalizes the complete route snapshot independently from recent activities', () => {
   const routes = normalizeRoutesData({

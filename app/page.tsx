@@ -11,7 +11,7 @@ export const metadata = createPageMetadata({
   path: '/',
 })
 
-// 首页是一条实时内容流。禁用页面缓存后，Notion 与 Memos 的更新不会被旧页面长期遮住。
+// 首页包含实时 Memos 短记，随请求更新。
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {

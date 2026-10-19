@@ -147,10 +147,108 @@ test('copies only attachments referenced by published posts', async (t) => {
     blogRoot: root,
     posts,
     destinationRoot: destination,
-    sourceFiles: new Map([['published', path.join(root, 'posts', 'published.md')]]),
   })
   assert.deepEqual(copies, ['attachments/trip/photo one.jpg'])
   assert.equal(readFileSync(path.join(destination, 'attachments/trip/photo one.jpg'), 'utf8'), 'image')
+})
+
+test('titled drafts cannot change published slugs or override their wiki links', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'a-draft.md', 'published: false\nslug: same\ntitle: Article')
+  writePost(root, 'b-published.md', 'published: true\nslug: same\ntitle: Article\ndate: 2026-10-19', '[[Article]]')
+  writePost(root, 'z-draft.md', 'published: false\nslug: private\ntitle: Article')
+  const [post] = await loadObsidianPosts({ blogRoot: root })
+  assert.equal(post.slug, 'same')
+  assert.equal(post.content, '[Article](/posts/same)')
+})
+
+test('only attachments may be mirrored even when other files are inside Blog', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'private.md', 'published: false\ntitle: Private', 'DO NOT PUBLISH')
+  symlinkSync(path.join(root, 'posts/private.md'), path.join(root, 'attachments/private.md'))
+  writePost(root, 'public.md', 'published: true\ntitle: Public\ndate: 2026-10-19', '![[private.md]]')
+  await assert.rejects(loadObsidianContent({ blogRoot: root }), /不在 Blog 发布区内/)
+  rmSync(path.join(root, 'attachments/private.md'))
+  await assert.rejects(loadObsidianContent({ blogRoot: root }), /找不到附件/)
+})
+
+test('literal percent signs and encoded links refer to the same attachment in every stage', async (t) => {
+  const root = fixture(t)
+  writeFileSync(path.join(root, 'attachments/100% image.jpg'), 'image')
+  writePost(root, 'public.md', 'published: true\ntitle: Public\ndate: 2026-10-19', [
+    '![[attachments/100% image.jpg]]',
+    '![photo](attachments/100%25%20image.jpg)',
+  ].join('\n'))
+  const content = await loadObsidianContent({ blogRoot: root })
+  assert.equal((content.posts[0].content.match(/100%25%20image.jpg/g) || []).length, 2)
+  assert.deepEqual(await mirrorPublishedAttachments({
+    blogRoot: root, posts: content.posts, destinationRoot: path.join(root, 'public'),
+  }), ['attachments/100% image.jpg'])
+})
+
+test('literal percent signs are valid attachment names across content, cover and mirror stages', async (t) => {
+  const root = fixture(t)
+  writeFileSync(path.join(root, 'attachments/100% image.jpg'), 'image')
+  writePost(root, 'public.md', [
+    'published: true',
+    'title: Public',
+    'date: 2026-10-19',
+    'cover: attachments/100% image.jpg',
+  ].join('\n'), '![photo](attachments/100% image.jpg)')
+
+  const content = await loadObsidianContent({ blogRoot: root })
+  assert.equal(content.posts[0].cover, '/obsidian/attachments/100%25%20image.jpg')
+  assert.match(content.posts[0].content, /!\[photo\]\(\/obsidian\/attachments\/100%25%20image\.jpg\)/)
+  assert.deepEqual(await mirrorPublishedAttachments({
+    blogRoot: root, posts: content.posts, destinationRoot: path.join(root, 'public'),
+  }), ['attachments/100% image.jpg'])
+})
+
+test('malformed percent escapes remain an ordinary missing-attachment error', async (t) => {
+  const root = fixture(t)
+  writePost(root, 'public.md', 'published: true\ntitle: Public\ndate: 2026-10-19', '![photo](attachments/%E0%A4%A.jpg)')
+  await assert.rejects(loadObsidianPosts({ blogRoot: root, attachmentBaseUrl: '/obsidian' }), /找不到附件/)
+})
+
+test('percent-encoded filenames are decoded once across links, metadata and gallery sizing', async (t) => {
+  const root = fixture(t)
+  mkdirSync(path.join(root, 'gallery'))
+  writeFileSync(path.join(root, 'attachments/literal%20name.jpg'), 'image')
+  const frontmatter = [
+    'published: true', 'title: Public', 'date: 2026-10-19',
+    'cover: attachments/literal%2520name.jpg',
+    'images: [attachments/literal%2520name.jpg]',
+  ].join('\n')
+  const body = [
+    '![[attachments/literal%20name.jpg]]',
+    '![photo](attachments/literal%2520name.jpg)',
+  ].join('\n')
+  writePost(root, 'public.md', frontmatter, body)
+  writeFileSync(path.join(root, 'gallery/album.md'), `---\n${frontmatter}\n---\n${body}`)
+  const content = await loadObsidianContent({ blogRoot: root })
+  assert.equal(content.posts[0].cover, '/obsidian/attachments/literal%2520name.jpg')
+  assert.equal((content.posts[0].content.match(/literal%2520name.jpg/g) || []).length, 2)
+  assert.equal(content.gallery[0].images[0].src, '/obsidian/attachments/literal%2520name.jpg')
+  assert.deepEqual(await mirrorPublishedAttachments({
+    blogRoot: root, posts: [...content.posts, ...content.gallery], destinationRoot: path.join(root, 'public'),
+  }), ['attachments/literal%20name.jpg'])
+})
+
+test('encoded cover and image-list metadata resolve the same attachment on disk', async (t) => {
+  const root = fixture(t)
+  writeFileSync(path.join(root, 'attachments/photo one.jpg'), 'image')
+  writePost(root, 'public.md', [
+    'published: true',
+    'title: Public',
+    'date: 2026-10-19',
+    'cover: attachments/photo%20one.jpg',
+    'images: [attachments/photo%20one.jpg]',
+  ].join('\n'))
+  const content = await loadObsidianContent({ blogRoot: root })
+  assert.equal(content.posts[0].cover, '/obsidian/attachments/photo%20one.jpg')
+  assert.deepEqual(await mirrorPublishedAttachments({
+    blogRoot: root, posts: content.posts, destinationRoot: path.join(root, 'public'),
+  }), ['attachments/photo one.jpg'])
 })
 
 test('mirrors attachments and removes copies no longer referenced', async (t) => {

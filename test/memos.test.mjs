@@ -5,7 +5,7 @@ import { fetchMemos, fetchMemosWithFallback, parseMemos } from '../lib/memos.mjs
 test('normalizes modern attachments, proxies local files and removes duplicate images', () => {
   const [memo] = parseMemos({ memos: [{
     name: 'memos/note-1',
-    state: 'NORMAL',
+    state: 'NORMAL', visibility: 'PUBLIC',
     createTime: '2026-10-17T00:00:00Z',
     content: 'A note\n![photo](https://memos.guanyan.me/file/attachments/photo/a.jpg)',
     attachments: [
@@ -23,10 +23,26 @@ test('normalizes modern attachments, proxies local files and removes duplicate i
   })
 })
 
+test('proxies markdown images from the configured Memos origin', () => {
+  const memos = { memos: [{
+    name: 'memos/note-1',
+    state: 'NORMAL', visibility: 'PUBLIC',
+    content: [
+      '![local](https://notes.example/file/attachments/photo/a.jpg)',
+      '![other](https://memos.guanyan.me/file/attachments/photo/b.jpg)',
+    ].join('\n'),
+  }] }
+  const [memo] = parseMemos(memos, 'https://notes.example')
+  assert.deepEqual(memo.images, [
+    '/api/memos/file/attachments/photo/a.jpg',
+    'https://memos.guanyan.me/file/attachments/photo/b.jpg',
+  ])
+})
+
 test('supports legacy resources and memo identifiers', () => {
   const [memo] = parseMemos({ memos: [{
     uid: 'legacy-note',
-    state: 'NORMAL',
+    state: 'NORMAL', visibility: 'PUBLIC',
     displayTime: '2026-10-16T00:00:00Z',
     resources: [{ id: 'photo', filename: 'old.jpg', type: 'image/jpeg' }],
   }] })
@@ -39,14 +55,14 @@ test('keeps valid memo locations and drops invalid coordinates', () => {
   const [withLocation, invalidLocation] = parseMemos({ memos: [
     {
       name: 'memos/place-1',
-      state: 'NORMAL',
+      state: 'NORMAL', visibility: 'PUBLIC',
       createTime: '2026-10-17T00:00:00Z',
       content: 'A place',
       location: { placeholder: '天一阁', latitude: 29.8733, longitude: 121.5426 },
     },
     {
       name: 'memos/place-2',
-      state: 'NORMAL',
+      state: 'NORMAL', visibility: 'PUBLIC',
       createTime: '2026-10-16T00:00:00Z',
       content: 'Nowhere',
       location: { placeholder: '0,0', latitude: 0, longitude: 181 },
@@ -63,8 +79,15 @@ test('keeps valid memo locations and drops invalid coordinates', () => {
 test('omits archived notes and records without identifiers', () => {
   assert.deepEqual(parseMemos({ memos: [
     { id: 'archived', state: 'ARCHIVED', content: 'hidden' },
-    { state: 'NORMAL', content: 'no id' },
+    { state: 'NORMAL', visibility: 'PUBLIC', content: 'no id' },
   ] }), [])
+})
+
+test('owner authentication cannot publish private, protected, or unspecified notes', () => {
+  const memos = ['PUBLIC', 3, 'PRIVATE', 'PROTECTED', 0, 1, 2, undefined].map((visibility, index) => ({
+    id: String(index), state: 'NORMAL', visibility, content: 'A note',
+  }))
+  assert.deepEqual(parseMemos({ memos }).map((memo) => memo.slug), ['0', '1'])
 })
 
 test('a successful empty response stays empty instead of restoring deleted notes', async (t) => {
@@ -99,7 +122,7 @@ test('a live memo resolves its address without sending Memos credentials to Tenc
   const request = t.mock.method(globalThis, 'fetch', async (url) => {
     if (new URL(url).hostname === 'memos.example') return Response.json({ memos: [{
       name: 'memos/live-location',
-      state: 'NORMAL',
+      state: 'NORMAL', visibility: 'PUBLIC',
       location: { latitude: 39.9, longitude: 116.3, placeholder: '39.9, 116.3' },
     }] })
     return Response.json({ status: 0, result: { address: '北京市海淀区' } })

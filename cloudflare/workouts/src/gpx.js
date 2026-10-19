@@ -9,13 +9,19 @@ function toRadians(degrees) {
 }
 
 function attribute(tag, name) {
-  const match = tag.match(new RegExp(`${name}\\s*=\\s*"([^"]*)"`, 'i'))
-  return match ? match[1] : null
+  const match = tag.match(new RegExp(`\\s${name}\\s*=\\s*(["'])(.*?)\\1`, 'i'))
+  return match ? match[2] : null
 }
 
 function textOf(block, name) {
-  const match = block.match(new RegExp(`<${name}[^>]*>([^<]*)</${name}>`, 'i'))
+  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([^<]*)</${name}>`, 'i'))
   return match ? match[1].trim() : null
+}
+
+function optionalNumber(value) {
+  if (value === null || !value.trim()) return undefined
+  const number = Number(value)
+  return Number.isFinite(number) ? number : undefined
 }
 
 /** Extract every track point, skipping route points and malformed entries. */
@@ -29,15 +35,15 @@ export function parseGpx(xml) {
     ?? []
 
   for (const segment of segments) {
-    const trackPoints = segment.match(/<(?:trkpt|rtept)\b[^>]*>[\s\S]*?<\/(?:trkpt|rtept)>|<(?:trkpt|rtept)\b[^>]*\/>/gi) ?? []
+    const trackPoints = segment.match(/<(?:trkpt|rtept)\b[^>]*\/>|<(?:trkpt|rtept)\b[^>]*>[\s\S]*?<\/(?:trkpt|rtept)>/gi) ?? []
     for (const trackPoint of trackPoints) {
       const openTag = trackPoint.match(/^<(?:trkpt|rtept)\b[^>]*>/i)?.[0] ?? ''
-      const lat = Number(attribute(openTag, 'lat'))
-      const lng = Number(attribute(openTag, 'lon'))
+      const lat = optionalNumber(attribute(openTag, 'lat'))
+      const lng = optionalNumber(attribute(openTag, 'lon'))
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) continue
 
-      const elevation = Number(textOf(trackPoint, 'ele'))
+      const elevation = optionalNumber(textOf(trackPoint, 'ele'))
       const time = textOf(trackPoint, 'time')
       points.push({
         lat,

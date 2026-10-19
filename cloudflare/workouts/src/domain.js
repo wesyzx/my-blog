@@ -142,6 +142,28 @@ function optionalNumber(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }
 
+function publicActivity(activity) {
+  const pace = optionalNumber(activity.pace)
+  const activeEnergyKcal = optionalNumber(activity.activeEnergyKcal)
+  const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
+  const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
+  const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
+  return {
+    id: activity.id,
+    type: activity.type,
+    startedAt: activity.startedAt,
+    distanceMeters: activity.distanceMeters,
+    durationSeconds: activity.durationSeconds,
+    elevationGainMeters: activity.elevationGainMeters,
+    ...(pace ? { pace } : {}),
+    ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
+    ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
+    ...(maxHeartRateBpm !== undefined ? { maxHeartRateBpm } : {}),
+    ...(averageCadenceRpm !== undefined ? { averageCadenceRpm } : {}),
+    ...(activity.route ? { route: activity.route } : {}),
+  }
+}
+
 export function buildSnapshot(activities, now = new Date()) {
   const ordered = [...activities].sort((left, right) => right.startedAt.localeCompare(left.startedAt))
   const summary = {}
@@ -174,27 +196,7 @@ export function buildSnapshot(activities, now = new Date()) {
     lastUpdated: now.toISOString(),
     summary,
     heatmap: Array.from(heatmap.values()).sort((left, right) => left.date.localeCompare(right.date)),
-    activities: ordered.slice(0, 50).map((activity) => {
-      const pace = optionalNumber(activity.pace)
-      const activeEnergyKcal = optionalNumber(activity.activeEnergyKcal)
-      const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
-      const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
-      const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
-      return {
-        id: activity.id,
-        type: activity.type,
-        startedAt: activity.startedAt,
-        distanceMeters: activity.distanceMeters,
-        durationSeconds: activity.durationSeconds,
-        elevationGainMeters: activity.elevationGainMeters,
-        ...(pace ? { pace } : {}),
-        ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
-        ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
-        ...(maxHeartRateBpm !== undefined ? { maxHeartRateBpm } : {}),
-        ...(averageCadenceRpm !== undefined ? { averageCadenceRpm } : {}),
-        ...(activity.route ? { route: activity.route } : {}),
-      }
-    }),
+    activities: ordered.slice(0, 50).map(publicActivity),
   }
 }
 
@@ -202,27 +204,7 @@ export function buildRoutesSnapshot(activities, now = new Date()) {
   const routes = [...activities]
     .filter((activity) => typeof activity.route === 'string' && activity.route.length > 0)
     .sort((left, right) => right.startedAt.localeCompare(left.startedAt))
-    .map((activity) => {
-      const pace = optionalNumber(activity.pace)
-      const activeEnergyKcal = optionalNumber(activity.activeEnergyKcal)
-      const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
-      const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
-      const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
-      return {
-        id: activity.id,
-        type: activity.type,
-        startedAt: activity.startedAt,
-        distanceMeters: activity.distanceMeters,
-        durationSeconds: activity.durationSeconds,
-        elevationGainMeters: activity.elevationGainMeters,
-        ...(pace ? { pace } : {}),
-        ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
-        ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
-        ...(maxHeartRateBpm !== undefined ? { maxHeartRateBpm } : {}),
-        ...(averageCadenceRpm !== undefined ? { averageCadenceRpm } : {}),
-        route: activity.route,
-      }
-    })
+    .map(publicActivity)
 
   return {
     schemaVersion: 1,

@@ -3,6 +3,7 @@
  * 从构建时生成的内容快照读取
  */
 import { bundleData } from './data-bundle'
+import { decodeRouteSlug } from './slug'
 
 export interface GalleryMeta {
   slug: string
@@ -30,6 +31,6 @@ export function getAllGalleryItems(): GalleryMeta[] {
  * 根据 slug 获取单个相册详情
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
-  const decodedSlug = decodeURIComponent(slug);
+  const decodedSlug = decodeRouteSlug(slug)
   return (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug) || null;
 }

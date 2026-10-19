@@ -1,13 +1,15 @@
 import 'server-only'
+import { cache } from 'react'
 import { bundleData } from './data-bundle'
 import { fetchMemosWithFallback, type SayMeta } from './memos.mjs'
+import { decodeRouteSlug } from './slug'
 
 export type { SayMeta } from './memos.mjs'
 
 const MEMOS_BASE_URL = process.env.MEMOS_BASE_URL || 'https://memos.guanyan.me'
 const MEMOS_API_URL = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
 
-export async function getAllSays(): Promise<SayMeta[]> {
+export const getAllSays = cache(async (): Promise<SayMeta[]> => {
   return fetchMemosWithFallback(MEMOS_API_URL, process.env.MEMOS_TOKEN, {
     // 不缓存：短记的增删都要求立刻反映到页面上。
     // 之前用 next: { revalidate: 60 }，加上页面本身的 ISR，最坏要等两分钟还得刷两次。
@@ -26,11 +28,12 @@ export async function getAllSays(): Promise<SayMeta[]> {
     ].join('\n'))
     return bundleData.says as SayMeta[]
   })
-}
+})
 
 export async function getSayBySlug(slug: string): Promise<SayMeta | null> {
   const says = await getAllSays()
-  return says.find((say) => say.slug === slug) ?? null
+  const decodedSlug = decodeRouteSlug(slug)
+  return says.find((say) => say.slug === decodedSlug) ?? null
 }
 
 export function getSaySummary(content: string, maxLength = 72) {

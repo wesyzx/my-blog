@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import polyline from '@mapbox/polyline'
-import { wgs84ToGcj02 } from '@/lib/geo.mjs'
 import { workoutRoutesUrl } from '@/lib/workout-routes'
+import { decodeWorkoutRoute } from '@/lib/workout-route.mjs'
 import {
   normalizeRoutesData,
   type NormalizedActivity,
@@ -48,23 +47,9 @@ const TYPE_ORDER = Object.keys(TYPE_APPEARANCE) as RouteType[]
 
 function decodeRoutes(routes: NormalizedRouteActivity[]) {
   return routes.flatMap<RoutePath>((activity) => {
-    const points = decodeRoute(activity.route)
+    const points = decodeWorkoutRoute(activity.route)
     return points.length > 0 ? [{ activity, points }] : []
   })
-}
-
-function decodeRoute(route: string): TMapLatLng[] {
-  try {
-    const points = polyline.decode(route)
-    // A polyline can carry an elevation third coordinate. Only latitude and
-    // longitude belong in the map path.
-    return points.map(([lat, lng]) => {
-      const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat)
-      return { lat: gcjLat, lng: gcjLng }
-    })
-  } catch {
-    return []
-  }
 }
 
 function formatDate(isoStr: string) {

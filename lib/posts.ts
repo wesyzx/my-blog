@@ -1,14 +1,15 @@
 /**
  * 文章内容管理模块
  *
- * 从构建时生成的 Notion 快照读取已发布文章，
+ * 从构建时生成的内容快照读取已发布文章，
  * 为博客的文章列表和详情页提供数据。
  */
 import { bundleData } from './data-bundle'
+import { decodeRouteSlug } from './slug'
 
 /** 文章元数据（不含正文，用于列表页） */
 export interface PostMeta {
-  slug: string // 文章唯一标识，来自 Notion Slug 或标题
+  slug: string // 文章网址中的唯一标识
   title: string
   date: string
   category: string // 博文分类：生活 / 技术 / 摄影 / 学习
@@ -36,7 +37,7 @@ export function getAllPosts(): PostMeta[] {
  * @returns 文章对象，找不到则返回 null
  */
 export function getPostBySlug(slug: string): Post | null {
-  const decodedSlug = decodeURIComponent(slug);
+  const decodedSlug = decodeRouteSlug(slug)
   return (bundleData.posts as Post[]).find(p => p.slug === decodedSlug) || null;
 }
 

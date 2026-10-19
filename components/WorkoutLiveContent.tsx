@@ -193,15 +193,13 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
 
       {latestYear && <Heatmap data={data.heatmap} year={Number(latestYear)} lastUpdated={data.lastUpdated} />}
 
-      {data.activities.some((activity) => activity.route) && (
-        <section className="workout-section" aria-labelledby="workout-route-atlas-title">
-          <div className="workout-section-heading">
-            <h2 id="workout-route-atlas-title">全部轨迹</h2>
-            <span>所有公开路线 · 按类型与年份查看</span>
-          </div>
-          <WorkoutRouteAtlas className="workout-route-map" />
-        </section>
-      )}
+      <section className="workout-section" aria-labelledby="workout-route-atlas-title">
+        <div className="workout-section-heading">
+          <h2 id="workout-route-atlas-title">全部轨迹</h2>
+          <span>所有公开路线 · 按类型与年份查看</span>
+        </div>
+        <WorkoutRouteAtlas className="workout-route-map" />
+      </section>
 
       {latestActivityWithRoute?.route && (
         <section className="workout-section" aria-labelledby="latest-route-title">

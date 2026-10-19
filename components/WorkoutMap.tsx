@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import polyline from '@mapbox/polyline'
-import { wgs84ToGcj02 } from '@/lib/geo.mjs'
+import { decodeWorkoutRoute } from '@/lib/workout-route.mjs'
 import { boundsOf, loadTMap, mapOptions, TMAP_KEY_MISSING, TMAP_STYLE_ID, type TMapLatLng, type TMapMap } from '@/lib/tmap'
 
 /** 起终点圆点，白描边保证在任何底图上都看得清 */
@@ -23,13 +22,7 @@ export default function WorkoutMap({ route, className = '' }: { route?: string; 
     let disposed = false
     let map: TMapMap | null = null
 
-    // 轨迹来自 Apple Health，是 WGS-84；腾讯底图用 GCJ-02，逐点转换后才会贴合道路
-    const path: TMapLatLng[] = polyline
-      .decode(route)
-      .map(([lat, lng]) => {
-        const [gcjLng, gcjLat] = wgs84ToGcj02(lng, lat)
-        return { lat: gcjLat, lng: gcjLng }
-      })
+    const path: TMapLatLng[] = decodeWorkoutRoute(route)
 
     if (path.length === 0) return
 

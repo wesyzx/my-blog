@@ -62,6 +62,16 @@ test('dry run never pushes a pending publication; the next normal run retries it
   assert.equal(f.git(['rev-parse', 'HEAD']), f.git(['rev-parse', 'origin/main']))
 })
 
+test('invalid current content never pushes a previously pending publication', (t) => {
+  const f = fixture(t)
+  f.publish('--no-push')
+  const remote = f.git(['rev-parse', 'origin/main'])
+  writeFileSync(path.join(f.source, 'posts/文章.md'),
+    '---\npublished: true\ntitle: Invalid\ndate: 2026-10-19\n---\n![[missing.jpg]]\n')
+  assert.throws(() => f.publish(), /找不到附件/)
+  assert.equal(f.git(['rev-parse', 'origin/main']), remote)
+})
+
 test('publisher rejects unrelated staged changes, wrong branches, and unrelated pending commits', (t) => {
   const f = fixture(t)
   writeFileSync(path.join(f.repo, 'private.txt'), 'not for publication')

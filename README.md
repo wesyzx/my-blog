@@ -22,6 +22,8 @@ npm run dev
 ```
 
 开发与构建前会同步内容；内容源暂时不可用时沿用已提交的快照。短记页面在请求时读取 Memos，仅在请求失败时回退到快照。
+Memos 只展示明确标记为公开的短记；私密、登录可见和缺少可见性标记的记录不进入新快照。
+图片代理仅开放当前短记列表引用的常规图片，拒绝 HTML、SVG 和无引用附件。
 
 短记中文地址需要服务端的 `TMAP_SERVER_KEY`，地图底图使用浏览器端的 `NEXT_PUBLIC_TMAP_KEY`。
 这两个变量需分别在本地和部署环境配置；修改部署环境后重新部署，修改本地配置后重启服务。
@@ -120,19 +122,7 @@ npm run obsidian:publish
 有变化时自动提交并推送到 `main`；仓库在工作区不干净、来源不是 `Blog` 或没有已发布文章时会拒绝运行。
 可用 `-- --dry-run` 只做校验，用 `-- --no-push` 只提交不推送。
 
-旧的 Mac 后台发布器应保持停用，避免与服务器同时推送。以下安装脚本仅用于手动切回 Mac 方案：
-
-```bash
-OBSIDIAN_BLOG_DIR="$HOME/Library/Application Support/Obsidian-Local/Vaults/Obsidian LiveSync/Blog" \
-node scripts/install-obsidian-publisher.mjs
-```
-
-卸载后台任务：
-
-```bash
-launchctl bootout "gui/$(id -u)/com.wesyzx.obsidian-blog-publisher"
-rm "$HOME/Library/LaunchAgents/com.wesyzx.obsidian-blog-publisher.plist"
-```
+自动发布仅使用服务器定时器。旧的 Mac 后台安装脚本已移除，避免意外启用重复发布任务。
 
 若附件已经放在其他 HTTPS 静态存储中，可用 `OBSIDIAN_ATTACHMENT_BASE_URL` 覆盖 `/obsidian`；
 该地址只用于生成文章中的 URL；构建仍会镜像已发布文章引用的附件，避免站点资源与文章指向脱节。

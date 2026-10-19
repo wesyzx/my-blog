@@ -1,4 +1,6 @@
 import path from 'node:path'
+import { attachmentCandidates } from '../../lib/obsidian-attachments.mjs'
+export { localAttachmentTargets } from '../../lib/obsidian-attachments.mjs'
 
 export function safeBlogPath(value) {
   if (typeof value !== 'string' || value.includes('\\') || value.includes('\0')) return null
@@ -37,37 +39,9 @@ export function readOnlyFetch(baseUrl, counters, transport = globalThis.fetch) {
   }
 }
 
-export function localAttachmentTargets(source, data) {
-  const targets = []
-  for (const match of source.matchAll(/!\[\[([^\]|]+?)(?:\|[^\]]+)?\]\]/g)) targets.push(match[1])
-  for (const match of source.matchAll(/!\[[^\]]*\]\((<[^>]+>|[^)"\n]+?)(?:\s+"[^"]*")?\)/g)) {
-    let value = match[1]
-    if (value.startsWith('<')) value = value.slice(1, -1)
-    targets.push(decodeURIComponent(value))
-  }
-  if (data.cover) targets.push(String(data.cover))
-  if (data.images !== undefined) {
-    if (!Array.isArray(data.images)) throw new Error('Invalid image list')
-    for (const image of data.images) {
-      const src = typeof image === 'string' ? image : image?.src
-      if (typeof src !== 'string' || !src.trim()) throw new Error('Invalid image source')
-      targets.push(src)
-    }
-  }
-  return [...new Set(targets.map((value) => value.trim()).filter((value) => {
-    return value && !/^(?:https?:|data:|\/)/i.test(value)
-  }))]
-}
-
 export function resolveAttachment(target, postPath, metadata) {
-  const candidates = [
-    path.posix.join(path.posix.dirname(postPath), target),
-    path.posix.join('Blog', target),
-    path.posix.join('Blog/attachments', target),
-    target,
-  ]
-  for (const candidate of candidates) {
-    if (!safeBlogPath(candidate) || !candidate.startsWith('Blog/attachments/')) continue
+  for (const relative of attachmentCandidates(target, postPath.replace(/^Blog\//, ''))) {
+    const candidate = `Blog/${relative}`
     if (metadata.has(candidate)) return candidate
   }
   throw new Error('A published article references a missing attachment or one outside Blog/attachments')

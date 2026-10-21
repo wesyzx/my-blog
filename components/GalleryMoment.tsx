@@ -22,7 +22,6 @@ export default function GalleryMoment({ album, headingLevel = 'h2' }: { album: G
     <article className="moment-item">
       <span className="stream-meta">
         <time className="item-time" dateTime={album.date}>{formatItemDate(album.date)}</time>
-        <span>相册</span>
       </span>
       <Heading className="moment-title"><Link href={href}>{album.title}</Link></Heading>
       {album.excerpt && <p className="moment-excerpt">{album.excerpt}</p>}

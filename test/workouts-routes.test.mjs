@@ -49,7 +49,7 @@ test('drops malformed route records without discarding valid routes', () => {
   assert.ok(routes)
   assert.equal(routes.routes.length, 1)
   assert.equal(routes.routes[0].id, '42')
-  assert.equal(routes.routes[0].type, 'Workout')
+  assert.equal(routes.routes[0].type, 'Run')
 })
 
 test('rejects route snapshots with an incompatible schema version', () => {

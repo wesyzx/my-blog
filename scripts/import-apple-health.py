@@ -23,21 +23,6 @@ import zipfile
 from dataclasses import dataclass
 from typing import Iterable
 
-
-TYPE_ALIASES = {
-    "hkworkoutactivitytyperunning": "Run",
-    "hkworkoutactivitytypecycling": "Ride",
-    "hkworkoutactivitytypeswimming": "Swim",
-    "hkworkoutactivitytypehiking": "Hike",
-    "hkworkoutactivitytypewalking": "Walk",
-    "running": "Run",
-    "cycling": "Ride",
-    "swimming": "Swim",
-    "hiking": "Hike",
-    "walking": "Walk",
-}
-
-
 @dataclass
 class Workout:
     identifier: str
@@ -127,7 +112,7 @@ def parse_workouts(archive: zipfile.ZipFile) -> list[Workout]:
                 element.clear()
                 continue
             raw_type = (attrs.get("workoutActivityType") or "workout").lower().replace(" ", "")
-            activity_type = TYPE_ALIASES.get(raw_type, "Workout")
+            activity_type = attrs.get("workoutActivityType") or "Workout"
             identifier = attrs.get("uuid") or attrs.get("id")
             if not identifier:
                 fingerprint = f"{raw_type}|{attrs.get('startDate')}|{attrs.get('endDate')}"

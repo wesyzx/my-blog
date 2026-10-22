@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { normalizeActivity } from '../src/domain.js'
-import { createAndStoreSnapshot, upsertActivities } from '../src/storage.js'
+import { attachRoute, createAndStoreSnapshot, upsertActivities } from '../src/storage.js'
 import worker from '../src/index.js'
 
 // Run the real D1 SQL against SQLite when the local Node runtime provides it.
@@ -31,7 +31,7 @@ const BASE = {
 function environment(t) {
   const sqlite = new DatabaseSync(':memory:')
   t.after(() => sqlite.close())
-  for (const migration of ['0001_init.sql', '0002_workout_metrics.sql']) {
+  for (const migration of ['0001_init.sql', '0002_workout_metrics.sql', '0003_activity_categories.sql']) {
     sqlite.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'))
   }
   const objects = new Map()
@@ -96,6 +96,74 @@ test('summary retries preserve the route, absent metrics and local date', { skip
   assert.equal(snapshot.heatmap[0].date, '2026-10-14')
   assert.equal(snapshot.routes.length, 1)
   assert.equal('providedFields' in snapshot.activities[0], false)
+})
+
+test('preserves the source sport and reclassifies when a partial update supplies distance', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, { ...BASE, type: 'Walking', distanceMeters: 0 })
+  await insert(env, { id: BASE.id, startedAt: BASE.startedAt, distanceMeters: 5000 })
+  const row = env.sqlite.prepare('SELECT type, source_type FROM activities').get()
+  assert.equal(row.type, 'Hike')
+  assert.equal(row.source_type, 'Walking')
+  let snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].type, 'Hike')
+  assert.equal(snapshot.activities[0].route, BASE.route)
+  await insert(env, { id: BASE.id, type: 'Walking', startedAt: BASE.startedAt })
+  assert.equal(env.sqlite.prepare('SELECT type FROM activities').get().type, 'Hike')
+  await insert(env, { id: BASE.id, startedAt: BASE.startedAt, distanceMeters: 4999 })
+  snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].type, 'Walk')
+})
+
+test('new uploads distinguish cooldown and jump rope while retaining training subtypes', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  for (const [id, type] of [['stretch', 'Cooldown'], ['rope', 'Jump Rope'], ['core', 'Core Training']]) {
+    await insert(env, { ...BASE, id, type })
+  }
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities.find((item) => item.id.endsWith(':stretch')).type, 'Stretch')
+  assert.equal(snapshot.activities.find((item) => item.id.endsWith(':rope')).type, 'JumpRope')
+  assert.equal(snapshot.activities.find((item) => item.id.endsWith(':core')).type, 'Workout')
+  assert.equal(env.sqlite.prepare("SELECT source_type FROM activities WHERE source_activity_id = 'core'").get().source_type, 'Core Training')
+})
+
+test('a later GPX distance classifies a walking summary as a hike without replacing Health metrics', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, { ...BASE, type: 'Walking', distanceMeters: 0 })
+  await attachRoute(env.DB, { id: `apple-health:${BASE.id}`, distanceMeters: 0, elevationGainMeters: 32 }, {
+    polyline: 'hike-track', distanceMeters: 6000, elevationGainMeters: 100,
+  })
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].type, 'Hike')
+  assert.equal(snapshot.activities[0].elevationGainMeters, 32)
+  assert.equal(snapshot.activities[0].activeEnergyKcal, 350)
+  assert.equal(env.sqlite.prepare('SELECT type FROM activities').get().type, 'Hike')
+})
+
+test('historical category migration keeps measurements, routes, UUIDs and ambiguous training intact', { skip: !DatabaseSync }, () => {
+  const sqlite = new DatabaseSync(':memory:')
+  try {
+    for (const file of ['0001_init.sql', '0002_workout_metrics.sql']) {
+      sqlite.exec(readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'))
+    }
+    for (const [id, type, distance] of [['long', 'Walk', 10033], ['short', 'Hike', 4999], ['unknown', 'Workout', 969]]) {
+      sqlite.prepare(`INSERT INTO activities
+        (id, source, source_activity_id, type, started_at, local_date, distance_meters,
+         duration_seconds, route_polyline, updated_at, active_energy_kcal, average_heart_rate_bpm)
+        VALUES (?, 'apple-health', ?, ?, '2025-01-04T07:08:40Z', '2025-01-04', ?, 3600, 'track', 'before', 300, 140)
+      `).run(id, id, type, distance)
+    }
+    const before = sqlite.prepare('SELECT * FROM activities ORDER BY id').all()
+    sqlite.exec(readFileSync(new URL('../migrations/0003_activity_categories.sql', import.meta.url), 'utf8'))
+    const after = sqlite.prepare('SELECT * FROM activities ORDER BY id').all()
+    assert.deepEqual(after.map(({ type, source_type }) => [type, source_type]), [
+      ['Hike', 'Walk'], ['Walk', 'Hike'], ['Workout', 'Workout'],
+    ])
+    assert.deepEqual(after.map(({ type, source_type, ...metrics }) => metrics),
+      before.map(({ type, ...metrics }) => metrics))
+  } finally {
+    sqlite.close()
+  }
 })
 
 test('explicit zeros update metrics and clear a no-longer-valid pace', { skip: !DatabaseSync }, async (t) => {

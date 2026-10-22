@@ -8,5 +8,7 @@ export async function importTypeScript(url) {
     compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
     fileName: url.pathname,
   })
-  return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`)
+  const resolved = outputText.replace(/(from\s+['"])(\.[^'"]+)(['"])/g,
+    (_, before, specifier, after) => `${before}${new URL(specifier, url).href}${after}`)
+  return import(`data:text/javascript;base64,${Buffer.from(resolved).toString('base64')}`)
 }

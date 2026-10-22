@@ -4,10 +4,11 @@
 // `lib/workouts.ts`, and the browser fallback in `WorkoutLiveContent` that
 // calls the Worker directly. Both must run the same normalization, otherwise
 // the client path would print "0 bpm" for a workout without heart-rate data.
+import { normalizeWorkoutType } from './workout-types.mjs'
 
 export interface NormalizedActivity {
   id: string
-  type: 'Run' | 'Ride' | 'Swim' | 'Hike' | 'Walk' | 'Stairs' | 'Workout'
+  type: 'Run' | 'Ride' | 'Swim' | 'Hike' | 'Walk' | 'Stairs' | 'Stretch' | 'JumpRope' | 'Workout'
   startedAt: string
   distanceMeters: number
   durationSeconds: number
@@ -52,8 +53,6 @@ export interface RoutesDataContract {
   routes: NormalizedRouteActivity[]
 }
 
-const ACTIVITY_TYPES = new Set<NormalizedActivity['type']>(['Run', 'Ride', 'Swim', 'Hike', 'Walk', 'Stairs', 'Workout'])
-
 export function emptyWorkoutsData(): WorkoutsDataContract {
   return { schemaVersion: 1, lastUpdated: new Date().toISOString(), summary: {}, heatmap: [], activities: [] }
 }
@@ -76,14 +75,13 @@ function normalizeActivityRecord(item: unknown): NormalizedActivity | null {
   if (!isRecord(item) || (typeof item.id !== 'string' && typeof item.id !== 'number') || typeof item.startedAt !== 'string') return null
   if (Number.isNaN(new Date(item.startedAt).getTime())) return null
 
-  const type = typeof item.type === 'string' && ACTIVITY_TYPES.has(item.type as NormalizedActivity['type'])
-    ? item.type as NormalizedActivity['type']
-    : 'Workout'
+  const distanceMeters = nonNegativeNumber(item.distanceMeters)
+  const type = normalizeWorkoutType(item.type, distanceMeters) as NormalizedActivity['type']
   return {
     id: String(item.id),
     type,
     startedAt: item.startedAt,
-    distanceMeters: nonNegativeNumber(item.distanceMeters),
+    distanceMeters,
     durationSeconds: nonNegativeNumber(item.durationSeconds),
     elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
     pace: optionalPositiveNumber(item.pace),

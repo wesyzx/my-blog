@@ -5,15 +5,15 @@ const UPSERT_SQL = `
     id, source, source_activity_id, type, started_at, local_date,
     distance_meters, duration_seconds, elevation_gain_meters,
     pace_seconds_per_km, active_energy_kcal, average_heart_rate_bpm,
-    max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at, source_type
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 function updateAssignments(activity) {
   const provided = new Set(activity.providedFields)
   const updates = ['started_at = excluded.started_at', 'updated_at = excluded.updated_at']
   const columns = {
-    type: 'type',
+    sourceType: 'source_type',
     localDate: 'local_date',
     distanceMeters: 'distance_meters',
     durationSeconds: 'duration_seconds',
@@ -22,6 +22,11 @@ function updateAssignments(activity) {
   }
   for (const [field, column] of Object.entries(columns)) {
     if (provided.has(field)) updates.push(`${column} = excluded.${column}`)
+  }
+  if (provided.has('type') || provided.has('distanceMeters')) {
+    const type = provided.has('type') ? 'excluded.type' : 'activities.type'
+    const distance = provided.has('distanceMeters') ? 'excluded.distance_meters' : 'activities.distance_meters'
+    updates.push(`type = CASE WHEN ${type} IN ('Walk', 'Hike') THEN CASE WHEN ${distance} >= 5000 THEN 'Hike' ELSE 'Walk' END ELSE ${type} END`)
   }
   for (const column of ['active_energy_kcal', 'average_heart_rate_bpm', 'max_heart_rate_bpm', 'average_cadence_rpm']) {
     updates.push(`${column} = COALESCE(excluded.${column}, activities.${column})`)
@@ -63,6 +68,7 @@ export async function upsertActivities(db, activities) {
       activity.averageCadenceRpm ?? null,
       activity.route ?? null,
       activity.updatedAt,
+      activity.sourceType,
     )))
   }
   return activities.length
@@ -113,10 +119,11 @@ export async function attachRoute(db, activity, route) {
       route_polyline = ?,
       distance_meters = ?,
       elevation_gain_meters = ?,
+      type = CASE WHEN type IN ('Walk', 'Hike') THEN CASE WHEN ? >= 5000 THEN 'Hike' ELSE 'Walk' END ELSE type END,
       pace_seconds_per_km = CASE WHEN ? > 0 THEN duration_seconds / (? / 1000.0) ELSE pace_seconds_per_km END,
       updated_at = ?
     WHERE id = ?
-  `).bind(route.polyline, distance, elevation, distance, distance, new Date().toISOString(), activity.id).run()
+  `).bind(route.polyline, distance, elevation, distance, distance, distance, new Date().toISOString(), activity.id).run()
   return { distanceMeters: distance, elevationGainMeters: elevation }
 }
 
@@ -138,6 +145,7 @@ export async function loadActivities(db) {
       id,
       source,
       source_activity_id AS sourceActivityId,
+      source_type AS sourceType,
       type,
       started_at AS startedAt,
       local_date AS localDate,

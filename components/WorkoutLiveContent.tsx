@@ -1,19 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
-import { normalizeWorkoutsData, type HeatmapNode, type NormalizedActivity, type WorkoutsDataContract } from '@/lib/workouts-schema'
+import { normalizeRoutesData, normalizeWorkoutsData, type HeatmapNode, type NormalizedActivity, type NormalizedRouteActivity, type WorkoutsDataContract } from '@/lib/workouts-schema'
+import { latestHikingRoute, WORKOUT_LABELS } from '@/lib/workout-types.mjs'
 import WorkoutMap from '@/components/WorkoutMap'
 
 // This is a public, read-only snapshot endpoint. Keeping the browser fallback
 // independent from EdgeOne's server network makes the page resilient when the
 // two providers cannot reach each other directly.
 const WORKOUTS_SNAPSHOT_URL = 'https://workouts.wesyzx.workers.dev/v1/workouts.json'
+const WORKOUTS_ROUTES_URL = 'https://workouts.wesyzx.workers.dev/v1/routes.json'
 const ACTIVITIES_PER_PAGE = 10
-const WorkoutRouteAtlas = dynamic(() => import('@/components/WorkoutRouteAtlas'), {
-  ssr: false,
-  loading: () => <div className="workout-route-loading">正在读取全部轨迹…</div>,
-})
 
 function formatDuration(seconds: number) {
   const h = Math.floor(seconds / 3600)
@@ -41,18 +38,8 @@ function formatDate(isoStr: string) {
   }).format(date)
 }
 
-const ACTIVITY_LABELS: Record<NormalizedActivity['type'], string> = {
-  Run: '跑步',
-  Ride: '骑行',
-  Swim: '游泳',
-  Hike: '徒步',
-  Walk: '步行',
-  Stairs: '爬楼',
-  Workout: '训练',
-}
-
 function activityLabel(type: NormalizedActivity['type']) {
-  return ACTIVITY_LABELS[type] ?? type
+  return WORKOUT_LABELS[type] ?? type
 }
 
 function daysInYear(year: number) {
@@ -140,6 +127,8 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
   const [loading, setLoading] = useState(!hasData(initialData))
   const [error, setError] = useState<string | null>(null)
   const [activityPage, setActivityPage] = useState(1)
+  const [routes, setRoutes] = useState<NormalizedRouteActivity[] | null>(null)
+  const [routeError, setRouteError] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -166,6 +155,22 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
     return () => controller.abort()
   }, [])
 
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch(WORKOUTS_ROUTES_URL, { signal: controller.signal, cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const snapshot = normalizeRoutesData(await response.json())
+        if (!snapshot) throw new Error('数据格式不兼容')
+        setRoutes(snapshot.routes)
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return
+        setRouteError(true)
+      })
+    return () => controller.abort()
+  }, [])
+
   const years = Object.keys(data.summary).sort((left, right) => Number(right) - Number(left))
   const latestYear = years[0] ?? data.activities[0]?.startedAt.slice(0, 4)
   const summary = latestYear ? data.summary[latestYear] : null
@@ -173,7 +178,7 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
   const currentActivityPage = Math.min(activityPage, Math.max(activityPageCount, 1))
   const pageStart = (currentActivityPage - 1) * ACTIVITIES_PER_PAGE
   const visibleActivities = data.activities.slice(pageStart, pageStart + ACTIVITIES_PER_PAGE)
-  const latestActivityWithRoute = data.activities.find((activity) => activity.route)
+  const latestActivityWithRoute = latestHikingRoute(routes ?? data.activities) as NormalizedRouteActivity | null
 
   if (loading && !hasData(data)) return <div className="empty-state">正在读取运动数据…</div>
   if (error && !hasData(data)) return <div className="empty-state">{error}</div>
@@ -193,23 +198,22 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
 
       {latestYear && <Heatmap data={data.heatmap} year={Number(latestYear)} lastUpdated={data.lastUpdated} />}
 
-      <section className="workout-section" aria-labelledby="workout-route-atlas-title">
+      <section className="workout-section" aria-labelledby="latest-route-title">
         <div className="workout-section-heading">
-          <h2 id="workout-route-atlas-title">全部轨迹</h2>
-          <span>所有公开路线 · 按类型与年份查看</span>
+          <h2 id="latest-route-title">最近路线</h2>
+          <span>{latestActivityWithRoute
+            ? `徒步 · ${(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} km`
+            : '徒步路线'}</span>
         </div>
-        <WorkoutRouteAtlas className="workout-route-map" />
-      </section>
-
-      {latestActivityWithRoute?.route && (
-        <section className="workout-section" aria-labelledby="latest-route-title">
-          <div className="workout-section-heading">
-            <h2 id="latest-route-title">最近路线</h2>
-            <span>{activityLabel(latestActivityWithRoute.type)} · {(latestActivityWithRoute.distanceMeters / 1000).toFixed(2)} km</span>
-          </div>
+        {latestActivityWithRoute ? (
           <WorkoutMap route={latestActivityWithRoute.route} className="workout-map" />
-        </section>
-      )}
+        ) : (
+          <div className="empty-state">
+            {routeError ? '暂时无法读取徒步路线，请稍后刷新。'
+              : routes === null ? '正在读取徒步路线…' : '暂无 5 km 及以上的徒步路线。'}
+          </div>
+        )}
+      </section>
 
       {visibleActivities.length > 0 && (
         <section className="workout-section" aria-labelledby="recent-activities-title">

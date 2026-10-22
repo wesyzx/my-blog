@@ -1,27 +1,4 @@
-const ACTIVITY_TYPES = new Map([
-  ['run', 'Run'],
-  ['running', 'Run'],
-  ['hkworkoutactivitytyperunning', 'Run'],
-  ['ride', 'Ride'],
-  ['cycling', 'Ride'],
-  ['bike', 'Ride'],
-  ['hkworkoutactivitytypecycling', 'Ride'],
-  ['swim', 'Swim'],
-  ['swimming', 'Swim'],
-  ['hkworkoutactivitytypeswimming', 'Swim'],
-  ['hike', 'Hike'],
-  ['hiking', 'Hike'],
-  ['hkworkoutactivitytypehiking', 'Hike'],
-  ['walk', 'Walk'],
-  ['walking', 'Walk'],
-  ['hkworkoutactivitytypewalking', 'Walk'],
-  ['stairs', 'Stairs'],
-  ['stairclimbing', 'Stairs'],
-  ['stair-climbing', 'Stairs'],
-  ['stair_climbing', 'Stairs'],
-  ['hkworkoutactivitytypestairclimbing', 'Stairs'],
-  ['workout', 'Workout'],
-])
+import { normalizeWorkoutType } from '../../../lib/workout-types.mjs'
 
 function cleanSource(value) {
   const source = String(value || 'manual').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-')
@@ -78,9 +55,9 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   if (Number.isNaN(parsedDate.getTime())) throw new Error(`Activity ${sourceActivityId} has an invalid startedAt`)
   const startedAt = parsedDate.toISOString()
 
-  const typeKey = String(input.type || 'workout').trim().toLowerCase()
-  const type = ACTIVITY_TYPES.get(typeKey) || 'Workout'
+  const sourceType = String(input.sourceType || input.type || 'Workout').trim()
   const distanceMeters = nonNegativeNumber(input.distanceMeters ?? input.distance)
+  const type = normalizeWorkoutType(sourceType, distanceMeters)
   const durationSeconds = nonNegativeNumber(input.durationSeconds ?? input.duration)
   const elevationGainMeters = nonNegativeNumber(input.elevationGainMeters ?? input.elevationGain)
   const suppliedPace = optionalPositiveNumber(input.pace ?? input.paceSecondsPerKm)
@@ -101,7 +78,8 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   // Keep presence separate from insert defaults so a summary-only retry cannot
   // erase metrics or a route supplied by another import of the same workout.
   const supplied = {
-    type: input.type,
+    type: input.sourceType || input.type,
+    sourceType: input.sourceType || input.type,
     localDate: input.localDate,
     distanceMeters: input.distanceMeters ?? input.distance,
     durationSeconds: input.durationSeconds ?? input.duration,
@@ -118,6 +96,7 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
     id: `${source}:${sourceActivityId}`,
     source,
     sourceActivityId,
+    sourceType,
     type,
     startedAt,
     localDate: dateKey(input.localDate, dateFallback),
@@ -150,7 +129,7 @@ function publicActivity(activity) {
   const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
   return {
     id: activity.id,
-    type: activity.type,
+    type: normalizeWorkoutType(activity.sourceType || activity.type, activity.distanceMeters),
     startedAt: activity.startedAt,
     distanceMeters: activity.distanceMeters,
     durationSeconds: activity.durationSeconds,

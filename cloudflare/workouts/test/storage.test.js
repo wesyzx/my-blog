@@ -127,14 +127,14 @@ test('new uploads distinguish cooldown and jump rope while retaining training su
   assert.equal(env.sqlite.prepare("SELECT source_type FROM activities WHERE source_activity_id = 'core'").get().source_type, 'Core Training')
 })
 
-test('owner-confirmed historical stretch correction changes only the two matching classifications', { skip: !DatabaseSync }, async (t) => {
+test('owner-revised historical classifications change only the two matching records', { skip: !DatabaseSync }, async (t) => {
   const env = environment(t)
   const targets = [
     ['8A47CD5D-3174-4EB3-B8DC-FB753DEE5E1B', '2026-03-24T08:33:53.451Z'],
     ['74F7CDF2-2FA9-41EB-B70F-B625F973B9E0', '2026-03-23T02:09:19.931Z'],
   ]
   for (const [id, startedAt] of [...targets, ['unrelated-training', BASE.startedAt]]) {
-    await insert(env, { ...BASE, id, startedAt, type: 'Workout' })
+    await insert(env, { ...BASE, id, startedAt, type: 'Workout', distanceMeters: 969 })
   }
   const before = env.sqlite.prepare('SELECT * FROM activities ORDER BY id').all()
   const migration = readFileSync(new URL('../migrations/0004_historical_stretch.sql', import.meta.url), 'utf8')
@@ -148,6 +148,17 @@ test('owner-confirmed historical stretch correction changes only the two matchin
     assert.equal(snapshot.activities.find((item) => item.id === `apple-health:${id}`).type, 'Stretch')
   }
   assert.equal(snapshot.activities.find((item) => item.id.endsWith(':unrelated-training')).type, 'Workout')
+  const walkMigration = readFileSync(new URL('../migrations/0005_historical_walk.sql', import.meta.url), 'utf8')
+  env.sqlite.exec(walkMigration)
+  env.sqlite.exec(walkMigration)
+  const walked = env.sqlite.prepare('SELECT * FROM activities ORDER BY id').all()
+  assert.deepEqual(walked.map((row) => ({ ...row })), before.map((row) => targets.some(([id]) => row.id === `apple-health:${id}`)
+    ? { ...row, type: 'Walk', source_type: 'Walking' } : { ...row }))
+  const walkSnapshot = await createAndStoreSnapshot(env, NOW)
+  for (const [id] of targets) {
+    assert.equal(walkSnapshot.activities.find((item) => item.id === `apple-health:${id}`).type, 'Walk')
+  }
+  assert.equal(walkSnapshot.activities.find((item) => item.id.endsWith(':unrelated-training')).type, 'Workout')
 })
 
 test('a later GPX distance classifies a walking summary as a hike without replacing Health metrics', { skip: !DatabaseSync }, async (t) => {

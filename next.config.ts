@@ -13,6 +13,10 @@ const nextConfig: NextConfig = {
     }]
   },
   images: {
+    // Match the Worker ladder: a 3840w descriptor must not point at 2400px
+    // bytes, which makes browsers choose undersized previews on dense screens.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 2400],
+    imageSizes: [32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: 'https',

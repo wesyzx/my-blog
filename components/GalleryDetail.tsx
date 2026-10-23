@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import Image from 'next/image'
+import BlogImage from '@/components/BlogImage'
+import { blogImageUrl } from '@/lib/blog-images.mjs'
 import Link from 'next/link'
 import PhotoAlbum from 'react-photo-album'
 import 'react-photo-album/styles.css'
@@ -29,7 +30,8 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
             rowConstraints={{ minPhotos: 1, maxPhotos: 4 }}
             render={{
               image: ({ alt, title, className, style, sizes }, { photo }) => (
-                <Image
+                <BlogImage
+                  preset="fit"
                   src={photo.src}
                   alt={alt || ''}
                   title={title}
@@ -38,7 +40,7 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
                   width={photo.width}
                   height={photo.height}
                   sizes={sizes || '(max-width: 860px) 100vw, 680px'}
-                  data-lightbox-src={photo.src}
+                  data-lightbox-src={blogImageUrl(photo.src, { preset: 'full' })}
                   data-pswp-width={photo.width}
                   data-pswp-height={photo.height}
                 />

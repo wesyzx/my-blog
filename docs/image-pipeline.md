@@ -1,0 +1,93 @@
+# Obsidian → R2 → Worker → EdgeOne 图片链路评估
+
+复核日期：2026-10-23。当前结论：方案可行；本轮部署验证发现 EdgeOne 不区分 Accept 缓存，已将 v2 路径修正为固定 WebP 输出。部署记录见文末。
+
+## 推荐链路
+
+```text
+Obsidian 粘贴 / 拖入图片
+  → R2 Media Sync 上传原文件到 blog-images/blog/obsidian/…
+  → 笔记插入 https://img.guanyan.me/webp/blog/obsidian/….webp
+  → 博客根据展示场景生成固定规格的 v2 图片路径
+  → EdgeOne img.guanyan.me 缓存 / 加速
+  → 回源 img.215320.xyz，同路径进入 Worker
+  → Worker 直接读取 R2 原图，通过 Images binding 编码 WebP
+```
+
+这里是**访问时转换**。插入图片触发原图上传和链接替换；首个访问者请求某种规格时才生成对应的 WebP。R2 原文件、原后缀与本地附件保持完整，不必在上传时永久裁掉内容，也不必改写历史笔记为多个规格。
+
+直接通过 Images binding 处理 R2 字节可以避开两家 CDN 间的源图 URL 抓取和递归回源。此方案使用 Cloudflare Images 转换服务，Worker 本身只负责路由、尺寸策略和错误处理，不在 JavaScript 内实现图像编码。
+
+## 线上复核结果
+
+抽样图片：`blog/obsidian/2026/10/1792712517517-xmcizwr0.webp`。这些是一次抽样结果，不代表所有地区、所有图片或缓存规则都已通过验收。
+
+| 检查项 | 实测结果 | 意义 |
+| --- | --- | --- |
+| EdgeOne 旧 `/webp/blog/…` 路径 | 200，`image/webp`，文件头为 RIFF/WEBP，2400×3200，216158 字节，EdgeOne HIT | 旧 WebP 服务真实可用，不能只凭后缀判断 |
+| Cloudflare 同一旧路径 | 200，Cloudflare HIT，文件头同上 | 已命中的缓存可直接返回 WebP |
+| Cloudflare 旧路径添加独立探测查询串，`Accept: */*` | 406，JSON `WebP is required`，`no-store` | 缓存命中可能掩盖旧版应用的请求头限制；不能据此断言 Images 编码器要求 WebP Accept |
+| 两个域名 `/webp/v2/landscape/640/auto/…` | 404，JSON `Image not found` | 当前线上尚不能服务本地组件新生成的裁剪路径 |
+
+## 图片展示策略
+
+| 场景 | 输出策略 | 理由 |
+| --- | --- | --- |
+| 正文、相册行布局 | `fit`，等比缩放，最大宽 2400，质量 75 | 保留截图文字、图表与完整构图 |
+| 短记方格、美食卡片、文章列表和详情封面 | 按容器选择 1:1、4:3、3:1、2:1 等规格，质量 75 | 统一卡片外观，减少下载后再由 CSS 裁掉的像素 |
+| 灯箱 | `full`，等比缩放，长边 ≤3840，质量 82 | 点击后看完整照片，竖图不会因只限宽而超大解码 |
+| 图表、截图等不宜裁剪的封面 | 在原始笔记链接添加 `?crop=off` | 同时关闭 Worker 裁剪与组件的 `object-fit: cover` |
+| 自动裁剪不理想的照片 | `?focus=top` / `?focus=face` / `?focus=center` | 少量人工指定重点，保持日常插图自动化 |
+
+自动焦点基于显著性或人脸检测，并不理解文章的叙事重点；多人合影、文字截图、细长全景都可能裁错。它改善默认结果，不能保证每一张照片的构图。默认仅裁卡片，灯箱始终从原图生成完整版本。小原图使用 `fit: crop` 不放大，但可能保留原比例，卡片 CSS 最终补齐；这种情况下焦点效果也需要肉眼核对。
+
+`crop=off` 不等于取回原文件：页面仍获取优化后的等比 WebP。转换异常时才临时跳转到独立原图路径；原图可能更大，并保留其原始元数据。
+
+## 本次补强
+
+- 编码异常、超额度或非成功编码响应临时重定向至 `/webp/v2/original/…`，带 `no-store`，避免原图被当成 WebP 缩略图长期缓存。R2 故障仍返回非缓存 502，避免循环重定向。
+- 回退使用相对重定向，避免 EdgeOne 回源改写 Host 后把访问者跳到 Cloudflare 域名。
+- v2 光栅图片路径固定输出 WebP，不依赖 Accept 或 Vary；显式原图和转换回退使用独立路径。旧路径保留 Accept 协商。中心裁剪使用服务默认焦点，避免传入文档未列出的 `center` gravity 值。
+- Worker 直接请求也校验编码分隔符、控制字符、二次编码和预设名；未知参数不会新增转换规格。
+- Next.js 的响应式宽度与 Worker 档位一致，避免 `3840w` 描述符实际返回 2400 像素；单张相册按整行显示宽度选图。
+- Obsidian R2 相册构建时优先取 `.info()` 的真实比例，兼容 v2 尚未上线时的旧路径探测，并在失败时保留快照尺寸。尺寸接口的 HEAD 请求不带响应体。
+
+## 缓存与费用
+
+新链接将尺寸和裁剪规格写进**路径**，减少对查询串缓存规则的依赖。不同路径仍按不同对象缓存；不能将 `/webp/v2/…` 去掉前缀后回源 R2。
+
+Cloudflare Images 当前包含每月 5000 次唯一转换；相同原图与转换参数在同一自然月重复请求只计一次，`quality` 和 `format` 不单独增加唯一转换数，`.info()` 不计费。免费版超限会拒绝新转换；付费 Images 计划超出包含量后为每 1000 次 $0.50。R2、Worker 请求、Workers Cache 和 EdgeOne 的费用需各自核对，不能据此称整个链路永久免费。
+
+例如 1000 张照片各请求 4 个预览尺寸和 1 个灯箱规格，约为 5000 个唯一转换；额外封面比例、焦点、更多屏幕尺寸会继续增加。固定宽度只限制组合数量，并非预算限制；公开接口仍可被遍历所有合法规格。默认不启用新付费套餐、不增加持久化派生图桶。若实际访问量使冷转换延迟或费用明显增加，再考虑将常用派生图持久化到独立 R2 前缀。
+
+## 上线顺序与验收
+
+1. 保留当前 Worker 部署版本作为回滚点，将 `cloudflare/images/` 独立部署；绑定现有 `blog-images` 桶和 Images，路由仅覆盖 `img.215320.xyz/webp/*`。
+2. 直接请求 Cloudflare 域名，分别验证 `fit`、`landscape`、`full`、`info`、`original`，核对实际类型、文件头、宽高与内容；PNG 透明、竖图、小图、GIF 和 SVG 都应各取一个样本。
+3. 核对 EdgeOne 的回源域名与 Host 均为 `img.215320.xyz`，保留完整 `/webp/*` 路径；通过加速域名重复验证同一批链接。
+4. `/webp/*` 遵循源站 `Cache-Control`，回退重定向和错误响应不得强制缓存。新版 v2 固定 WebP，不再依赖 Vary；旧路径仍依赖 Accept 和查询串选择响应，必须保留查询串缓存键并核对 Vary，或绕过其缓存。新版博客使用 v2。
+5. 用浏览器 WebP Accept 与 `*/*` 交替访问同一图片，分别测试两种请求顺序以及 MISS/HIT，确认 v2 始终返回正确规格的 WebP，没有 406 或错误格式污染；显式 original 路径始终返回原图。
+6. Worker 与 EdgeOne 均通过后，部署博客，再核对网络请求中的 v2 预览 URL、响应式候选、灯箱 `full` URL。部署顺序不可反过来。
+7. 桌面与手机检查卡片构图、竖图、横竖混排、透明图、文字截图、灯箱缩放和左右切换；确认 `crop=off` 没有被 CSS 再次裁掉。对少数裁错的图片指定 focus。
+8. 必要时清理旧 `/webp/*` 的 406、错误图片或混用参数缓存。v2 路径是新缓存空间；回滚博客后再回滚 Worker，保留旧版 URL 的兼容处理。
+
+部署操作已获用户授权。未修改 EdgeOne 控制台或重新安装 Obsidian 插件；实体手机视觉验收仍需另行进行。
+
+## 验证范围
+
+本地测试覆盖站点与 Worker 的 URL 契约、裁剪/灯箱参数、错误回退、请求头、路径边界，以及 Obsidian 相册元数据与旧接口回退。Images binding 使用模拟环境，因此测试通过不能代替线上编码验收。生产构建使用当前内容快照；短记因缺少 MEMOS_TOKEN 沿用旧快照。
+
+## 官方依据
+
+- [Images binding：读取 R2 字节、输出 WebP、缓存和免费 info](https://developers.cloudflare.com/images/optimization/binding/)
+- [Cloudflare Images 费用与免费额度](https://developers.cloudflare.com/images/pricing/)
+- [图片变换：fit、gravity 和元数据规则](https://developers.cloudflare.com/images/optimization/features/)
+- [EdgeOne 自定义缓存键](https://edgeone.ai/zh/document/47615)
+
+## 2026-10-23 部署记录
+
+- Worker 当前版本：`7fa75e68-b81c-4b1e-b25e-7b04721b84ae`。部署前回滚版本：`9bd7b527-24ab-4a6a-8d4e-20e47be8c06b`。
+- 真实原图：3072×4096，JPEG，3174350 字节。
+- 两个域名均通过：4:3 裁剪 640×480（21460 字节），方形裁剪 384×384（13960 字节），完整灯箱 2880×3840（332710 字节）。
+- 实测 EdgeOne 缓存不区分 Accept。因此 v2 改为固定 WebP；在两种请求顺序与 MISS/HIT 下，均返回相同的正确 WebP，不再依赖 Vary 协商。未修改 EdgeOne 控制台规则。
+- 最新生产分支的独立发布副本已完成内容构建与 Next.js 生产构建；不会发布本地旧内容快照或其他未提交的发布器改动。博客由 GitHub main 推送触发 EdgeOne 部署。

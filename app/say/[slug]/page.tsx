@@ -1,10 +1,11 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getSayBySlug, getSaySummary } from '@/lib/say'
+import { blogImageUrl } from '@/lib/blog-images.mjs'
 import { createPageMetadata } from '@/lib/metadata'
 import { formatItemDate } from '@/lib/format'
 import SafeMarkdown from '@/components/SafeMarkdown'
+import BlogImage from '@/components/BlogImage'
 import ImageLightbox from '@/components/ImageLightbox'
 import ArtalkComments from '@/components/ArtalkComments'
 import Icon from '@/components/Icon'
@@ -57,14 +58,14 @@ export default async function SayDetailPage({ params }: { params: Promise<{ slug
         {say.images && say.images.length > 0 && (
           <ImageLightbox className={`say-images count-${Math.min(say.images.length, 3)}`}>
             {say.images.map((src, index) => (
-              <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
-                <Image
+              <a href={blogImageUrl(src, { preset: 'full' })} target="_blank" rel="noopener noreferrer" key={src}>
+                <BlogImage
+                  preset="square"
                   src={src}
                   alt={`短记配图 ${index + 1}`}
-                  width={720}
-                  height={720}
+                  fill
                   sizes="(max-width: 760px) 100vw, 680px"
-                  data-lightbox-src={src}
+                  data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
                 />
               </a>
             ))}

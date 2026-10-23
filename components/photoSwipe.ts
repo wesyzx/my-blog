@@ -1,24 +1,26 @@
 import PhotoSwipe, { type SlideData } from 'photoswipe'
+import { blogImageUrl } from '@/lib/blog-images.mjs'
 import 'photoswipe/style.css'
 import './photoSwipe.css'
 
 function originalSource(image: HTMLImageElement) {
-  if (image.dataset.lightboxSrc) return image.dataset.lightboxSrc
+  const fullSource = (src: string) => blogImageUrl(src, { preset: 'full' })
+  if (image.dataset.lightboxSrc) return fullSource(image.dataset.lightboxSrc)
   const source = image.getAttribute('src') || image.currentSrc
   const url = new URL(source, document.baseURI)
-  // Recover the existing R2/EdgeOne URL without removing signed or processing parameters.
+  // Recover Next's source before normalization; signed/external URLs pass through.
   if (url.origin === location.origin && url.pathname === '/_next/image') {
-    return url.searchParams.get('url') || source
+    return fullSource(url.searchParams.get('url') || source)
   }
   const link = image.closest('a')
-  if (link) return link.href
+  if (link) return fullSource(link.href)
   const candidates = (image.getAttribute('srcset') || '').split(',')
     .map((candidate) => {
       const [src, descriptor = ''] = candidate.trim().split(/\s+/)
       return { src, size: Number.parseFloat(descriptor) || 0 }
     })
     .sort((a, b) => b.size - a.size)
-  return candidates[0]?.src || source
+  return fullSource(candidates[0]?.src || source)
 }
 
 function slideData(image: HTMLImageElement): SlideData {

@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
 import { readImageSize } from '../lib/image-size.mjs'
+import { blogImageInfoUrl, isBlogImage } from '../lib/blog-images.mjs'
 import { fetchMemosWithFallback } from '../lib/memos.mjs'
 import { loadObsidianContent, mirrorPublishedAttachments, parseBundle, serializeBundle } from '../lib/obsidian-content.mjs'
 
@@ -113,11 +114,28 @@ function imageLinks(content) {
 
 
 async function fetchImageMeta(imageUrl, lastKnown) {
-  if (!imageUrl.includes('guanyan.me')) return lastKnown || { width: 1200, height: 800 }
+  const ownedImage = isBlogImage(imageUrl)
+  if (!ownedImage && !imageUrl.includes('guanyan.me')) return lastKnown || { width: 1200, height: 800 }
   try {
+    if (ownedImage) {
+      try {
+        // R2 source dimensions, without encoding/downloading a full WebP merely
+        // to lay out an album. The endpoint may not be deployed yet.
+        const metadata = await fetch(blogImageInfoUrl(imageUrl), { signal: AbortSignal.timeout(8000) })
+        if (metadata.ok) {
+          const size = await metadata.json()
+          if (Number.isInteger(size.width) && size.width > 0 && Number.isInteger(size.height) && size.height > 0) {
+            return { width: size.width, height: size.height }
+          }
+        }
+      } catch { /* Fall back to the established header probe during rollout. */ }
+    }
     // 尺寸信息在文件头里，只取前 64KB 即可，不必下载整张图。
     // 注意：不要带图片处理参数，处理后的图会丢失原始尺寸与元数据。
-    const response = await fetch(imageUrl, { headers: { Range: 'bytes=0-65535' } })
+    const response = await fetch(imageUrl, {
+      headers: { Range: 'bytes=0-65535', Accept: 'image/webp,image/*;q=0.8' },
+      signal: AbortSignal.timeout(8000),
+    })
     if (!response.ok && response.status !== 206) throw new Error(`HTTP ${response.status}`)
     const size = readImageSize(Buffer.from(await response.arrayBuffer()))
     if (size?.width && size?.height) return size
@@ -318,6 +336,13 @@ async function buildBundle() {
         throw new Error(`Obsidian ${section} 发布区没有已发布文章或条目。若确实要清空，请设置 CONTENT_ALLOW_EMPTY=1`)
       }
       selected[section] = local[section]
+    }
+    if (CONTENT_SOURCES.gallery === 'obsidian') {
+      await Promise.all(selected.gallery.flatMap((album) => album.images.map(async (image) => {
+        if (isBlogImage(image.src)) {
+          Object.assign(image, await fetchImageMeta(image.src, previousImageSizes.get(image.src) || image))
+        }
+      })))
     }
     for (const item of selected.food) {
       if (CONTENT_SOURCES.food === 'obsidian' && !item.lng && !item.lat) {

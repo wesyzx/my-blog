@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type PhotoSwipe from 'photoswipe'
+import { blogImageUrl, isBlogImage } from '@/lib/blog-images.mjs'
 
 let viewerModule: Promise<typeof import('./photoSwipe')> | undefined
 
@@ -65,12 +66,20 @@ export default function ImageLightbox({
               'aria-haspopup': 'dialog',
               'aria-label': `放大图片${image.alt ? `：${image.alt}` : ''}`,
             }
+        const source = image.dataset.lightboxSrc || image.getAttribute('src') || ''
+        if (isBlogImage(source)) attributes['data-lightbox-src'] = blogImageUrl(source, { preset: 'full' })
+        const link = image.closest('a')
+        const href = link?.getAttribute('href')
+        if (link && href && isBlogImage(href)) link.setAttribute('href', blogImageUrl(href, { preset: 'full' }))
         const previous = Object.keys(attributes).map((name) => [name, image.getAttribute(name)] as const)
         Object.entries(attributes).forEach(([name, value]) => image.setAttribute(name, value))
-        restorations.set(image, () => previous.forEach(([name, value]) => {
-          if (value === null) image.removeAttribute(name)
-          else image.setAttribute(name, value)
-        }))
+        restorations.set(image, () => {
+          previous.forEach(([name, value]) => {
+            if (value === null) image.removeAttribute(name)
+            else image.setAttribute(name, value)
+          })
+          if (link && href) link.setAttribute('href', href)
+        })
       })
     }
 

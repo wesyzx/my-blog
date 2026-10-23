@@ -1,10 +1,11 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllFoodPosts, getFoodPostBySlug } from '@/lib/food'
+import { blogImageUrl } from '@/lib/blog-images.mjs'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
+import BlogImage from '@/components/BlogImage'
 import ImageLightbox from '@/components/ImageLightbox'
 import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
@@ -48,7 +49,7 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
 
         {post.cover && (
           <div className="article-cover">
-            <Image src={post.cover} alt={post.title} fill fetchPriority="high" sizes="(max-width: 760px) 100vw, 720px" />
+            <BlogImage preset="banner" src={post.cover} alt={post.title} fill fetchPriority="high" sizes="(max-width: 760px) 100vw, 720px" />
           </div>
         )}
 
@@ -63,8 +64,15 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
             <h2 className="section-title">更多图片</h2>
             <ImageLightbox>
               {post.images.slice(1).map((src, index) => (
-                <a href={src} target="_blank" rel="noopener noreferrer" key={src}>
-                  <Image src={src} alt={`${post.title} 图片 ${index + 2}`} width={360} height={270} data-lightbox-src={src} />
+                <a href={blogImageUrl(src, { preset: 'full' })} target="_blank" rel="noopener noreferrer" key={src}>
+                  <BlogImage
+                    preset="landscape"
+                    src={src}
+                    alt={`${post.title} 图片 ${index + 2}`}
+                    fill
+                    sizes="(max-width: 760px) 50vw, 340px"
+                    data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
+                  />
                 </a>
               ))}
             </ImageLightbox>

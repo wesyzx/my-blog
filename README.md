@@ -7,6 +7,7 @@
 - `app/`、`components/`、`lib/`：Next.js 主站，部署于 EdgeOne。
 - `scripts/bundle-data.mjs`：生成内容快照；博文、美食与相册均来自同一 Obsidian Vault。`content/about.md` 管理关于页。
 - `cloudflare/workouts/`：运动数据 Worker、D1 迁移与测试，是运动页面的数据服务。
+- `cloudflare/images/`：Blog 图片的只读 WebP 转换 Worker。
 - `cloudflare/workouts/shortcuts/`：三个正式运动快捷指令及生成器，日常使用见该目录的 README。
 - `scripts/import-apple-health.py`：Apple 健康历史数据批量导入工具。
 - `docs/`：灯箱说明与保留的主题设计提案。

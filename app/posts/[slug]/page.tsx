@@ -1,4 +1,3 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
@@ -6,6 +5,7 @@ import { getAllPosts, getPostBySlug } from '@/lib/posts'
 import { formatItemDate } from '@/lib/format'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
+import BlogImage from '@/components/BlogImage'
 import ImageLightbox from '@/components/ImageLightbox'
 import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
@@ -60,7 +60,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
         {post.cover && (
           <figure className="article-cover">
-            <Image
+            <BlogImage
+              preset="banner"
               src={post.cover}
               alt=""
               fill

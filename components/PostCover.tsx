@@ -1,4 +1,5 @@
-import Image from 'next/image'
+import BlogImage from '@/components/BlogImage'
+import { blogImageUrl } from '@/lib/blog-images.mjs'
 import Link from 'next/link'
 import ImageLightbox from '@/components/ImageLightbox'
 import { formatItemDate } from '@/lib/format'
@@ -23,13 +24,14 @@ export default function PostCover({
   return (
     <ImageLightbox className="post-cover" triggerSelector=".post-cover-expand">
       <Link href={href} className="post-cover-media" aria-label={`阅读博文：${title}`}>
-        <Image
+        <BlogImage
+          preset="cover"
           src={src}
           alt={title}
           fill
           sizes="(max-width: 720px) calc(100vw - 32px), 680px"
           unoptimized={process.env.NODE_ENV === 'development'}
-          data-lightbox-src={src}
+          data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
         />
       </Link>
       <button type="button" className="post-cover-expand" aria-label={`放大图片：${title}`} aria-haspopup="dialog">

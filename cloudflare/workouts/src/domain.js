@@ -60,6 +60,7 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
   const type = normalizeWorkoutType(sourceType, distanceMeters)
   const durationSeconds = nonNegativeNumber(input.durationSeconds ?? input.duration)
   const elevationGainMeters = nonNegativeNumber(input.elevationGainMeters ?? input.elevationGain)
+  const flightsClimbed = optionalPositiveNumber(input.flightsClimbed ?? input.stairsClimbed)
   const suppliedPace = optionalPositiveNumber(input.pace ?? input.paceSecondsPerKm)
   const activeEnergyKcal = optionalNonNegativeNumber(input.activeEnergyKcal ?? input.calories ?? input.energyKcal)
   const averageHeartRateBpm = optionalHeartRate(input.averageHeartRateBpm ?? input.avgHeartRateBpm)
@@ -77,6 +78,9 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
 
   // Keep presence separate from insert defaults so a summary-only retry cannot
   // erase metrics or a route supplied by another import of the same workout.
+  // Optional metrics are not tracked in `supplied`: their SQL updates use
+  // COALESCE so an omitted or null property preserves a previously measured
+  // value, regardless of whether the shortcut emitted the key at all.
   const supplied = {
     type: input.sourceType || input.type,
     sourceType: input.sourceType || input.type,
@@ -103,6 +107,8 @@ export function normalizeActivity(input, defaultSource = 'manual', now = new Dat
     distanceMeters,
     durationSeconds,
     elevationGainMeters,
+    flightsClimbed,
+    stepsClimbed: optionalPositiveNumber(input.stepsClimbed),
     pace: suppliedPace ?? calculatedPace,
     activeEnergyKcal,
     averageHeartRateBpm,
@@ -127,6 +133,8 @@ function publicActivity(activity) {
   const averageHeartRateBpm = optionalNumber(activity.averageHeartRateBpm)
   const maxHeartRateBpm = optionalNumber(activity.maxHeartRateBpm)
   const averageCadenceRpm = optionalNumber(activity.averageCadenceRpm)
+  const flightsClimbed = optionalNumber(activity.flightsClimbed)
+  const stepsClimbed = optionalNumber(activity.stepsClimbed)
   return {
     id: activity.id,
     type: normalizeWorkoutType(activity.sourceType || activity.type, activity.distanceMeters),
@@ -134,6 +142,8 @@ function publicActivity(activity) {
     distanceMeters: activity.distanceMeters,
     durationSeconds: activity.durationSeconds,
     elevationGainMeters: activity.elevationGainMeters,
+    ...(flightsClimbed !== undefined ? { flightsClimbed } : {}),
+    ...(stepsClimbed !== undefined ? { stepsClimbed } : {}),
     ...(pace ? { pace } : {}),
     ...(activeEnergyKcal !== undefined ? { activeEnergyKcal } : {}),
     ...(averageHeartRateBpm !== undefined ? { averageHeartRateBpm } : {}),
@@ -157,11 +167,18 @@ export function buildSnapshot(activities, now = new Date()) {
       totalDistanceMeters: 0,
       totalDurationSeconds: 0,
       totalElevationGainMeters: 0,
+      totalActiveEnergyKcal: 0,
+      activeEnergyActivityCount: 0,
     }
     yearly.totalActivities += 1
     yearly.totalDistanceMeters += activity.distanceMeters
     yearly.totalDurationSeconds += activity.durationSeconds
     yearly.totalElevationGainMeters += activity.elevationGainMeters
+    const energy = optionalNumber(activity.activeEnergyKcal)
+    if (energy !== undefined && energy >= 0) {
+      yearly.totalActiveEnergyKcal += energy
+      yearly.activeEnergyActivityCount += 1
+    }
     summary[yearKey] = yearly
 
     const daily = heatmap.get(activity.localDate) ?? { date: activity.localDate, activityCount: 0, distanceMeters: 0 }

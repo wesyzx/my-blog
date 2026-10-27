@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import html
 import json
 import math
 import os
@@ -31,7 +32,8 @@ class Workout:
     local_date: str
     duration_seconds: float
     distance_meters: float
-    elevation_gain_meters: float
+    elevation_gain_meters: float | None
+    active_energy_kcal: float | None = None
 
 
 @dataclass
@@ -77,7 +79,7 @@ def iso_date(value: dt.datetime) -> str:
 
 def number(value: str | None, default: float = 0.0) -> float:
     try:
-        parsed = float(value or default)
+        parsed = float(html.unescape(value) if value else default)
         return parsed if math.isfinite(parsed) and parsed >= 0 else default
     except (TypeError, ValueError):
         return default
@@ -91,6 +93,38 @@ def convert_distance(value: str | None, unit: str | None) -> float:
 def convert_duration(value: str | None, unit: str | None) -> float:
     factors = {"s": 1, "sec": 1, "second": 1, "seconds": 1, "min": 60, "minute": 60, "minutes": 60, "h": 3600, "hr": 3600, "hour": 3600, "hours": 3600}
     return number(value) * factors.get((unit or "s").lower(), 1)
+
+
+def optional_quantity(value: str | None, unit: str | None, factors: dict[str, float]) -> float | None:
+    if value is None or not value.strip():
+        return None
+    factor = factors.get((unit or "").lower())
+    if factor is None:
+        return None
+    parsed = number(html.unescape(value), float("nan"))
+    return parsed * factor if math.isfinite(parsed) else None
+
+
+LENGTH_FACTORS = {"m": 1, "km": 1000, "ft": 0.3048, "cm": 0.01}
+ENERGY_FACTORS = {"kcal": 1, "cal": 0.001, "kj": 1 / 4.184, "j": 1 / 4184}
+
+
+def workout_metrics(element: ET.Element) -> tuple[float | None, float | None]:
+    attrs = element.attrib
+    elevation = optional_quantity(attrs.get("totalElevationAscended"), attrs.get("totalElevationAscendedUnit"), LENGTH_FACTORS)
+    energy = None
+    for child in element:
+        attrs = child.attrib
+        if local_name(child.tag) == "MetadataEntry" and attrs.get("key") == "HKElevationAscended":
+            # Health exports HKQuantity metadata as a value followed by its unit.
+            match = re.fullmatch(r"\s*([+\d.eE-]+)\s*([A-Za-z]+)\s*", html.unescape(attrs.get("value", "")))
+            if match:
+                measured = optional_quantity(match[1], match[2], LENGTH_FACTORS)
+                if measured is not None:
+                    elevation = measured
+        elif local_name(child.tag) == "WorkoutStatistics" and attrs.get("type") == "HKQuantityTypeIdentifierActiveEnergyBurned":
+            energy = optional_quantity(attrs.get("sum"), attrs.get("unit"), ENERGY_FACTORS)
+    return elevation, energy
 
 
 def local_name(tag: str) -> str:
@@ -117,6 +151,7 @@ def parse_workouts(archive: zipfile.ZipFile) -> list[Workout]:
             if not identifier:
                 fingerprint = f"{raw_type}|{attrs.get('startDate')}|{attrs.get('endDate')}"
                 identifier = "workout-" + hashlib.sha1(fingerprint.encode()).hexdigest()[:20]
+            elevation, energy = workout_metrics(element)
             workouts.append(Workout(
                 identifier=identifier,
                 activity_type=activity_type,
@@ -124,7 +159,8 @@ def parse_workouts(archive: zipfile.ZipFile) -> list[Workout]:
                 local_date=(attrs.get("startDate", "")[:10] if re.match(r"^\d{4}-\d{2}-\d{2}", attrs.get("startDate", "")) else iso_date(started)),
                 duration_seconds=convert_duration(attrs.get("duration"), attrs.get("durationUnit")),
                 distance_meters=convert_distance(attrs.get("totalDistance"), attrs.get("totalDistanceUnit")),
-                elevation_gain_meters=convert_distance(attrs.get("totalElevationAscended"), attrs.get("totalElevationAscendedUnit")),
+                elevation_gain_meters=elevation,
+                active_energy_kcal=energy,
             ))
             element.clear()
     return workouts
@@ -214,12 +250,15 @@ def build_activities(workouts: list[Workout], routes: dict[str, Route]) -> list[
             "localDate": workout.local_date,
             "distanceMeters": round(workout.distance_meters, 3),
             "durationSeconds": round(workout.duration_seconds, 3),
-            "elevationGainMeters": round(workout.elevation_gain_meters, 3),
         }
+        if workout.elevation_gain_meters is not None:
+            activity["elevationGainMeters"] = round(workout.elevation_gain_meters, 3)
+        if workout.active_energy_kcal is not None:
+            activity["activeEnergyKcal"] = round(workout.active_energy_kcal, 3)
         if route:
             activity["publishRoute"] = True
             activity["route"] = encode_polyline(route.points)
-            if not activity["elevationGainMeters"]:
+            if workout.elevation_gain_meters is None and any(point[2] is not None for point in route.points):
                 activity["elevationGainMeters"] = round(route_elevation_gain(route), 3)
         activities.append(activity)
     return activities

@@ -86,6 +86,40 @@ Cron 每 6 小时运行一次（`17 */6 * * *`，北京时间 02:17、08:17、14
 
 写入接口还支持 `activeEnergyKcal`、`averageHeartRateBpm`、`maxHeartRateBpm` 和 `averageCadenceRpm`；Worker 会将这些指标保存在 D1 并返回给博客。当前快捷指令提供的指标与限制见快捷指令说明。
 
+## 年度热量与爬升
+
+年度快照增加 `totalActiveEnergyKcal`（动态热量合计，kcal）与
+`activeEnergyActivityCount`（有热量数据的运动次数）。汇总按每条记录的 `localDate`
+归年，在截取最近 50 条活动前计算，包含该年所有已存储记录。缺失热量不视为测量到
+0 kcal；明确上传的 0 kcal 仍计为有数据。页面对不完整的热量汇总显示覆盖次数。
+升级前的快照没有这两个字段，页面显示“—”，不会从最近 50 条记录拼出不完整的年度总数。
+前端与 Worker 都需要更新；Worker 部署后须重建快照（下一次上传或 Cron 均会触发）。
+
+单次记录现在显示已上传的 `elevationGainMeters`，并计入年度“已记录爬升”。
+爬楼的高度缺失时显示“—”并说明未计入累计值。现有数据库以 0 保存默认爬升，
+无法仅凭这个值区分“未同步”与“实测零爬升”，因此不把它描述为测量结果。
+接口也接受独立的 `flightsClimbed`（爬楼层数）与 `stepsClimbed`（级数），
+页面分别显示“层”和“级”。它们不会换算成米或加入累计爬升，避免把楼层高度
+假设成真实测量值。`0006_flights_climbed.sql` 为这两项增加 D1 列。
+
+当前摘要快捷指令会上传时长、动态热量、平均心率，并按本次运动的时间窗查询
+“已爬楼层”样本上传 `flightsClimbed`。Actions 模板本身没有爬升或层数属性，
+楼层数来自苹果原生健康查询，不来自 Actions 属性面板。该查询取运动时段内的样本总和，
+仍需在 iPhone 上确认实际训练能返回样本及读取授权；签名完成不等于真机验收通过。
+快捷指令没有上传级数或 HealthKit 实测的累计爬升米数。
+Apple 的 [累计爬升元数据](https://developer.apple.com/documentation/healthkit/hkmetadatakeyelevationascended)
+与 [爬楼层数](https://developer.apple.com/documentation/healthkit/hkquantitytypeidentifier/flightsclimbed)
+是不同指标：前者是长度，后者是次数，不能直接把层数当米数。
+这些字段的存在不代表每次爬楼训练都已保存它们；没有样本时楼层数仍显示“—”。
+
+备用导入器 `scripts/import-apple-health.py` 支持从训练的
+`MetadataEntry key="HKElevationAscended"` 读取带单位的爬升，以及从
+`WorkoutStatistics type="HKQuantityTypeIdentifierActiveEnergyBurned"` 读取动态热量。
+支持米、公里、英尺和厘米的高度换算，以及 kcal、cal、kJ、J 的能量换算；
+无法识别单位或缺失的指标会省略，保留后端已有值。不会把 `totalEnergyBurned`
+当作动态热量。获取真实爬楼高度仍需核对同次训练的健康记录或导出文件，
+再通过已有运动 ID 补传；若只有层数，可另行接入层数指标，不能伪装成实测高度。
+
 将请求发往 `https://workouts.wesyzx.workers.dev/internal/healthkit`，添加 `Authorization: Bearer <INGEST_TOKEN>` 和 `Content-Type: application/json`。服务端按活动 ID 幂等更新，重复运行不会产生重复记录。
 
 ## 首次部署

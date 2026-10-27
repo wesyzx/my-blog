@@ -4,6 +4,19 @@
 
 研究日期：2026-10-14。用户设备：iOS 26.6.1（用户提供）。要求：免费，可以安装现成 App；运动摘要通过快捷指令上传，轨迹先尝试文件导出。
 
+## 2026-10-27 爬楼层数
+
+- Actions 的 `Find Workout` 模板仍未暴露爬升或楼层属性，因此摘要指令新增原生
+  `Find Health Samples` 查询：类型“已爬楼层”（`Flights Climbed`），开始时间位于
+  本次运动自身的 `startDate` 与 `endDate` 之间，再对 `Value` 求 `Sum`。
+- 查询结果上传为独立的 `flightsClimbed`。该字段表示楼层数，不换算是米，也不并入
+  `totalElevationGainMeters`。缺失或统计为 0 时不覆盖已有数据。
+- 三个正式快捷指令已重新生成并通过 Apple `shortcuts sign --mode anyone` 签名；生成结构
+  检查通过。本轮尚未在 iPhone 运行，仍待确认真实训练时间窗能取到楼层样本，以及
+  “快捷指令”对“已爬楼层”的读取授权是否独立存在。
+- 历史导入器可从 `HKElevationAscended` 读取实测量爬升米数。它是长度指标，不能与
+  `Flights Climbed` 的楼层次数互相替代。
+
 ## 2026-10-15 实机复核
 
 - 最新结论（已验收）：心率不再走“查找健康样本”，改用 Actions `Find Workout` 自带的

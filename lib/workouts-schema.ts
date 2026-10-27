@@ -13,6 +13,8 @@ export interface NormalizedActivity {
   distanceMeters: number
   durationSeconds: number
   elevationGainMeters: number
+  flightsClimbed?: number
+  stepsClimbed?: number
   pace?: number
   activeEnergyKcal?: number
   averageHeartRateBpm?: number
@@ -31,6 +33,8 @@ export interface YearlySummary {
   totalDistanceMeters: number
   totalDurationSeconds: number
   totalElevationGainMeters: number
+  totalActiveEnergyKcal?: number
+  activeEnergyActivityCount?: number
 }
 
 export interface HeatmapNode {
@@ -65,6 +69,10 @@ function nonNegativeNumber(value: unknown): number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : 0
 }
 
+function optionalNonNegativeNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : undefined
+}
+
 // The Worker omits unmeasured fields, but older snapshots and D1 nulls can
 // still arrive as `null`; treat anything non-numeric as "not measured".
 function optionalPositiveNumber(value: unknown): number | undefined {
@@ -84,8 +92,10 @@ function normalizeActivityRecord(item: unknown): NormalizedActivity | null {
     distanceMeters,
     durationSeconds: nonNegativeNumber(item.durationSeconds),
     elevationGainMeters: nonNegativeNumber(item.elevationGainMeters),
+    flightsClimbed: optionalPositiveNumber(item.flightsClimbed),
+    stepsClimbed: optionalPositiveNumber(item.stepsClimbed),
     pace: optionalPositiveNumber(item.pace),
-    activeEnergyKcal: optionalPositiveNumber(item.activeEnergyKcal),
+    activeEnergyKcal: optionalNonNegativeNumber(item.activeEnergyKcal),
     averageHeartRateBpm: optionalPositiveNumber(item.averageHeartRateBpm),
     maxHeartRateBpm: optionalPositiveNumber(item.maxHeartRateBpm),
     averageCadenceRpm: optionalPositiveNumber(item.averageCadenceRpm),
@@ -123,6 +133,8 @@ export function normalizeWorkoutsData(value: unknown): WorkoutsDataContract | nu
         totalDistanceMeters: nonNegativeNumber(item.totalDistanceMeters),
         totalDurationSeconds: nonNegativeNumber(item.totalDurationSeconds),
         totalElevationGainMeters: nonNegativeNumber(item.totalElevationGainMeters),
+        totalActiveEnergyKcal: optionalNonNegativeNumber(item.totalActiveEnergyKcal),
+        activeEnergyActivityCount: optionalNonNegativeNumber(item.activeEnergyActivityCount),
       }
     }
   }

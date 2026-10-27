@@ -31,7 +31,10 @@ const BASE = {
 function environment(t) {
   const sqlite = new DatabaseSync(':memory:')
   t.after(() => sqlite.close())
-  for (const migration of ['0001_init.sql', '0002_workout_metrics.sql', '0003_activity_categories.sql']) {
+  for (const migration of [
+    '0001_init.sql', '0002_workout_metrics.sql', '0003_activity_categories.sql',
+    '0004_historical_stretch.sql', '0005_historical_walk.sql', '0006_flights_climbed.sql',
+  ]) {
     sqlite.exec(readFileSync(new URL(`../migrations/${migration}`, import.meta.url), 'utf8'))
   }
   const objects = new Map()
@@ -96,6 +99,26 @@ test('summary retries preserve the route, absent metrics and local date', { skip
   assert.equal(snapshot.heatmap[0].date, '2026-10-14')
   assert.equal(snapshot.routes.length, 1)
   assert.equal('providedFields' in snapshot.activities[0], false)
+})
+
+test('stair flights and steps are stored and never overwritten by an absent retry', { skip: !DatabaseSync }, async (t) => {
+  const env = environment(t)
+  await insert(env, {
+    id: 'stair-fields',
+    type: 'Stairs',
+    startedAt: '2026-10-14T06:30:00+08:00',
+    durationSeconds: 1800,
+    flightsClimbed: 36,
+    stepsClimbed: 540,
+  })
+  await insert(env, { id: 'stair-fields', startedAt: '2026-10-14T06:30:00+08:00', durationSeconds: 1900 })
+  const row = env.sqlite.prepare('SELECT flights_climbed, steps_climbed FROM activities').get()
+  assert.equal(row.flights_climbed, 36)
+  assert.equal(row.steps_climbed, 540)
+  const snapshot = await createAndStoreSnapshot(env, NOW)
+  assert.equal(snapshot.activities[0].flightsClimbed, 36)
+  assert.equal(snapshot.activities[0].stepsClimbed, 540)
+  assert.equal(snapshot.activities[0].elevationGainMeters, 0)
 })
 
 test('preserves the source sport and reclassifies when a partial update supplies distance', { skip: !DatabaseSync }, async (t) => {

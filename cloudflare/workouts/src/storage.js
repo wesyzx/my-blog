@@ -5,8 +5,9 @@ const UPSERT_SQL = `
     id, source, source_activity_id, type, started_at, local_date,
     distance_meters, duration_seconds, elevation_gain_meters,
     pace_seconds_per_km, active_energy_kcal, average_heart_rate_bpm,
-    max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at, source_type
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    max_heart_rate_bpm, average_cadence_rpm, route_polyline, updated_at, source_type,
+    flights_climbed, steps_climbed
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 function updateAssignments(activity) {
@@ -28,7 +29,7 @@ function updateAssignments(activity) {
     const distance = provided.has('distanceMeters') ? 'excluded.distance_meters' : 'activities.distance_meters'
     updates.push(`type = CASE WHEN ${type} IN ('Walk', 'Hike') THEN CASE WHEN ${distance} >= 5000 THEN 'Hike' ELSE 'Walk' END ELSE ${type} END`)
   }
-  for (const column of ['active_energy_kcal', 'average_heart_rate_bpm', 'max_heart_rate_bpm', 'average_cadence_rpm']) {
+  for (const column of ['active_energy_kcal', 'average_heart_rate_bpm', 'max_heart_rate_bpm', 'average_cadence_rpm', 'flights_climbed', 'steps_climbed']) {
     updates.push(`${column} = COALESCE(excluded.${column}, activities.${column})`)
   }
 
@@ -69,6 +70,8 @@ export async function upsertActivities(db, activities) {
       activity.route ?? null,
       activity.updatedAt,
       activity.sourceType,
+      activity.flightsClimbed ?? null,
+      activity.stepsClimbed ?? null,
     )))
   }
   return activities.length
@@ -152,6 +155,8 @@ export async function loadActivities(db) {
       distance_meters AS distanceMeters,
       duration_seconds AS durationSeconds,
       elevation_gain_meters AS elevationGainMeters,
+      flights_climbed AS flightsClimbed,
+      steps_climbed AS stepsClimbed,
       pace_seconds_per_km AS pace,
       active_energy_kcal AS activeEnergyKcal,
       average_heart_rate_bpm AS averageHeartRateBpm,

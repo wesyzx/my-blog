@@ -70,6 +70,48 @@ test('builds the frontend schema with yearly and daily aggregates', () => {
   assert.equal(snapshot.activities[0].id, 'test:2')
 })
 
+test('aggregates measured active energy across the full year before limiting recent activities', () => {
+  const activities = Array.from({ length: 60 }, (_, index) => normalizeActivity({
+    id: `energy-${index}`,
+    startedAt: '2026-01-01T00:30:00+08:00',
+    activeEnergyKcal: 10.25,
+  }, 'test', NOW))
+  activities.push(
+    normalizeActivity({ id: 'missing', startedAt: '2026-06-01T00:00:00Z' }, 'test', NOW),
+    normalizeActivity({ id: 'zero', startedAt: '2026-06-02T00:00:00Z', activeEnergyKcal: 0 }, 'test', NOW),
+    normalizeActivity({ id: 'old', startedAt: '2025-06-01T00:00:00Z', activeEnergyKcal: 100 }, 'test', NOW),
+  )
+  const snapshot = buildSnapshot(activities, NOW)
+  assert.equal(snapshot.activities.length, 50)
+  assert.equal(snapshot.summary['2026'].totalActiveEnergyKcal, 615)
+  assert.equal(snapshot.summary['2026'].activeEnergyActivityCount, 61)
+  assert.equal(snapshot.summary['2026'].totalActivities, 62)
+  assert.equal(snapshot.summary['2025'].totalActiveEnergyKcal, 100)
+})
+
+test('preserves measured stair elevation in the yearly total and the public workout', () => {
+  const measured = normalizeActivity({
+    id: 'stairs-elevation', type: 'Stairs', startedAt: NOW, elevationGainMeters: 128.5,
+  }, 'test', NOW)
+  const unmeasured = normalizeActivity({
+    id: 'stairs-missing', type: 'Stairs', startedAt: NOW,
+  }, 'test', NOW)
+  const snapshot = buildSnapshot([measured, unmeasured], NOW)
+  assert.equal(snapshot.summary['2026'].totalElevationGainMeters, 128.5)
+  assert.equal(snapshot.activities[0].elevationGainMeters, 128.5)
+  assert.equal(snapshot.summary['2026'].activeEnergyActivityCount, 0)
+})
+
+test('publishes stairs and flights separately from elevation meters', () => {
+  const activity = normalizeActivity({
+    id: 'stairs-flights', type: 'Stairs', startedAt: NOW, flightsClimbed: 36, stepsClimbed: 540,
+  }, 'test', NOW)
+  const snapshot = buildSnapshot([activity], NOW)
+  assert.equal(activity.elevationGainMeters, 0)
+  assert.equal(snapshot.activities[0].flightsClimbed, 36)
+  assert.equal(snapshot.activities[0].stepsClimbed, 540)
+})
+
 test('rejects an activity without an id or valid date', () => {
   assert.throws(() => normalizeActivity({ startedAt: NOW }, 'test', NOW), /id is required/)
   assert.throws(() => normalizeActivity({ id: 'x', startedAt: 'not-a-date' }, 'test', NOW), /invalid startedAt/)

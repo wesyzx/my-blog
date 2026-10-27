@@ -7,8 +7,8 @@ store the token in a private temporary directory and must never be shared.
 Two families of shortcuts are generated:
 
 * summary uploads read a workout through the Actions app's Find Workout action
-  and post calories, duration and the workout's own average heart rate to
-  `/internal/healthkit`;
+  and post calories, duration, the workout's own average heart rate and
+  flights-climbed samples from the workout window to `/internal/healthkit`;
 * the GPX upload exports the latest workout with a route using WorkoutGPX and posts it to
   `/internal/route`. The Worker reads the first timestamp inside the file and
   matches the workout itself, so the file alone is enough;
@@ -69,10 +69,12 @@ def dictionary(items):
         ]}}
 
 
-def save_workflow(workflow, name, personal_token=None):
-    directory = pathlib.Path('/private/tmp')
+def save_workflow(workflow, name, personal_token=None, output_dir=None):
+    directory = pathlib.Path(output_dir or '/private/tmp')
+    directory.mkdir(parents=True, exist_ok=True)
     if personal_token:
-        directory /= 'personal-workout-shortcuts'
+        if output_dir is None:
+            directory /= 'personal-workout-shortcuts'
         directory.mkdir(mode=0o700, exist_ok=True)
         directory.chmod(0o700)
         token_ids = set()
@@ -121,7 +123,8 @@ def _summary_actions(actions, action, upload, personal_token, latest=True, intro
     the multi-select troubleshooting variant needs.
     """
     if intro is None:
-        intro = ('读取 Apple 健康中的运动摘要（时长、动态热量）与这次运动的平均心率。'
+        intro = ('读取 Apple 健康中的运动摘要（时长、动态热量、平均心率）'
+                 '以及运动时段内的已爬楼层。'
                  + ('读取第一条运动（当前实机为最近一条）。' if latest else '选择要处理的运动，逐条读取。')
                  + '不读取或上传 GPS 轨迹。')
     action('comment', WFCommentActionText=(
@@ -164,15 +167,42 @@ def _summary_actions(actions, action, upload, personal_token, latest=True, intro
                         WFDateFormatStyle='Custom', WFDateFormat="yyyy-MM-dd'T'HH:mm:ssXXX")
     local_id = action('format.date', WFDate=text(ref=property_ref('startDate')),
                       WFDateFormatStyle='Custom', WFDateFormat='yyyy-MM-dd')
-    if not upload:
-        ended_id = action('format.date', WFDate=text(ref=property_ref('endDate')),
-                          WFDateFormatStyle='Custom', WFDateFormat="yyyy-MM-dd'T'HH:mm:ssXXX")
+    ended_id = action('format.date', WFDate=text(ref=property_ref('endDate')),
+                      WFDateFormatStyle='Custom', WFDateFormat="yyyy-MM-dd'T'HH:mm:ssXXX")
 
     def number_ref(name):
         ref = property_ref(name)
         ref.setdefault('Aggrandizements', []).append(
             {'Type': 'WFCoercionVariableAggrandizement', 'CoercionItemClass': 'WFNumberContentItem'})
         return ref
+
+    # Actions does not expose a climb property. Query the workout's own time
+    # window for HealthKit's Flights Climbed quantity and sum its samples.
+    # This is a count of floors, not elevation in metres.
+    action('comment', WFCommentActionText=(
+        '爬楼层数取自“查找健康样本”：类型为“已爬楼层”，开始时间落在本次运动的起止区间内，'
+        '再计算总和。它只表示爬了几层，不会换算成米或加入累计爬升。'
+        '没有样本时后端保留已有值。'))
+    flights_id = action('filter.health.quantity', WFContentItemFilter={
+        'Value': {
+            'WFActionParameterFilterPrefix': 1,
+            'WFContentPredicateBoundedDate': False,
+            'WFActionParameterFilterTemplates': [
+                {'Bounded': True, 'Operator': 4, 'Property': 'Type', 'Removable': False,
+                 'Values': {'Enumeration': {'Value': 'Flights Climbed',
+                                            'WFSerializationType': 'WFStringSubstitutableState'}}},
+                {'Bounded': True, 'Operator': 1003, 'Property': 'Start Date', 'Removable': False,
+                 'Values': {'Date': attachment(property_ref('startDate')),
+                            'AnotherDate': attachment(output(ended_id, 'Formatted Date'))}},
+            ],
+        },
+        'WFSerializationType': 'WFContentPredicateTableTemplate',
+    })
+    flights_values_id = action('properties.health.quantity',
+                               WFContentItemPropertyName='Value',
+                               WFInput=attachment(output(flights_id, 'Health Samples')))
+    flights_total_id = action('statistics', WFStatisticsOperation='Sum',
+                              WFInput=attachment(output(flights_values_id, 'Details of Health Sample')))
 
     # Read the workout's own average heart rate from Actions. The earlier
     # "Find Health Samples" detour is gone: a native query filtered to the
@@ -191,7 +221,8 @@ def _summary_actions(actions, action, upload, personal_token, latest=True, intro
              ('localDate', text(ref=output(local_id, 'Formatted Date')), 0),
              ('durationSeconds', text(ref=number_ref('duration')), 0),
              ('activeEnergyKcal', text(ref=number_ref('activeCalories')), 0),
-             ('averageHeartRateBpm', text(ref=number_ref('averageHeartRate')), 0)]
+             ('averageHeartRateBpm', text(ref=number_ref('averageHeartRate')), 0),
+             ('flightsClimbed', text(ref=output(flights_total_id, 'Statistics')), 0)]
     if not upload:
         # Keep diagnostics local; they are not part of the ingest contract.
         items.extend([
@@ -217,7 +248,7 @@ def _summary_actions(actions, action, upload, personal_token, latest=True, intro
     return result_id, result_name, token_id
 
 
-def build(upload, latest=True, personal_token=None):
+def build(upload, latest=True, personal_token=None, output_dir=None):
     workflow = copy.deepcopy(TEMPLATE['workflow'])
     # These shortcuts read Health and post a request; they never consume
     # Shortcut Input, so advertising input types only produces a stale
@@ -238,7 +269,7 @@ def build(upload, latest=True, personal_token=None):
     action('previewdocument', WFInput=attachment(output(result_id, result_name)))
     workflow['WFWorkflowActions'] = actions
     name = ('同步最近运动到博客' if upload else '预览最近运动上传数据') if latest else ('同步运动到博客' if upload else '预览运动上传数据')
-    save_workflow(workflow, name, personal_token)
+    save_workflow(workflow, name, personal_token, output_dir)
 
 
 def _gpx_export_action(actions, action):
@@ -254,7 +285,7 @@ def _gpx_export_action(actions, action):
     return file_id
 
 
-def build_gpx(upload=True, personal_token=None):
+def build_gpx(upload=True, personal_token=None, output_dir=None):
     """Export the latest GPS workout and post its GPX to the route endpoint.
 
     The Worker matches the workout from the first `<time>` inside the track,
@@ -297,10 +328,10 @@ def build_gpx(upload=True, personal_token=None):
     action('previewdocument', WFInput=attachment(output(result_id, result_name)))
     workflow['WFWorkflowActions'] = actions
     name = '上传运动轨迹到博客' if upload else '预览运动轨迹文件'
-    save_workflow(workflow, name, personal_token)
+    save_workflow(workflow, name, personal_token, output_dir)
 
 
-def build_combined(personal_token=None, name='一键同步运动到博客'):
+def build_combined(personal_token=None, name='一键同步运动到博客', output_dir=None):
     """Post the latest summary, then upload each GPX returned by WorkoutGPX."""
     workflow = copy.deepcopy(TEMPLATE['workflow'])
     workflow['WFWorkflowInputContentItemClasses'] = []
@@ -339,13 +370,14 @@ def build_combined(personal_token=None, name='一键同步运动到博客'):
         '请确认摘要和轨迹响应均包含 ok: true；没有导出文件时只显示摘要响应。'))
     action('previewdocument', WFInput=attachment(output(summary_id, summary_name)))
     workflow['WFWorkflowActions'] = actions
-    save_workflow(workflow, name, personal_token)
+    save_workflow(workflow, name, personal_token, output_dir)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--all', action='store_true', help='Also build troubleshooting variants')
     parser.add_argument('--personal', action='store_true', help='Build private shortcuts with a saved token')
+    parser.add_argument('--output-dir', help='Write unsigned shortcuts here instead of /private/tmp')
     options = parser.parse_args()
     token = None
     if options.personal:
@@ -353,11 +385,11 @@ if __name__ == '__main__':
         token = token.strip()
         if not token:
             parser.error('个人版需要上传令牌')
-    build(True, personal_token=token)
-    build_gpx(True, personal_token=token)
-    build_combined(personal_token=token)
+    build(True, personal_token=token, output_dir=options.output_dir)
+    build_gpx(True, personal_token=token, output_dir=options.output_dir)
+    build_combined(personal_token=token, output_dir=options.output_dir)
     if options.all:
-        build(False)
-        build(False, latest=False)
-        build(True, latest=False)
-        build_gpx(False)
+        build(False, output_dir=options.output_dir)
+        build(False, latest=False, output_dir=options.output_dir)
+        build(True, latest=False, output_dir=options.output_dir)
+        build_gpx(False, output_dir=options.output_dir)

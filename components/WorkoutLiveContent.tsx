@@ -42,6 +42,19 @@ function activityLabel(type: NormalizedActivity['type']) {
   return WORKOUT_LABELS[type] ?? type
 }
 
+function climbLabel(activity: NormalizedActivity) {
+  if (activity.elevationGainMeters > 0) {
+    return `${activity.elevationGainMeters.toLocaleString('zh-CN', { maximumFractionDigits: 1 })} m`
+  }
+  if (activity.flightsClimbed !== undefined && activity.flightsClimbed > 0) {
+    return `${activity.flightsClimbed.toLocaleString('zh-CN', { maximumFractionDigits: 1 })} 层`
+  }
+  if (activity.stepsClimbed !== undefined && activity.stepsClimbed > 0) {
+    return `${Math.round(activity.stepsClimbed).toLocaleString('zh-CN')} 级`
+  }
+  return null
+}
+
 function daysInYear(year: number) {
   const days: string[] = []
   const current = new Date(Date.UTC(year, 0, 1))
@@ -174,6 +187,13 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
   const years = Object.keys(data.summary).sort((left, right) => Number(right) - Number(left))
   const latestYear = years[0] ?? data.activities[0]?.startedAt.slice(0, 4)
   const summary = latestYear ? data.summary[latestYear] : null
+  const energyTotal = summary?.totalActiveEnergyKcal
+  const hasEnergySummary = energyTotal !== undefined && (summary?.activeEnergyActivityCount ?? 0) > 0
+  const energySummaryTitle = hasEnergySummary && summary
+    ? `已记录 ${summary.activeEnergyActivityCount} / ${summary.totalActivities} 次运动的动态热量`
+    : '尚无年度动态热量汇总'
+  const hasMissingStairElevation = data.activities.some((activity) =>
+    activity.type === 'Stairs' && climbLabel(activity) === null)
   const activityPageCount = Math.ceil(data.activities.length / ACTIVITIES_PER_PAGE)
   const currentActivityPage = Math.min(activityPage, Math.max(activityPageCount, 1))
   const pageStart = (currentActivityPage - 1) * ACTIVITIES_PER_PAGE
@@ -192,7 +212,11 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
           <div><span>距离</span><strong>{(summary.totalDistanceMeters / 1000).toLocaleString('zh-CN', { maximumFractionDigits: 1 })} <small>km</small></strong></div>
           <div><span>运动</span><strong>{summary.totalActivities} <small>次</small></strong></div>
           <div><span>时长</span><strong>{Math.floor(summary.totalDurationSeconds / 3600)} <small>小时</small></strong></div>
-          <div><span>爬升</span><strong>{summary.totalElevationGainMeters.toLocaleString('zh-CN')} <small>m</small></strong></div>
+          <div><span>热量消耗</span><strong>{hasEnergySummary && energyTotal !== undefined ? <>{Math.round(energyTotal).toLocaleString('zh-CN')} <small>kcal</small></> : '—'}</strong></div>
+          <div><span>爬升</span><strong>{summary.totalElevationGainMeters > 0 ? <>{summary.totalElevationGainMeters.toLocaleString('zh-CN', { maximumFractionDigits: 1 })} <small>m</small></> : '—'}</strong></div>
+          {hasEnergySummary && summary.activeEnergyActivityCount! < summary.totalActivities && (
+            <p className="workout-data-note">{energySummaryTitle}；其余记录暂无热量数据。</p>
+          )}
         </section>
       )}
 
@@ -232,12 +256,14 @@ export default function WorkoutLiveContent({ initialData }: { initialData: Worko
                   {activity.distanceMeters > 0 && <div><dt>距离</dt><dd>{(activity.distanceMeters / 1000).toFixed(2)} km</dd></div>}
                   <div className="workout-duration"><dt>时间</dt><dd>{formatDuration(activity.durationSeconds)}</dd></div>
                   {activity.pace !== undefined && activity.pace > 0 && <div><dt>配速</dt><dd>{formatPace(activity.pace)}</dd></div>}
+                  {(climbLabel(activity) !== null || activity.type === 'Stairs') && <div><dt>爬升</dt><dd>{climbLabel(activity) ?? <span title="这次爬楼尚未同步高度或层数">—</span>}</dd></div>}
                   {activity.activeEnergyKcal !== undefined && <div><dt>消耗</dt><dd>{Math.round(activity.activeEnergyKcal)} kcal</dd></div>}
                   {activity.averageHeartRateBpm !== undefined && <div><dt>平均心率</dt><dd>{Math.round(activity.averageHeartRateBpm)} bpm</dd></div>}
                 </dl>
               </article>
             ))}
           </div>
+          {hasMissingStairElevation && <p className="workout-data-note">部分爬楼记录尚无高度或层数数据，未计入累计爬升。</p>}
           {activityPageCount > 1 && (
             <nav className="workout-pagination" aria-label="运动记录分页">
               <button

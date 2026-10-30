@@ -28,7 +28,7 @@ MEDIA_CONFIG = {
         'noun': '视频',
         'upload_path': 'videos',
         'content_type': 'video/quicktime',
-        'converted_output_name': None,
+        'converted_output_name': 'Encoded Media',
     },
 }
 
@@ -39,6 +39,10 @@ def uid():
 
 def attachment(ref):
     return {'WFSerializationType': 'WFTextTokenAttachment', 'Value': ref}
+
+
+def variable_input(ref):
+    return {'Type': 'Variable', 'Variable': attachment(ref)}
 
 
 def output(identifier, name):
@@ -120,6 +124,25 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
     if media == 'video':
         picker_parameters['WFPhotoPickerTypes'] = 'Videos'
     selected_photos_id = action('selectphoto', **picker_parameters)
+    selected_items = attachment(output(selected_photos_id, 'Photos'))
+    selected_count_id = action('count', WFInput=selected_items, Input=selected_items)
+    no_selection_group = uid()
+    action(
+        'conditional',
+        GroupingIdentifier=no_selection_group,
+        WFControlFlowMode=0,
+        WFCondition=2,
+        WFNumberValue=0.0,
+        WFInput=variable_input(output(selected_count_id, 'Count')),
+    )
+    action('conditional', GroupingIdentifier=no_selection_group, WFControlFlowMode=1)
+    action(
+        'showresult',
+        WFInput=text(f'没有选择任何{noun}。请返回照片选择器，选择至少一个{noun}后再运行。'),
+    )
+    action('exit')
+    action('conditional', GroupingIdentifier=no_selection_group, WFControlFlowMode=2)
+
     current_date_id = action('date', WFDateActionMode='Current Date')
     formatted_date_id = action(
         'format.date',
@@ -183,6 +206,19 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFDictionaryKey=text('albumId'),
         WFInput=attachment(output(create_dictionary_id, 'Dictionary')),
     )
+    create_guard_group = uid()
+    action(
+        'conditional',
+        GroupingIdentifier=create_guard_group,
+        WFControlFlowMode=0,
+        WFCondition=100,
+        WFInput=variable_input(output(album_id, 'Dictionary Value')),
+    )
+    action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=1)
+    action('showresult', WFInput=text('相册创建失败。服务端原始响应：'))
+    action('showresult', WFInput=attachment(output(create_id, 'Contents of URL')))
+    action('exit')
+    action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=2)
 
     action('comment', WFCommentActionText=(
         '直接读取照片选择器返回的项目，避免再次扫描整个照片图库。\n'
@@ -193,10 +229,10 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             '- “获取 URL 内容”以“转换后的图像”作为文件正文。'
             if media == 'photo'
             else
-            '逐个上传刚选择并确认的视频；单个失败时整个快捷指令停止。\n'
+            '逐个转换并上传刚选择并确认的视频；单个失败时整个快捷指令停止。\n'
             '- “重复”读取“选择照片”的结果。\n'
-            '- “获取 URL 内容”以“重复项目”作为文件正文。\n'
-            '- 视频不做图像转换，保留 QuickTime 原格式。'
+            '- “编码媒体”读取“重复项目”，生成可上传的视频文件。\n'
+            '- “获取 URL 内容”以“编码后的媒体”作为文件正文。'
         )))
     group = uid()
     action(
@@ -214,15 +250,19 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             WFImageCompressionQuality=0.9,
             WFImagePreserveMetadata=False,
         )
+    else:
+        converted_id = action(
+            'encodemedia',
+            WFMedia=attachment({'Type': 'Variable', 'VariableName': 'Repeat Item'}),
+            WFMediaAudioOnly=False,
+            WFMediaSize='Passthrough',
+            WFMediaSpeed='Normal',
+        )
     upload_headers = dictionary([
         ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
         ('Content-Type', text(config['content_type']), 0),
     ])
-    upload_body = (
-        output(converted_id, config['converted_output_name'])
-        if converted_id
-        else {'Type': 'Variable', 'VariableName': 'Repeat Item'}
-    )
+    upload_body = output(converted_id, config['converted_output_name'])
     upload_id = action(
         'downloadurl',
         WFURL=composed_text(
@@ -236,6 +276,30 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFFormValues=empty_dictionary(),
         WFHTTPHeaders=upload_headers,
     )
+    upload_dictionary_id = action(
+        'detect.dictionary',
+        WFInput=attachment(output(upload_id, 'Contents of URL')),
+    )
+    upload_ok_id = action(
+        'getvalueforkey',
+        WFGetDictionaryValueType='Value',
+        WFDictionaryKey=text('ok'),
+        WFInput=attachment(output(upload_dictionary_id, 'Dictionary')),
+    )
+    upload_guard_group = uid()
+    action(
+        'conditional',
+        GroupingIdentifier=upload_guard_group,
+        WFControlFlowMode=0,
+        WFCondition=2,
+        WFNumberValue=0.0,
+        WFInput=variable_input(output(upload_ok_id, 'Dictionary Value')),
+    )
+    action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=1)
+    action('showresult', WFInput=text(f'{noun}上传失败。服务端原始响应：'))
+    action('showresult', WFInput=attachment(output(upload_id, 'Contents of URL')))
+    action('exit')
+    action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=2)
     action('repeat.each', GroupingIdentifier=group, WFControlFlowMode=2)
 
     action('comment', WFCommentActionText=(

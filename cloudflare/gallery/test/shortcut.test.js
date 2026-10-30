@@ -40,6 +40,7 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   const selectPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.selectphoto')
   assert.equal(selectPhotos.WFWorkflowActionParameters.WFSelectMultiplePhotos, true)
   const selectedCount = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.count')
+  assert.equal(selectedCount.WFWorkflowActionParameters.WFCountType, 'Items')
   assert.deepEqual(selectedCount.WFWorkflowActionParameters.WFInput.Value, {
     Type: 'ActionOutput',
     OutputUUID: selectPhotos.WFWorkflowActionParameters.UUID,
@@ -130,7 +131,7 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
     && entry.WFWorkflowActionParameters.WFControlFlowMode === 0)
   assert.deepEqual(
     conditionalStarts.map((entry) => entry.WFWorkflowActionParameters.WFCondition),
-    [2, 100, 2],
+    [2, 100, 100],
   )
   const guardSources = [selectedCount, albumId, uploadOk]
   const guardOutputNames = ['Count', 'Dictionary Value', 'Dictionary Value']
@@ -210,6 +211,7 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
   assert.equal(selectVideos.WFWorkflowActionParameters.WFPhotoPickerTypes, 'Videos')
   assert.equal(ids.includes('is.workflow.actions.image.convert'), false)
   const selectedCount = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.count')
+  assert.equal(selectedCount.WFWorkflowActionParameters.WFCountType, 'Items')
   assert.deepEqual(selectedCount.WFWorkflowActionParameters.WFInput.Value, {
     Type: 'ActionOutput',
     OutputUUID: selectVideos.WFWorkflowActionParameters.UUID,
@@ -286,7 +288,7 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
     && entry.WFWorkflowActionParameters.WFControlFlowMode === 0)
   assert.deepEqual(
     conditionalStarts.map((entry) => entry.WFWorkflowActionParameters.WFCondition),
-    [2, 100, 2],
+    [2, 100, 100],
   )
   const guardSources = [selectedCount, albumId, uploadOk]
   const guardOutputNames = ['Count', 'Dictionary Value', 'Dictionary Value']

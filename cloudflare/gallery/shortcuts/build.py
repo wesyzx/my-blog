@@ -125,7 +125,12 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         picker_parameters['WFPhotoPickerTypes'] = 'Videos'
     selected_photos_id = action('selectphoto', **picker_parameters)
     selected_items = attachment(output(selected_photos_id, 'Photos'))
-    selected_count_id = action('count', WFInput=selected_items, Input=selected_items)
+    selected_count_id = action(
+        'count',
+        WFCountType='Items',
+        WFInput=selected_items,
+        Input=selected_items,
+    )
     no_selection_group = uid()
     action(
         'conditional',
@@ -291,8 +296,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         'conditional',
         GroupingIdentifier=upload_guard_group,
         WFControlFlowMode=0,
-        WFCondition=2,
-        WFNumberValue=0.0,
+        WFCondition=100,
         WFInput=variable_input(output(upload_ok_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=1)

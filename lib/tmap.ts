@@ -9,7 +9,7 @@
 export const TMAP_KEY = process.env.NEXT_PUBLIC_TMAP_KEY || ''
 export const TMAP_KEY_MISSING = TMAP_KEY.length === 0
 /**
- * 运动地图使用的绑定样式 ID；美食和短记保持 SDK 默认底图。
+ * 运动地图使用的绑定样式 ID；美食保持 SDK 默认底图。
  * 在 Key 管理 → 设置绑定样式里确认 ID，未绑定时留空。
  */
 export const TMAP_STYLE_ID = (process.env.NEXT_PUBLIC_TMAP_STYLE_ID || '').trim()

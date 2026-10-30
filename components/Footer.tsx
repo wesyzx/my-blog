@@ -40,7 +40,7 @@ function BrandIcon({ brand }: BrandIconProps) {
 export default async function Footer() {
   const food = await getAllFoodPosts()
   const pageKeys = [
-    '/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/message', '/say',
+    '/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/message',
     ...getAllPosts().map((post) => `/posts/${encodeURIComponent(post.slug)}`),
     ...food.map((post) => `/food/${encodeURIComponent(post.slug)}`),
     ...getAllGalleryItems().map((album) => `/gallery/${encodeURIComponent(album.slug)}`),

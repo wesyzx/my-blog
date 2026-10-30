@@ -6,7 +6,6 @@ import path from 'path'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
 import { readImageSize } from '../lib/image-size.mjs'
 import { blogImageInfoUrl, isBlogImage } from '../lib/blog-images.mjs'
-import { fetchMemosWithFallback } from '../lib/memos.mjs'
 import { loadObsidianContent, mirrorPublishedAttachments, parseBundle, serializeBundle } from '../lib/obsidian-content.mjs'
 
 dotenv.config({ path: '.env.local' })
@@ -50,7 +49,7 @@ function loadExistingBundle() {
     const source = fs.readFileSync(OUTPUT_PATH, 'utf8')
     return parseBundle(source)
   } catch {
-    return { posts: [], food: [], gallery: [], says: [], about: '' }
+    return { posts: [], food: [], gallery: [], about: '' }
   }
 }
 
@@ -164,32 +163,6 @@ async function geocode(address) {
   return { lng, lat }
 }
 
-const MEMOS_BASE_URL = process.env.MEMOS_BASE_URL || 'https://memos.guanyan.me'
-function reportMemosFailure(error, existingSays) {
-  const reason = process.env.MEMOS_TOKEN
-    ? `请求失败：${error.message}`
-    : '未配置 MEMOS_TOKEN —— 请求以匿名身份发出，Memos 会直接返回 401'
-  const bar = '='.repeat(64)
-  console.warn([
-    '',
-    `  ${bar}`,
-    '  ! Memos 同步失败 —— 短记页面将继续沿用旧快照，内容不会更新',
-    `  ! 原因: ${reason}`,
-    '  ! 修复: 在 .env.local 与部署环境配置有效的 MEMOS_TOKEN',
-    `  ! 自检: curl -H "Authorization: Bearer $MEMOS_TOKEN" "${MEMOS_BASE_URL}/api/v1/memos?pageSize=2"`,
-    '  ! 需要让构建直接失败可设置 MEMOS_STRICT=1',
-    `  ${bar}`,
-    '',
-  ].join('\n'))
-  if (process.env.MEMOS_STRICT === '1') throw new Error(`Memos 同步失败（MEMOS_STRICT=1）：${reason}`)
-  return existingSays
-}
-
-async function fetchSays(existingSays) {
-  const endpoint = process.env.MEMOS_API_URL || `${MEMOS_BASE_URL}/api/v1/memos`
-  return fetchMemosWithFallback(endpoint, process.env.MEMOS_TOKEN, {}, (error) => reportMemosFailure(error, existingSays))
-}
-
 async function fetchNotionContent(existing, previousCoords, previousImageSizes, {
   includePosts = true, includeFood = true, includeGallery = true,
 } = {}) {
@@ -295,7 +268,7 @@ async function buildBundle() {
   if (Object.values(CONTENT_SOURCES).some((source) => !['notion', 'obsidian'].includes(source))) {
     throw new Error('内容源只能是 notion 或 obsidian')
   }
-  console.log(`Bundling content: ${JSON.stringify(CONTENT_SOURCES)} and Memos...`)
+  console.log(`Bundling content: ${JSON.stringify(CONTENT_SOURCES)}...`)
   const existing = loadExistingBundle()
   const snapshotAvailable = hasUsableSnapshot(existing)
   const previousCoords = new Map((existing.food || []).filter((item) => item.slug && item.lng && item.lat).map((item) => [item.slug, { lng: item.lng, lat: item.lat }]))
@@ -360,13 +333,12 @@ async function buildBundle() {
 
   // 关于页只认本地 content/about.md，避免 Notion 页面权限变化影响构建。
   const about = fs.readFileSync(path.join(process.cwd(), 'content/about.md'), 'utf8')
-  const says = await fetchSays(existing.says || [])
-  const bundle = { posts, food, gallery, says, about, updatedAt: new Date().toISOString() }
+  const bundle = { posts, food, gallery, about, updatedAt: new Date().toISOString() }
   const output = serializeBundle(bundle)
   const tempPath = `${OUTPUT_PATH}.tmp`
   fs.writeFileSync(tempPath, output)
   fs.renameSync(tempPath, OUTPUT_PATH)
-  console.log(`Bundled ${posts.length} posts, ${food.length} food entries, ${gallery.length} albums and ${says.length} says.`)
+  console.log(`Bundled ${posts.length} posts, ${food.length} food entries and ${gallery.length} albums.`)
 }
 
 buildBundle().catch((error) => { console.error(`Content bundling failed: ${error.message}`); process.exit(1) })

@@ -7,7 +7,6 @@ import type { SiteUpdate } from '@/lib/site-updates'
 
 const LABELS: Record<SiteUpdate['kind'], string> = {
   post: '博文',
-  say: '短记',
   gallery: '相册',
   food: '美食',
 }
@@ -43,7 +42,7 @@ function StreamItem({ update, headingLevel }: { update: SiteUpdate; headingLevel
         <time className="item-time" dateTime={update.date}>{formatItemDate(update.date)}</time>
         <span>{LABELS[update.kind]}</span>
       </span>
-      <Heading className={update.kind === 'say' ? 'stream-note-title' : 'item-title'}>
+      <Heading className="item-title">
         <Link href={update.href}>{update.title}</Link>
       </Heading>
       {update.detail && <p className="item-subtitle">{update.detail}</p>}

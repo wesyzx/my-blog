@@ -46,7 +46,7 @@ EdgeOne must use this repository's `main` branch and must not force
 `CONTENT_SOURCE=notion`, `FOOD_CONTENT_SOURCE=notion`, or
 `GALLERY_CONTENT_SOURCE=notion`. Its build and deployment are separate from Git
 delivery. The checked-in source configuration selects Obsidian for all three
-sections; short notes still use Memos.
+sections.
 
 ## Alerts
 

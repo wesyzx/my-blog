@@ -5,7 +5,7 @@
 - `ImageLightbox` 保留原来的容器接口，增强容器内的图片，不改变正文或网格结构。
 - 博文、美食正文继续通过服务端 `MDXRemote` 渲染；`MarkdownImage` 为 Markdown 图片提供预览。
 - 相册保留 `react-photo-album` 排版，预览复用 `next/image`，点击后使用共享灯箱。
-- 短记和美食多图继续使用现有组件、图片链接和 Memos 文件代理。
+- 美食多图继续使用现有组件和图片链接。
 - 已移除 `yet-another-react-lightbox`，使用 `photoswipe@5.4.4`。
 
 ## 加载与图片地址
@@ -38,7 +38,7 @@ Markdown 中现有 `*.guanyan.me` 的 HTTPS 图片复用 Next.js 的图片优化
 - 异常与可访问性：图片加载错误提示、空说明、图注按文本输出、无 JavaScript 正文及链接、减少动画偏好。
 - 请求检查：优化预览不提前请求原图，打开后只请求当前及相邻原图，查询参数保留。
 - 页面切换：打开动画中离开页面后，查看器可清理。
-- 现有相册与短记页面：开发与生产模式均验证共享灯箱、缩略图布局及 Memos 代理地址。
+- 现有相册、美食与博文页面：开发与生产模式均验证共享灯箱和缩略图布局。
 - 生产按需加载：浏览器请求和构建清单共同确认 PhotoSwipe 的两个 JS 文件及 CSS 在图片交互后才加载。
 
 由于本地内容快照没有已发布博文，Markdown/MDX 用临时测试页面验证；该页面已移除，不包含在最终生产构建中。交互测试使用受控图片响应，未在实体 iPhone 或 iOS Safari 上验证。
@@ -47,7 +47,6 @@ Markdown 中现有 `*.guanyan.me` 的 HTTPS 图片复用 Next.js 的图片优化
 
 - 现有相册地址 `https://images.guanyan.me/IMG_7764.JPG` 返回 HTTP 200，但类型为 JSON，内容为 `{"code":501,"status":false,"message":"找不到API","data":null}`。这阻断了真实 CDN 原图的端到端验证；未修改域名、回源、缓存或 CDN 配置。
 - `RunningTime` 在服务端与浏览器取当前时间，秒数跨界时有既有水合警告；未修改该组件。
-- 当前环境缺少 `MEMOS_TOKEN`，构建及短记读取按照既有逻辑沿用内容快照；未修改令牌配置。
 - 默认 Turbopack 开发模式无法解码仓库现有 `favicon.ico`。本次使用与项目生产构建一致的 Webpack 模式验证；未修改图标。
 
 本次实现未修改 CDN 配置，未执行部署。工作区已有的运动快捷指令改动保持原样。

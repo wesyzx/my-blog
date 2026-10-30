@@ -10,7 +10,6 @@ export interface SiteNavItem {
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { label: '首页', href: '/', icon: 'orbit' },
   { label: '博文', href: '/posts', icon: 'post' },
-  { label: '短记', href: '/say', icon: 'say' },
   { label: '相册', href: '/gallery', icon: 'gallery' },
   { label: '美食', href: '/food', icon: 'food' },
   { label: '运动', href: '/workouts', icon: 'activity' },

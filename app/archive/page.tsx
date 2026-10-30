@@ -6,11 +6,9 @@ import { getAllSiteUpdates, type SiteUpdate } from '@/lib/site-updates'
 
 export const metadata = createPageMetadata({
   title: '归档',
-  description: '按年月收拢轨道之外留下的文章、短记、相册与美食记录。',
+  description: '按年月收拢轨道之外留下的文章、相册与美食记录。',
   path: '/archive',
 })
-
-export const dynamic = 'force-dynamic'
 
 function dateParts(value: string) {
   const date = new Date(value)

@@ -4,7 +4,6 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 const KIND_LABELS: Record<SiteUpdate['kind'], string> = {
   post: '博文',
-  say: '短记',
   gallery: '相册',
   food: '美食',
 }

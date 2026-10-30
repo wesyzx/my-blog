@@ -22,15 +22,8 @@ npm ci
 npm run dev
 ```
 
-开发与构建前会同步内容；内容源暂时不可用时沿用已提交的快照。短记页面在请求时读取 Memos，仅在请求失败时回退到快照。
-Memos 只展示明确标记为公开的短记；私密、登录可见和缺少可见性标记的记录不进入新快照。
-图片代理仅开放当前短记列表引用的常规图片，拒绝 HTML、SVG 和无引用附件。
-
-短记中文地址需要服务端的 `TMAP_SERVER_KEY`，地图底图使用浏览器端的 `NEXT_PUBLIC_TMAP_KEY`。
-这两个变量需分别在本地和部署环境配置；修改部署环境后重新部署，修改本地配置后重启服务。
-服务端 Key 应单独启用 WebService API，不配置浏览器域名白名单；浏览器 Key 仍保留域名限制。
-腾讯返回 `110` 表示域名授权失败，能看到地图不代表服务端地址解析已获授权。
-实时短记和回退快照均会补解析中文地址；失败请求退避 30 秒后可重试。
+开发与构建前会同步内容；内容源暂时不可用时沿用已提交的快照。
+美食地图使用浏览器端的 `NEXT_PUBLIC_TMAP_KEY`；修改部署环境后重新部署，修改本地配置后重启服务。
 
 ## 验证
 
@@ -84,7 +77,7 @@ npm run obsidian:preview
 
 仓库的 `content/source.json` 已将博文、美食和相册设为 Obsidian；`CONTENT_SOURCE` 可覆盖博文来源，
 `FOOD_CONTENT_SOURCE` 和 `GALLERY_CONTENT_SOURCE` 可分别覆盖美食与相册来源，留空使用仓库配置。
-三个板块全部使用 Obsidian 时，构建不再请求 Notion。短记继续使用 Memos。
+三个板块全部使用 Obsidian 时，构建不再请求 Notion。
 默认读取仓库内 `content/obsidian`，该目录只保存已批准发布的副本，不包含私人 Vault 或草稿。
 构建时只复制已发布文章实际引用到的附件到 `public/obsidian`，正文中的本地附件会改写成
 `/obsidian/attachments/...`。未发布的文章和未被引用的附件不会进入博客仓库。该目录会镜像同步：

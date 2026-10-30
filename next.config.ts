@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
       ],
     }]
   },
+  async redirects() {
+    return [{
+      source: '/say/:path*',
+      destination: '/archive',
+      permanent: true,
+    }]
+  },
   images: {
     // Match the Worker ladder: a 3840w descriptor must not point at 2400px
     // bytes, which makes browsers choose undersized previews on dense screens.

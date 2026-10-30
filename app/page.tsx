@@ -11,9 +11,6 @@ export const metadata = createPageMetadata({
   path: '/',
 })
 
-// 首页包含实时 Memos 短记，随请求更新。
-export const dynamic = 'force-dynamic'
-
 export default async function Home() {
   const updates = await getAllSiteUpdates()
   const latest = updates.slice(0, 16)

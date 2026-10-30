@@ -1,14 +1,13 @@
 import type { ReactNode, SVGProps } from 'react'
 
 export type IconName =
-  | 'orbit' | 'post' | 'say' | 'food' | 'gallery' | 'message' | 'about'
+  | 'orbit' | 'post' | 'food' | 'gallery' | 'message' | 'about'
   | 'sun' | 'moon' | 'menu' | 'close' | 'rss' | 'github' | 'mail' | 'x'
   | 'location' | 'calendar' | 'arrow-left' | 'arrow-right' | 'activity'
 
 const paths: Record<IconName, ReactNode> = {
   orbit: <><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4.5" transform="rotate(-28 12 12)"/><circle cx="19.2" cy="7.5" r="1.2" fill="currentColor" stroke="none"/></>,
   post: <><path d="M6 3.5h9l3 3V20.5H6z"/><path d="M15 3.5v3h3M9 11h6M9 15h5"/></>,
-  say: <><path d="M4 5.5h16v11H9l-4.5 3v-3H4z"/><path d="M8 9h8M8 12.5h5"/></>,
   food: <><path d="M7 3v7M4.5 3v4.5A2.5 2.5 0 0 0 7 10a2.5 2.5 0 0 0 2.5-2.5V3M7 10v11M15 3v18M15 3c3 1.2 4.5 4 4.5 7H15"/></>,
   gallery: <><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.3-4 3.2 3 2.8-2.5 2.7 3.5"/></>,
   message: <><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 3v-3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/><path d="M8 9h8M8 13h5"/></>,

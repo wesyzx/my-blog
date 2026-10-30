@@ -176,12 +176,6 @@ button { font: inherit; }
 [data-lightbox-trigger] { cursor: zoom-in; }
 [data-lightbox-trigger]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 [data-lightbox-trigger][aria-busy="true"] { cursor: progress; }
-.say-images { display: grid; gap: 8px; margin-top: 14px; }
-.say-images.count-1 { grid-template-columns: minmax(0, 420px); }
-.say-images.count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.say-images.count-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.say-images a { aspect-ratio: 1; overflow: hidden; background: var(--color-bg-surface); }
-.say-images img { width: 100%; height: 100%; object-fit: cover; }
 .artalk-container { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border-hairline); }
 .food-cover { position: relative; overflow: hidden; background: var(--color-bg-surface); }
 .food-cover img { object-fit: cover; transition: transform .45s ease, filter .45s ease; }
@@ -494,7 +488,6 @@ button { font: inherit; }
 /* 图片一律去边框、圆角 3px，不再压饱和度 */
 .food-cover,
 .article-cover,
-.say-images a,
 .about-avatar-wrap img,
 .flat-panel,
 .workout-map { border: 0; border-radius: 3px; }
@@ -593,8 +586,6 @@ button { font: inherit; }
 
 .stream-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .stream-meta > span { flex-shrink: 0; color: var(--color-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; }
-.stream-note-title { max-width: 640px; margin: 7px 0 0; color: var(--color-text-primary); font-size: 21px; font-weight: 300; line-height: 1.58; }
-.stream-note-title a:hover { color: var(--color-accent); }
 .home-stream .moment-grid { margin-top: 18px; }
 .stream-more { display: flex; justify-content: flex-end; padding: 24px 0; border-top: 1px solid var(--gray-a3); }
 .stream-more a { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; }
@@ -664,35 +655,6 @@ button { font: inherit; }
 .moment-count-2 .moment-photo { grid-column: span 6; aspect-ratio: 4 / 3; }
 .moment-count-3 .moment-photo { grid-column: span 4; aspect-ratio: 4 / 3; }
 
-/* 短记是个人随笔，不模拟社交网络时间线；日期、正文、图片直接构成条目。 */
-.note-item { padding: 20px 0 40px; }
-.note-item:first-child { padding-top: 0; }
-.note-item + .note-item { border-top: 1px solid var(--gray-a3); }
-.note-date-link { display: inline-flex; }
-.note-date-link:hover .item-time { color: var(--color-accent); }
-.note-content { margin-top: 8px; }
-.note-content-clickable { margin-right: -10px; margin-left: -10px; padding: 4px 10px; border-radius: 3px; cursor: pointer; transition: background-color .15s ease; }
-.note-content-clickable:hover { background: var(--color-bg-surface); }
-.note-content-clickable:active { background: var(--gray-a3); }
-.note-content .safe-markdown p {
-  color: var(--color-text-primary);
-  font-size: 20px;
-  font-weight: 300;
-  line-height: 1.58;
-}
-.note-content .safe-markdown p:last-child { margin-bottom: 0; }
-.note-item .say-images { margin-top: 20px; }
-.note-detail .note-content { margin-top: 14px; }
-.note-detail .note-content .safe-markdown p { font-size: 21px; line-height: 1.7; }
-.note-detail .say-images { margin-top: 28px; }
-.note-detail-header { margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--gray-a3); }
-.note-detail-header .page-kicker { margin-bottom: 7px; }
-.note-location { display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; color: var(--color-text-muted); font-size: 12px; }
-.note-location svg { width: 13px; height: 13px; }
-.note-location-block { margin-top: 24px; }
-.note-location-block .note-location { margin-top: 0; margin-bottom: 8px; }
-.note-map { width: 100%; height: 280px; margin-top: 10px; overflow: hidden; border-radius: 3px; background: var(--color-bg-surface); }
-
 /* 归档页按年与月分层，但条目继续沿用首页内容语法。 */
 .archive-activity { --activity-1: #a7bca3; --activity-2: #708d6c; --activity-3: #365b33; margin-bottom: 64px; padding-bottom: 32px; border-bottom: 1px solid var(--gray-a4); }
 [data-theme="dark"] .archive-activity { --activity-1: #4b6149; --activity-2: #728e6e; --activity-3: #abc5a6; }
@@ -757,9 +719,7 @@ button { font: inherit; }
   .home-stream .item-title,
   .home-stream .moment-title,
   .post-item .item-title { font-size: 21px; }
-  .stream-note-title { font-size: 18px; }
   .moment-title { font-size: 21px; }
-  .note-content .safe-markdown p { font-size: 17px; }
   .moment-photo,
   .moment-photo:nth-child(n + 5) { grid-column: span 6; aspect-ratio: 4 / 3; }
   .moment-count-1 .moment-photo { grid-column: 1 / -1; aspect-ratio: 4 / 3; }

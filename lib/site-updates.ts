@@ -2,11 +2,10 @@ import 'server-only'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems, type GalleryMeta } from '@/lib/gallery'
-import { getAllSays, getSaySummary } from '@/lib/say'
 
 export interface SiteUpdate {
   id: string
-  kind: 'post' | 'say' | 'gallery' | 'food'
+  kind: 'post' | 'gallery' | 'food'
   title: string
   detail?: string
   cover?: string
@@ -23,7 +22,7 @@ function dateValue(value: string) {
 export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
   const posts = getAllPosts()
   const gallery = getAllGalleryItems()
-  const [food, says] = await Promise.all([getAllFoodPosts(), getAllSays()])
+  const food = await getAllFoodPosts()
 
   return [
     ...posts.map((post): SiteUpdate => ({
@@ -34,14 +33,6 @@ export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
       cover: post.cover || undefined,
       date: post.date,
       href: `/posts/${encodeURIComponent(post.slug)}`,
-    })),
-    ...says.map((say): SiteUpdate => ({
-      id: `say-${say.slug}`,
-      kind: 'say',
-      title: getSaySummary(say.content),
-      cover: say.images?.[0] || say.image,
-      date: say.date,
-      href: `/say/${encodeURIComponent(say.slug)}`,
     })),
     ...gallery.map((album): SiteUpdate => ({
       id: `gallery-${album.slug}`,

@@ -15,7 +15,6 @@ test('the content builder preserves snapshots on source failure and reads the lo
     posts: [{ slug: 'saved-post' }],
     food: [],
     gallery: [],
-    says: [{ slug: 'saved-note', content: 'Saved note' }],
     about: 'Old about',
   }
   writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(existing)};`)
@@ -23,13 +22,14 @@ test('the content builder preserves snapshots on source failure and reads the lo
 
   execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
     cwd,
-    env: { ...process.env, NOTION_TOKEN: '', MEMOS_TOKEN: '', CONTENT_STRICT: '', MEMOS_STRICT: '' },
+    env: { ...process.env, NOTION_TOKEN: '', CONTENT_STRICT: '' },
     stdio: 'pipe',
     timeout: 10_000,
   })
   const output = readFileSync(path.join(cwd, 'lib/data-bundle.ts'), 'utf8')
   const bundle = JSON.parse(output.split('export const bundleData = ')[1].trim().replace(/;$/, ''))
-  for (const key of ['posts', 'food', 'gallery', 'says']) assert.deepEqual(bundle[key], existing[key])
+  for (const key of ['posts', 'food', 'gallery']) assert.deepEqual(bundle[key], existing[key])
+  assert.equal('says' in bundle, false)
   assert.equal(bundle.about, 'Local about\n')
   assert.ok(Number.isFinite(Date.parse(bundle.updatedAt)))
 })
@@ -45,7 +45,6 @@ test('the content builder falls back to the food and gallery snapshot when Notio
     posts: [{ slug: 'notion-post' }],
     food: [{ slug: 'saved-food' }],
     gallery: [{ slug: 'saved-gallery' }],
-    says: [],
     about: 'Old about',
   }
   writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(existing)};`)
@@ -70,9 +69,7 @@ test('the content builder falls back to the food and gallery snapshot when Notio
       CONTENT_SOURCE: 'obsidian',
       OBSIDIAN_BLOG_DIR: path.join(cwd, 'obsidian'),
       NOTION_TOKEN: '',
-      MEMOS_TOKEN: '',
       CONTENT_STRICT: '',
-      MEMOS_STRICT: '',
     },
     stdio: 'pipe',
     timeout: 10_000,
@@ -94,7 +91,7 @@ test('the Obsidian source refuses to erase existing posts unless explicitly allo
   mkdirSync(path.join(cwd, 'obsidian', 'posts'), { recursive: true })
   writeFileSync(
     path.join(cwd, 'lib/data-bundle.ts'),
-    `export const bundleData = ${JSON.stringify({ posts: [{ slug: 'saved' }], food: [], gallery: [], says: [], about: '' })};`,
+    `export const bundleData = ${JSON.stringify({ posts: [{ slug: 'saved' }], food: [], gallery: [], about: '' })};`,
   )
   writeFileSync(path.join(cwd, 'content/about.md'), 'About\n')
   assert.throws(() => execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
@@ -105,7 +102,6 @@ test('the Obsidian source refuses to erase existing posts unless explicitly allo
       OBSIDIAN_BLOG_DIR: path.join(cwd, 'obsidian'),
       CONTENT_ALLOW_EMPTY: '',
       NOTION_TOKEN: '',
-      MEMOS_TOKEN: '',
     },
     stdio: 'pipe',
     timeout: 10_000,
@@ -121,7 +117,7 @@ test('all three Obsidian sources build without contacting Notion and preserve co
   writeFileSync(path.join(cwd, 'content/source.json'), JSON.stringify({
     posts: 'obsidian', food: 'obsidian', gallery: 'obsidian',
   }))
-  const snapshot = { posts: [], food: [], gallery: [], says: [], about: '' }
+  const snapshot = { posts: [], food: [], gallery: [], about: '' }
   writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(snapshot)};`)
   for (const section of ['posts', 'food', 'gallery']) {
     mkdirSync(path.join(cwd, 'content/obsidian', section))
@@ -130,7 +126,7 @@ test('all three Obsidian sources build without contacting Notion and preserve co
   }
   const output = execFileSync(process.execPath, [fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
     cwd,
-    env: { ...process.env, NOTION_TOKEN: 'deliberately-invalid', CONTENT_STRICT: '1', MEMOS_TOKEN: '', CONTENT_SOURCE: '', MEMOS_STRICT: '' },
+    env: { ...process.env, NOTION_TOKEN: 'deliberately-invalid', CONTENT_STRICT: '1', CONTENT_SOURCE: '' },
     stdio: 'pipe', timeout: 10_000, encoding: 'utf8',
   })
   assert.equal(output.includes('Notion 同步失败'), false)
@@ -157,7 +153,7 @@ test('Obsidian R2 albums use source metadata and survive a metadata endpoint rol
     `---\npublished: true\nslug: album\ntitle: Album\ndate: 2026-10-23\nimages: [${src}]\n---\nBody\n`)
   for (const mode of ['info', 'legacy', 'offline']) {
     const gallery = mode === 'offline' ? [{ slug: 'album', images: [{ src, width: 777, height: 999 }] }] : []
-    writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify({ posts: [], food: [], gallery, says: [], about: '' })};`)
+    writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify({ posts: [], food: [], gallery, about: '' })};`)
     const probe = path.join(cwd, 'fetch-probe.mjs')
     writeFileSync(probe, `
       import assert from 'node:assert/strict'
@@ -180,7 +176,7 @@ test('Obsidian R2 albums use source metadata and survive a metadata endpoint rol
       }
     `)
     execFileSync(process.execPath, ['--import', probe, fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
-      cwd, env: { ...process.env, NOTION_TOKEN: '', MEMOS_TOKEN: '', CONTENT_SOURCE: '', CONTENT_ALLOW_EMPTY: '1', OBSIDIAN_BLOG_DIR: path.join(cwd, 'content/obsidian') },
+      cwd, env: { ...process.env, NOTION_TOKEN: '', CONTENT_SOURCE: '', CONTENT_ALLOW_EMPTY: '1', OBSIDIAN_BLOG_DIR: path.join(cwd, 'content/obsidian') },
       stdio: 'pipe', timeout: 10_000,
     })
     const output = readFileSync(path.join(cwd, 'lib/data-bundle.ts'), 'utf8')

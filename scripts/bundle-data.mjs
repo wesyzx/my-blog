@@ -394,7 +394,8 @@ async function buildBundle() {
     })
     for (const section of obsidianSections) {
       const previous = section === 'gallery' ? existing.gallery?.filter((album) => album.source !== 'r2') : existing[section]
-      if (!local[section].length && previous?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
+      const hybridGalleryCanUseR2 = section === 'gallery' && CONTENT_SOURCES.gallery === 'hybrid'
+      if (!local[section].length && previous?.length && !hybridGalleryCanUseR2 && process.env.CONTENT_ALLOW_EMPTY !== '1') {
         throw new Error(`Obsidian ${section} 发布区没有已发布文章或条目。若确实要清空，请设置 CONTENT_ALLOW_EMPTY=1`)
       }
       selected[section] = local[section]

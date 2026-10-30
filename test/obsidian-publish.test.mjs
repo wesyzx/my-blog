@@ -115,6 +115,31 @@ test('an empty section retains its public copy while other sections continue upd
   assert.equal(f.git(['status', '--porcelain']), '')
 })
 
+test('an empty local gallery is removed when the repository uses R2 as its gallery source', (t) => {
+  const f = fixture(t)
+  mkdirSync(path.join(f.repo, 'content'), { recursive: true })
+  writeFileSync(path.join(f.repo, 'content/source.json'), JSON.stringify({
+    posts: 'obsidian', food: 'obsidian', gallery: 'hybrid',
+  }))
+  f.git(['add', 'content/source.json'])
+  f.git(['commit', '-m', 'configure gallery source'])
+  f.git(['push', 'origin', 'main'])
+
+  mkdirSync(path.join(f.source, 'gallery'))
+  writeFileSync(path.join(f.source, 'gallery/old.md'),
+    '---\npublished: true\ntitle: Old gallery\nslug: old-gallery\ndate: 2026-10-19\nimages: []\n---\n')
+  f.publish()
+  assert.ok(readFileSync(path.join(f.repo, 'content/obsidian/gallery/old.md'), 'utf8').includes('Old gallery'))
+
+  rmSync(path.join(f.source, 'gallery/old.md'))
+  f.publish()
+  assert.equal(f.git(['ls-tree', '-r', '--name-only', 'HEAD', 'content/obsidian/gallery']), '')
+  const report = JSON.parse(readFileSync(path.join(f.repo, '.tmp/publication-result.json')))
+  assert.deepEqual(report.held_sections, [])
+  assert.deepEqual(report.effective_counts, { posts: 1, food: 0, gallery: 0 })
+  assert.equal(f.git(['status', '--porcelain']), '')
+})
+
 function developerClone(f) {
   const other = path.join(f.root, 'developer')
   execFileSync('git', ['clone', '--branch', 'main', f.remote, other], { stdio: 'pipe' })

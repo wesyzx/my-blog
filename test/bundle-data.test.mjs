@@ -279,6 +279,26 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
   assert.deepEqual(r2Only.gallery.map((album) => album.slug), ['only'])
 })
 
+test('a hybrid gallery can remove its local albums while R2 remains the published source', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-hybrid-empty-gallery-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  prepareGalleryBundle(cwd, 'hybrid')
+  writeFileSync(path.join(cwd, 'lib/data-bundle.ts'),
+    `export const bundleData = ${JSON.stringify({
+      posts: [],
+      food: [],
+      gallery: [{ slug: 'legacy-local', title: 'Legacy local', source: undefined }],
+      about: '',
+    })};`)
+  const validImage = 'https://img.215320.xyz/webp/blog/obsidian/gallery/2026/10/album/001-aabbccddeeff.webp'
+  const bundle = runGalleryBundle(cwd, `return Response.json({ albums: [{
+    id: 'remote-only', slug: 'remote-only', title: 'Remote only', date: '2026-10-30',
+    images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
+  }] })`, { CONTENT_ALLOW_EMPTY: '' })
+  assert.deepEqual(bundle.gallery.map((album) => album.slug), ['remote-only'])
+  assert.equal(bundle.gallery[0].source, 'r2')
+})
+
 test('invalid gallery manifests stop publication; explicitly allowed previews may use a stale snapshot', (t) => {
   const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-gallery-fallback-'))
   t.after(() => rmSync(cwd, { recursive: true, force: true }))

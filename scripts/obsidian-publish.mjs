@@ -90,6 +90,18 @@ async function repositoryStatus() {
   return changedPaths
 }
 
+async function galleryCanBecomeEmpty() {
+  const configured = process.env.GALLERY_CONTENT_SOURCE?.trim().toLowerCase()
+  if (configured) return configured === 'r2' || configured === 'hybrid'
+  try {
+    const source = JSON.parse(await fs.readFile(path.join(REPO_ROOT, 'content/source.json'), 'utf8'))
+    return source.gallery === 'r2' || source.gallery === 'hybrid'
+  } catch (error) {
+    if (error.code === 'ENOENT') return false
+    throw error
+  }
+}
+
 function assertOnlyPublishPathsChanged(lines) {
   const unexpected = lines.filter((changedPath) => {
     return changedPath !== 'content/obsidian' && !changedPath.startsWith('content/obsidian/')
@@ -109,12 +121,14 @@ async function stagePublish(source) {
     throw new Error('The Vault Blog directory has no published content; refusing to erase the published copy')
   }
   const heldSections = []
+  const canClearGallery = await galleryCanBecomeEmpty()
   for (const section of ['posts', 'food', 'gallery']) {
     const previous = await fs.readdir(path.join(DESTINATION_ROOT, section)).catch((error) => {
       if (error.code === 'ENOENT') return []
       throw error
     })
-    if (!content[section].length && previous.some((file) => file.endsWith('.md'))) {
+    if (!content[section].length && previous.some((file) => file.endsWith('.md'))
+      && !(section === 'gallery' && canClearGallery)) {
       const saved = await loadObsidianContent({ blogRoot: DESTINATION_ROOT, sections: [section] })
       if (!saved[section].length) throw new Error(`Cannot preserve the existing ${section} publication`)
       content[section] = saved[section]

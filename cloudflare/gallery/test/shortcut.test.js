@@ -19,7 +19,7 @@ function parseWorkflow(path) {
   return JSON.parse(result.stdout)
 }
 
-test('the public album shortcut reads one Photos album, converts to JPEG and publishes it', (t) => {
+test('the public gallery shortcut selects photos, converts to JPEG and publishes them', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'gallery-shortcut-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const result = spawnSync('python3', [builder, '--output-dir', directory], {
@@ -33,19 +33,23 @@ test('the public album shortcut reads one Photos album, converts to JPEG and pub
   const ids = actions.map((entry) => entry.WFWorkflowActionIdentifier)
 
   assert.equal(workflow.WFWorkflowName, '相册同步到博客')
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 3)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 2)
   assert.ok(actions[0].WFWorkflowActionParameters.WFCommentActionText.includes('照片'))
   assert.equal(statSync(path).mode & 0o777, 0o600)
 
+  const selectPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.selectphoto')
+  assert.equal(selectPhotos.WFWorkflowActionParameters.WFSelectMultiplePhotos, true)
+
   const findPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.filter.photos')
   const params = findPhotos.WFWorkflowActionParameters
+  assert.equal(params.WFInput.Value.OutputName, 'Photos')
   assert.equal(params.WFContentItemSortProperty, 'Date Taken')
   assert.equal(params.WFContentItemSortOrder, 'Oldest First')
   assert.equal(params.WFContentItemLimitEnabled, true)
   assert.equal(params.WFContentItemLimitNumber, 100)
-  assert.equal(params.WFContentItemFilter.Value.WFActionParameterFilterTemplates[0].Property, 'Album')
+  assert.equal(params.WFContentItemFilter.Value.WFActionParameterFilterTemplates.length, 1)
   assert.equal(
-    params.WFContentItemFilter.Value.WFActionParameterFilterTemplates[1].Values.Enumeration.Value,
+    params.WFContentItemFilter.Value.WFActionParameterFilterTemplates[0].Values.Enumeration.Value,
     'Image',
   )
 

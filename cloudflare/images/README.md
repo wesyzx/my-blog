@@ -14,9 +14,9 @@ transformation URL also failed to return WebP for this zone, while image resizin
 was active. A dedicated Worker avoids weakening the existing CDN cache and gives
 the blog an explicit WebP URL contract.
 
-The Worker uses the `/webp/*` route on the existing Cloudflare-owned image origin.
-This leaves the origin's original object paths untouched while allowing the
-EdgeOne-backed `img.guanyan.me/webp/*` address to be tested separately.
+The Worker uses `img.215320.xyz/*`, including `/webp/*`, authenticated gallery
+operations, and explicit redirects/aliases for archived public images.
+The EdgeOne-backed `img.guanyan.me/webp/*` address uses the same image service.
 
 ## Request contract
 
@@ -83,20 +83,32 @@ Quality is part of the preset contract: 75 for tiles and cards, 82 for `full`.
 
 All `/internal/gallery/*` requests require
 `Authorization: Bearer $GALLERY_UPLOAD_TOKEN`. The Worker route must therefore
-cover both:
+cover:
 
 ```text
-img.215320.xyz/webp/*
-img.215320.xyz/internal/gallery/*
+img.215320.xyz/*
 ```
 
-Album records stay under the private R2 prefix `internal/gallery/albums/`.
-Photos retain their uploaded bytes under
-`blog/obsidian/gallery/{year}/{month}/{slug}/`; `.webp` is a public view generated
+Album records stay in the private `blog-system` bucket under
+`internal/gallery/albums/`. The `blog-images` bucket contains image originals
+from both Obsidian and iPhone under `blog/obsidian/{year}/{month}/`; gallery
+filenames include the album ID and photo order, independently of the public slug.
+`.webp` is a public view generated
 at request time. The API allows 100 photos per album and 20 MiB per photo, the
 Images binding's documented input limit. The iPhone Shortcut converts HEIC to
 JPEG first. The Worker also accepts `image/heic` and `image/heif` for Enterprise
 Cloudflare Images plans that can decode them.
+
+Album creation accepts an optional `slug` of up to 64 lowercase ASCII letters,
+numbers and separating hyphens. English titles provide a default; other titles
+default to `album`, with sequential suffixes for collisions. Public URLs do not
+include a date or UUID. Historical `aliases` redirect to the canonical album URL.
+
+`blog-archive` stores the migrated `cdn` and literal `{year}` prefixes under
+`legacy/`. Neither new bucket has a public domain. Exact image aliases in
+`blog-system/image-aliases.json` preserve previously shared image links; database,
+lock and metadata objects are not exposed. The one-time migration verifies
+destination hashes before removing original objects.
 
 Legacy links (`/webp/blog/obsidian/...`) keep working. The old Next.js loader
 appends `?imageMogr2/thumbnail/{w}x/quality/{q}/format/webp`; the Worker parses

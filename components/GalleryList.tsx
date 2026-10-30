@@ -4,7 +4,7 @@ import PageHeader from './PageHeader'
 
 export default function GalleryList({ albums }: { albums: GalleryMeta[] }) {
   return (
-    <div className="page-shell animate-fade-up">
+    <div className="page-shell gallery-page animate-fade-up">
       <PageHeader title="相册" />
 
       {albums.length === 0 ? (

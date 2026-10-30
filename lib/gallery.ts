@@ -7,6 +7,7 @@ import { decodeRouteSlug } from './slug'
 
 export interface GalleryMeta {
   slug: string
+  aliases?: string[]
   title: string
   date: string
   category: string // 旅游 / 美食 / 日常 / 摄影
@@ -32,5 +33,5 @@ export function getAllGalleryItems(): GalleryMeta[] {
  */
 export function getGalleryBySlug(slug: string): GalleryItem | null {
   const decodedSlug = decodeRouteSlug(slug)
-  return (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug) || null;
+  return (bundleData.gallery as GalleryItem[]).find(i => i.slug === decodedSlug || i.aliases?.includes(decodedSlug)) || null;
 }

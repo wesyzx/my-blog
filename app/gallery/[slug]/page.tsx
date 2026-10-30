@@ -1,11 +1,11 @@
 import { getGalleryBySlug, getAllGalleryItems } from '@/lib/gallery'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 import GalleryDetail from '@/components/GalleryDetail'
 import { createPageMetadata } from '@/lib/metadata'
 
 export async function generateStaticParams() {
   const items = getAllGalleryItems()
-  return items.map((item) => ({ slug: item.slug }))
+  return items.flatMap((item) => [item.slug, ...(item.aliases || [])].map((slug) => ({ slug })))
 }
 
 export async function generateMetadata({
@@ -32,6 +32,7 @@ export default async function GalleryDetailPage({
   const { slug } = await params
   const album = getGalleryBySlug(slug)
   if (!album) notFound()
+  if (decodeURIComponent(slug) !== album.slug) permanentRedirect(`/gallery/${encodeURIComponent(album.slug)}`)
 
   return <GalleryDetail album={album} />
 }

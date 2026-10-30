@@ -48,6 +48,20 @@ test('rounds widths onto the fixed ladder and reserves 3840 for full', () => {
   assert.throws(() => blogImageUrl(legacy, { width: Number.NaN }), RangeError)
 })
 
+test('routes historical raw Obsidian image links through the versioned service', () => {
+  for (const extension of ['jpg', 'jpeg', 'png', 'webp']) {
+    const source = `https://img.guanyan.me/blog/obsidian/2026/10/older-photo.${extension}`
+    assert.equal(isBlogImage(source), true)
+    assert.equal(
+      blogImageUrl(source, { preset: 'fit', width: 750 }),
+      'https://img.guanyan.me/webp/v2/fit/750/center/blog/obsidian/2026/10/older-photo.webp',
+    )
+    assert.equal(blogImageUrl(`${source}?sign=private`), `${source}?sign=private`)
+  }
+  const unsafe = 'https://img.guanyan.me/blog/obsidian/2026/%2e%2e/private.jpg'
+  assert.equal(isBlogImage(unsafe), false)
+})
+
 test('fit and full ignore focus; crop presets honour auto and explicit focus', () => {
   const scoped = 'https://img.guanyan.me/webp/blog/obsidian/2026/10/photo.webp?focus=top'
   assert.equal(blogImageUrl(scoped, { preset: 'fit' }), 'https://img.guanyan.me/webp/v2/fit/2400/center/blog/obsidian/2026/10/photo.webp')

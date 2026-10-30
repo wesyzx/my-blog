@@ -171,7 +171,7 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
     const manifest = await response.json()
     if (!Array.isArray(manifest?.albums)) throw new Error('相册清单缺少 albums')
     const used = new Set(reservedSlugs)
-    return manifest.albums.slice(0, 1000).flatMap((album) => {
+    const albums = manifest.albums.slice(0, 1000).flatMap((album) => {
       if (!album || typeof album.title !== 'string' || !Array.isArray(album.images)) return []
       const images = album.images.slice(0, 100).flatMap((image) => {
         if (!isBlogImage(image?.src)) return []
@@ -189,6 +189,9 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
       const slug = uniqueSlug(album.slug, title, album.id || `${albumDate}-${title}`, used)
       return [{
         slug,
+        aliases: Array.isArray(album.aliases) ? [...new Set(album.aliases.filter((alias) =>
+          typeof alias === 'string' && alias.trim() && alias.length <= 160 && alias !== slug
+          && !/[\\/?#%\u0000-\u001f]/.test(alias) && !reservedSlugs.has(alias)))] : [],
         title,
         date: albumDate,
         category: cleanText(album.category, 40) || '日常',
@@ -200,6 +203,15 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
         source: 'r2',
       }]
     }).sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
+    const occupiedRoutes = new Set([...reservedSlugs, ...albums.map((album) => album.slug)])
+    for (const album of albums) {
+      album.aliases = album.aliases.filter((alias) => {
+        if (occupiedRoutes.has(alias)) return false
+        occupiedRoutes.add(alias)
+        return true
+      })
+    }
+    return albums
   } catch (error) {
     console.warn(`  R2 gallery manifest unavailable; using the previous shortcut albums: ${error.message}`)
     return (existing.gallery || [])

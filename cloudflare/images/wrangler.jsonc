@@ -6,11 +6,7 @@
   "preview_urls": false,
   "routes": [
     {
-      "pattern": "img.215320.xyz/webp/*",
-      "zone_name": "215320.xyz"
-    },
-    {
-      "pattern": "img.215320.xyz/internal/gallery/*",
+      "pattern": "img.215320.xyz/*",
       "zone_name": "215320.xyz"
     }
   ],
@@ -24,6 +20,14 @@
     {
       "binding": "IMAGES_BUCKET",
       "bucket_name": "blog-images"
+    },
+    {
+      "binding": "METADATA_BUCKET",
+      "bucket_name": "blog-system"
+    },
+    {
+      "binding": "ARCHIVE_BUCKET",
+      "bucket_name": "blog-archive"
     }
   ],
   "images": {

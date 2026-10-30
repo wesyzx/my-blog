@@ -1,7 +1,7 @@
 # iPhone 相簿同步到博客
 
 公开快捷指令 [`相册同步到博客.shortcut`](./shortcuts/相册同步到博客.shortcut)
-打开系统照片选择器，把手动选中的静态图片按拍摄时间从旧到新上传到博客相册，
+打开系统照片选择器，把手动选中的静态图片直接上传到博客相册，
 最后发布并触发 EdgeOne 构建。
 
 ## 日常用法
@@ -9,7 +9,8 @@
 1. 运行“相册同步到博客”。
 2. 在系统照片选择器中勾选准备公开的照片。需要从某个相簿中挑选时，点选择器底部
    的“相簿”，先进入该相簿再选择；共享相簿不用于发布。
-3. 输入博客相册标题。公开版还会询问上传令牌；个人版已内置令牌。
+3. 输入博客相册标题和英文链接短名，例如 `tuotuo-first-month`。短名留空时自动命名；
+   中文标题默认使用 `album`、`album-2` 等。公开版还会询问上传令牌；个人版已内置令牌。
 4. 等快捷指令完成。它会显示发布响应，并打开新相册的网址。
 
 快捷指令每张图片都会先转成 JPEG。这样普通 Cloudflare Images 方案也能处理 iPhone
@@ -31,9 +32,13 @@ pnpm dlx wrangler@latest deploy --config cloudflare/images/wrangler.jsonc
 ```
 
 `GALLERY_UPLOAD_TOKEN` 应是至少 32 字节的随机值，不能写进仓库或公开快捷指令。
-`EDGEONE_DEPLOY_WEBHOOK` 使用 EdgeOne 项目的部署 webhook。Worker 路由必须覆盖
-`img.215320.xyz/webp/*` 和 `img.215320.xyz/internal/gallery/*`；认证由 bearer token
-负责。
+`EDGEONE_DEPLOY_WEBHOOK` 使用 EdgeOne 项目的部署 webhook。Worker 路由覆盖
+`img.215320.xyz/*`；相册写入接口认证由 bearer token 负责。部署前创建
+`blog-images`、`blog-system`、`blog-archive` 三个 R2 桶，后两者保持私有。
+
+Obsidian 和 iPhone 原图统一放在 `blog-images/blog/obsidian/年/月/`；
+相册记录放在 `blog-system`，历史杂项放在 `blog-archive`。保留 Obsidian 自动上传
+与替换链接的现有设置；不要把目录占位符直接填入不支持模板的上传路径字段。
 
 部署 Worker 后再部署博客。博客构建从
 `https://img.215320.xyz/webp/gallery-manifest` 读取公开清单；清单不可用时沿用上一版

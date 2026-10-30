@@ -67,7 +67,7 @@ def empty_dictionary():
     return dictionary([])
 
 
-def build(personal_token=None):
+def build(personal_token=None, workflow_name='相册同步到博客'):
     actions = []
 
     def action(identifier_name, **params):
@@ -80,7 +80,7 @@ def build(personal_token=None):
         return identifier
 
     action('comment', WFCommentActionText=(
-        '打开照片选择器，手动选择要公开的照片，按拍摄时间从旧到新最多上传 100 张，'
+        '打开照片选择器，手动选择要公开的静态照片并直接上传选中的项目，'
         '创建博客相册并触发网站部署。\n'
         '可以在选择器底部打开“相簿”，先进入指定相簿再挑选照片。'
         '本指令不会创建或修改 iCloud 共享相簿。'))
@@ -101,6 +101,12 @@ def build(personal_token=None):
         'ask',
         CustomOutputName='Gallery Title',
         WFAskActionPrompt='输入博客相册标题（例如：十月散步）',
+        WFInputType='Text',
+    )
+    album_slug_id = action(
+        'ask',
+        CustomOutputName='Gallery Link',
+        WFAskActionPrompt='相册链接短名（英文，例如 tuotuo-first-month；留空自动命名）',
         WFInputType='Text',
     )
     token_id = action(
@@ -125,6 +131,7 @@ def build(personal_token=None):
     ])
     create_body = dictionary([
         ('title', text('', output(album_title_id, 'Gallery Title')), 0),
+        ('slug', text('', output(album_slug_id, 'Gallery Link')), 0),
         ('date', text('', output(formatted_date_id, 'Formatted Date')), 0),
     ])
     create_id = action(
@@ -147,42 +154,9 @@ def build(personal_token=None):
     )
 
     action('comment', WFCommentActionText=(
-        '“查找照片”只保留刚在照片选择器中选中的静态图片，排除视频，'
-        '按拍摄日期从旧到新排序，最多 100 张。'))
-    photo_filter = {
-        'Value': {
-            'WFActionParameterFilterPrefix': 1,
-            'WFContentPredicateBoundedDate': False,
-            'WFActionParameterFilterTemplates': [
-                {
-                    'Operator': 4,
-                    'Property': 'Media Type',
-                    'Removable': True,
-                    'Values': {
-                        'Enumeration': {
-                            'Value': 'Image',
-                            'WFSerializationType': 'WFStringSubstitutableState',
-                        },
-                        'Unit': 4,
-                    },
-                },
-            ],
-        },
-        'WFSerializationType': 'WFContentPredicateTableTemplate',
-    }
-    photos_id = action(
-        'filter.photos',
-        WFInput=attachment(output(selected_photos_id, 'Photos')),
-        WFContentItemFilter=photo_filter,
-        WFContentItemSortProperty='Date Taken',
-        WFContentItemSortOrder='Oldest First',
-        WFContentItemLimitEnabled=True,
-        WFContentItemLimitNumber=100,
-    )
-
-    action('comment', WFCommentActionText=(
+        '直接读取照片选择器返回的项目，避免再次扫描整个照片图库。\n'
         '逐张转换并上传刚选择并确认的照片；单张失败时整个快捷指令停止。\n'
-        '- “重复”读取“查找照片”的结果。\n'
+        '- “重复”读取“选择照片”的结果。\n'
         '- “转换图像”读取“重复项目”。\n'
         '- “获取 URL 内容”以“转换后的图像”作为文件正文。'))
     group = uid()
@@ -190,7 +164,7 @@ def build(personal_token=None):
         'repeat.each',
         GroupingIdentifier=group,
         WFControlFlowMode=0,
-        WFInput=attachment(output(photos_id, 'Photos')),
+        WFInput=attachment(output(selected_photos_id, 'Photos')),
     )
     converted_id = action(
         'image.convert',
@@ -262,7 +236,7 @@ def build(personal_token=None):
         'WFWorkflowMinimumClientVersionString': '900',
         'WFWorkflowOutputContentItemClasses': [],
         'WFWorkflowTypes': ['WFWorkflowTypeShowInSearch'],
-        'WFWorkflowName': '相册同步到博客',
+        'WFWorkflowName': workflow_name,
     }
     if personal_token:
         token_ids = set()
@@ -324,6 +298,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--personal', action='store_true', help='Inline an upload token in a private build')
     parser.add_argument('--output-dir', help='Output directory; personal builds are restricted to /private/tmp')
+    parser.add_argument('--name', default='相册同步到博客', help='Shortcut name shown in the Shortcuts app')
     options = parser.parse_args()
 
     token = None
@@ -336,7 +311,11 @@ def main():
     else:
         output_dir = options.output_dir or '/private/tmp/gallery-shortcut-build'
 
-    target = save(build(personal_token=token), output_dir, personal=options.personal)
+    target = save(
+        build(personal_token=token, workflow_name=options.name),
+        output_dir,
+        personal=options.personal,
+    )
     print(target)
 
 

@@ -239,6 +239,7 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
   const bundle = runGalleryBundle(cwd, `return Response.json({ albums: [
     {
       id: 'remote-one', slug: 'remote', title: 'Remote Album', date: '2026-10-30',
+      aliases: ['2026-10-30-旧相册-12345678', 'obsidian', 'R2-capture', '../secret', '', '   '],
       category: '旅行', excerpt: 'Remote', images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
     },
     {
@@ -254,6 +255,7 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
     'remote', 'R2-capture', 'obsidian',
   ])
   assert.equal(bundle.gallery[0].source, 'r2')
+  assert.deepEqual(bundle.gallery[0].aliases, ['2026-10-30-旧相册-12345678'])
   assert.deepEqual(bundle.gallery[1].images[0], {
     src: validImage.replace('001-aabbccddeeff', '002-aabbccddeeff'),
     width: 3024,

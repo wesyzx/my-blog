@@ -170,7 +170,6 @@ test('rejects missing images and traversal paths before R2 access', async (t) =>
   const { env, calls } = environment(t)
   assert.equal((await worker.fetch(imageRequest('/webp/blog/obsidian/2026/10/missing.webp'), env)).status, 404)
   assert.equal((await worker.fetch(imageRequest('/webp/blog/%2e%2e/private.webp'), env)).status, 404)
-  assert.equal((await worker.fetch(imageRequest('/blog/obsidian/2026/10/photo.jpg'), env)).status, 404)
   assert.equal(calls.filter((call) => call.type === 'get').length, 8)
   assert.deepEqual(calls.slice(0, 8).map((call) => call.key), [
     'blog/obsidian/2026/10/missing.webp',
@@ -190,6 +189,17 @@ test('only exposes GET, HEAD and health requests', async (t) => {
   assert.equal((await worker.fetch(imageRequest('/unexpected.jpg'), env)).status, 404)
   const health = await worker.fetch(new Request('https://images.example/health'), env)
   assert.deepEqual(await health.json(), { ok: true, formats: ['webp'] })
+})
+
+test('preserves raw Obsidian image links without exposing other bucket prefixes', async (t) => {
+  const { env } = environment(t)
+  const rawPath = new URL(imageRequest().url).pathname.replace('/webp/', '/').replace(/\.webp$/, '.jpg')
+  const response = await worker.fetch(imageRequest(rawPath), env)
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'image/jpeg')
+  assert.deepEqual(new Uint8Array(await response.arrayBuffer()), ORIGINAL)
+  assert.equal((await worker.fetch(imageRequest('/blog/%2e%2e/private.jpg'), env)).status, 404)
+  assert.equal((await worker.fetch(imageRequest('/internal/private.jpg'), env)).status, 404)
 })
 
 test('redirects conversion failures to original bytes without poisoning the variant cache', async (t) => {
@@ -449,7 +459,7 @@ test('creates, uploads, deduplicates and publishes a gallery album', async (t) =
   assert.equal(created.status, 200)
   const album = await created.json()
   assert.match(album.albumId, /^[a-f0-9-]{36}$/)
-  assert.equal(album.slug, '2026-10-30-秋日散步')
+  assert.equal(album.slug, 'album')
 
   const first = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
     body: ORIGINAL,
@@ -464,7 +474,7 @@ test('creates, uploads, deduplicates and publishes a gallery album', async (t) =
     height: 3024,
     order: 0,
   })
-  assert.match(uploaded.image.src, /\/gallery\/2026\/10\/2026-10-30-秋日散步\/001-[a-f0-9]{12}\.webp$/)
+  assert.match(uploaded.image.src, /\/blog\/obsidian\/2026\/10\/2026-10-30-[a-f0-9-]{36}-001\.webp$/)
 
   const duplicate = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
     body: ORIGINAL,
@@ -600,7 +610,7 @@ test('gallery makes duplicate album slugs unique and manifest pagination complet
     created.push(await response.json())
   }
   assert.notEqual(created[0].slug, created[1].slug)
-  assert.match(created[1].slug, /-[a-f0-9]{8}$/)
+  assert.equal(created[1].slug, 'album-2')
 
   for (const album of created) {
     const photo = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
@@ -611,4 +621,52 @@ test('gallery makes duplicate album slugs unique and manifest pagination complet
   }
   const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), env)
   assert.equal((await manifest.json()).albums.length, 2)
+})
+
+test('gallery stores metadata separately and reserves readable links and historical aliases', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const metadata = new Map()
+  gallery.env.METADATA_BUCKET = {
+    async get(key) { return metadata.has(key) ? { body: metadata.get(key) } : null },
+    async put(key, body) { metadata.set(key, body) },
+    async list() { return { objects: [...metadata.keys()].map((key) => ({ key })) } },
+  }
+  const create = (slug) => worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '满月', slug }), contentType: 'application/json',
+  }), gallery.env)
+  assert.equal((await create('../private')).status, 400)
+  assert.equal((await create('满月')).status, 400)
+  const first = await (await create('tuotuo-first-month')).json()
+  const key = `internal/gallery/albums/${first.albumId}.json`
+  const record = JSON.parse(metadata.get(key))
+  record.aliases = ['first-month']
+  metadata.set(key, JSON.stringify(record))
+  assert.equal((await (await create('tuotuo-first-month')).json()).slug, 'tuotuo-first-month-2')
+  assert.equal((await (await create('first-month')).json()).slug, 'first-month-2')
+  assert.equal(gallery.objects.size, 0)
+  assert.equal(metadata.size, 3)
+})
+
+test('migrated photo aliases serve the original bytes and archive metadata remains private', async (t) => {
+  const { env } = environment(t)
+  const oldKey = 'blog/obsidian/gallery/2026/10/old/001.jpg'
+  env.METADATA_BUCKET = { async get(key) {
+    if (key !== 'image-aliases.json') return null
+    return { body: JSON.stringify({ objects: {
+      [oldKey]: { bucket: 'images', key: 'blog/obsidian/2026/10/photo.jpg' },
+      'cdn/old.jpg': { bucket: 'archive', key: 'legacy/cdn/old.jpg' },
+    } }) }
+  } }
+  env.ARCHIVE_BUCKET = { async get(key) {
+    return key === 'legacy/cdn/old.jpg' ? object(ORIGINAL, 'application/octet-stream') : null
+  } }
+  const migrated = await worker.fetch(imageRequest('/webp/v2/original/' + oldKey), env)
+  assert.equal(migrated.status, 200)
+  assert.deepEqual(new Uint8Array(await migrated.arrayBuffer()), ORIGINAL)
+  const archived = await worker.fetch(imageRequest('/cdn/old.jpg'), env)
+  assert.equal(archived.status, 200)
+  assert.equal(archived.headers.get('content-type'), 'image/jpeg')
+  assert.equal((await worker.fetch(imageRequest('/cdn/.watermelon/months/2026-09.sqlite'), env)).status, 404)
+  assert.equal((await worker.fetch(imageRequest('/internal/gallery/albums/private.json'), env)).status, 404)
 })

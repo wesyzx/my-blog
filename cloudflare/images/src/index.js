@@ -80,20 +80,15 @@ function cleanDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : new Date().toISOString().slice(0, 10)
 }
 
-function albumSlug(title, date, id) {
-  const preferred = title.normalize('NFKC')
-    .replace(/[\/?#%\\]+/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 72)
-  return `${date}-${preferred || id.slice(0, 8)}`
+function uniqueAlbumSlug(title, requested, used) {
+  const preferred = requested || title.normalize('NFKD').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64).replace(/-+$/g, '') || 'album'
+  let slug = preferred
+  for (let suffix = 2; used.has(slug); suffix += 1) slug = `${preferred}-${suffix}`
+  return slug
 }
 
-function uniqueAlbumSlug(title, date, id, used) {
-  const preferred = albumSlug(title, date, id)
-  if (!used.has(preferred)) return preferred
-  return `${preferred}-${id.slice(0, 8)}`
-}
+function metadataBucket(env) { return env.METADATA_BUCKET || env.IMAGES_BUCKET }
 
 function sameSecret(actual, expected) {
   if (!actual || !expected || actual.length !== expected.length) return false
@@ -115,7 +110,7 @@ function albumKey(id) {
 }
 
 async function readAlbum(env, id) {
-  const object = await env.IMAGES_BUCKET.get(albumKey(id))
+  const object = await metadataBucket(env).get(albumKey(id))
   if (!object?.body) return null
   try {
     return JSON.parse(await new Response(object.body).text())
@@ -126,7 +121,7 @@ async function readAlbum(env, id) {
 
 async function writeAlbum(env, album) {
   album.updatedAt = new Date().toISOString()
-  await env.IMAGES_BUCKET.put(albumKey(album.id), JSON.stringify(album), {
+  await metadataBucket(env).put(albumKey(album.id), JSON.stringify(album), {
     httpMetadata: { contentType: 'application/json; charset=utf-8' },
   })
 }
@@ -135,7 +130,7 @@ async function listGalleryAlbums(env) {
   const entries = []
   let cursor
   do {
-    const page = await env.IMAGES_BUCKET.list({
+    const page = await metadataBucket(env).list({
       prefix: GALLERY_ALBUM_PREFIX,
       ...(cursor ? { cursor } : {}),
     })
@@ -161,16 +156,22 @@ async function createGalleryAlbum(request, env) {
 
   const title = cleanText(metadata?.title, 120)
   if (!title) return errorResponse(400, 'Album title is required')
+  const requestedSlug = cleanText(metadata?.slug, 80).toLowerCase()
+  if (requestedSlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedSlug)) {
+    return errorResponse(400, 'Use lowercase English words or numbers separated by hyphens for the album link')
+  }
+  if (requestedSlug.length > 64) return errorResponse(400, 'Album link is too long')
   const date = cleanDate(metadata?.date)
   const id = crypto.randomUUID()
   const used = new Set()
   for (const entry of await listGalleryAlbums(env)) {
     const existing = await readAlbum(env, entry.key.slice(GALLERY_ALBUM_PREFIX.length, -'.json'.length))
     if (existing?.slug) used.add(existing.slug)
+    for (const alias of existing?.aliases || []) used.add(alias)
   }
   const album = {
     id,
-    slug: uniqueAlbumSlug(title, date, id, used),
+    slug: uniqueAlbumSlug(title, requestedSlug, used),
     title,
     date,
     category: cleanText(metadata?.category, 40) || '日常',
@@ -229,7 +230,7 @@ async function uploadGalleryPhoto(request, env, id) {
   }[contentType]
   const [year, month] = album.date.split('-')
   const order = String(album.images.length + 1).padStart(3, '0')
-  const objectKey = `blog/obsidian/gallery/${year}/${month}/${album.slug}/${order}-${hash.slice(0, 12)}.${extension}`
+  const objectKey = `blog/obsidian/${year}/${month}/${album.date}-${album.id}-${order}.${extension}`
   await env.IMAGES_BUCKET.put(objectKey, buffer, {
     httpMetadata: { contentType },
   })
@@ -299,7 +300,7 @@ async function serveGalleryManifest(request, env) {
   }
   const albums = []
   for (const entry of await listGalleryAlbums(env)) {
-    const object = await env.IMAGES_BUCKET.get(entry.key)
+    const object = await metadataBucket(env).get(entry.key)
     if (!object?.body) continue
     try {
       const album = JSON.parse(await new Response(object.body).text())
@@ -309,6 +310,7 @@ async function serveGalleryManifest(request, env) {
       albums.push({
         id: album.id,
         slug: album.slug,
+        aliases: album.aliases || [],
         title: album.title,
         date: album.date,
         category: album.category || '日常',
@@ -472,7 +474,7 @@ async function convert(request, env, object, key, transform, quality, headers) {
 /** The stored object type, falling back to the requested extension. */
 function sourceContentType(object, key) {
   const stored = object.httpMetadata?.contentType
-  if (stored) return stored
+  if (stored && stored !== 'application/octet-stream') return stored
   const extension = key.slice(key.lastIndexOf('.')).toLowerCase()
   return {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
@@ -486,7 +488,39 @@ async function readObject(env, key) {
     const object = await env.IMAGES_BUCKET.get(candidate)
     if (object?.body) return { object, sourceKey: candidate }
   }
+  // Explicit migration aliases preserve links saved in old notes and cached pages.
+  const aliases = await readImageAliases(env)
+  for (const candidate of sourceKeys(key)) {
+    const target = aliases[candidate]
+    if (!target || target.bucket !== 'images' || !safeKey(target.key)) continue
+    const object = await env.IMAGES_BUCKET.get(target.key)
+    if (object?.body) return { object, sourceKey: target.key }
+  }
   return null
+}
+
+async function readImageAliases(env) {
+  if (!env.METADATA_BUCKET) return {}
+  const object = await env.METADATA_BUCKET.get('image-aliases.json')
+  return object?.body ? JSON.parse(await new Response(object.body).text()).objects || {} : {}
+}
+
+async function serveArchivedImage(request, env, url) {
+  if (!['GET', 'HEAD'].includes(request.method)) return errorResponse(405, 'Method not allowed')
+  // Older Obsidian notes used raw object URLs before the /webp route existed.
+  const originalKey = safeKey(url.pathname.slice(1))
+  if (originalKey) {
+    const source = await readObject(env, originalKey)
+    return source ? originalResponse(request, source.object, source.sourceKey) : errorResponse(404, 'Image not found')
+  }
+  let key
+  try { key = decodeURIComponent(url.pathname.slice(1)) } catch { return errorResponse(404, 'Image not found') }
+  if (!IMAGE_EXTENSION.test(key)) return errorResponse(404, 'Image not found')
+  const aliases = await readImageAliases(env)
+  const target = aliases[key]
+  if (!target || target.bucket !== 'archive' || !env.ARCHIVE_BUCKET) return errorResponse(404, 'Image not found')
+  const object = await env.ARCHIVE_BUCKET.get(target.key)
+  return object?.body ? originalResponse(request, object, target.key) : errorResponse(404, 'Image not found')
 }
 
 /** Cloudflare Images cannot decode SVG, so vectors are passed through as-is. */
@@ -667,7 +701,9 @@ const worker = {
           : await publishGalleryAlbum(request, env, id)
       }
 
-      return await serveImage(request, env, url)
+      return url.pathname.startsWith(PUBLIC_PREFIX)
+        ? await serveImage(request, env, url)
+        : await serveArchivedImage(request, env, url)
     } catch (error) {
       console.error(JSON.stringify({
         message: url.pathname.startsWith('/internal/gallery/')

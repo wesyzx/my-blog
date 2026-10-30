@@ -33,25 +33,15 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   const ids = actions.map((entry) => entry.WFWorkflowActionIdentifier)
 
   assert.equal(workflow.WFWorkflowName, '相册同步到博客')
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 2)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 3)
   assert.ok(actions[0].WFWorkflowActionParameters.WFCommentActionText.includes('照片'))
   assert.equal(statSync(path).mode & 0o777, 0o600)
 
   const selectPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.selectphoto')
   assert.equal(selectPhotos.WFWorkflowActionParameters.WFSelectMultiplePhotos, true)
 
-  const findPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.filter.photos')
-  const params = findPhotos.WFWorkflowActionParameters
-  assert.equal(params.WFInput.Value.OutputName, 'Photos')
-  assert.equal(params.WFContentItemSortProperty, 'Date Taken')
-  assert.equal(params.WFContentItemSortOrder, 'Oldest First')
-  assert.equal(params.WFContentItemLimitEnabled, true)
-  assert.equal(params.WFContentItemLimitNumber, 100)
-  assert.equal(params.WFContentItemFilter.Value.WFActionParameterFilterTemplates.length, 1)
-  assert.equal(
-    params.WFContentItemFilter.Value.WFActionParameterFilterTemplates[0].Values.Enumeration.Value,
-    'Image',
-  )
+  assert.equal(ids.includes('is.workflow.actions.filter.photos'), false)
+  assert.equal(ids.includes('is.workflow.actions.filter.images'), false)
 
   const convert = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.image.convert')
   assert.equal(convert.WFWorkflowActionParameters.WFImageFormat, 'JPEG')
@@ -63,7 +53,7 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   assert.equal(requests[0].WFWorkflowActionParameters.WFHTTPBodyType, 'JSON')
   const createKeys = requests[0].WFWorkflowActionParameters.WFJSONValues.Value.WFDictionaryFieldValueItems
     .map((item) => item.WFKey.Value.string)
-  assert.deepEqual(createKeys, ['title', 'date'])
+  assert.deepEqual(createKeys, ['title', 'slug', 'date'])
 
   const upload = requests[1].WFWorkflowActionParameters
   assert.match(upload.WFURL.Value.string, /^https:\/\/img\.215320\.xyz\/internal\/gallery\/albums\/.*\/photos$/)
@@ -92,6 +82,15 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
     && entry.WFWorkflowActionParameters.WFControlFlowMode === 2)
   assert.equal(repeatStarts.length, 1)
   assert.equal(repeatEnds.length, 1)
+  assert.equal(repeatStarts[0].WFWorkflowActionParameters.WFInput.Value.OutputName, 'Photos')
+  assert.equal(
+    repeatStarts[0].WFWorkflowActionParameters.WFInput.Value.OutputUUID,
+    selectPhotos.WFWorkflowActionParameters.UUID,
+  )
+  assert.deepEqual(convert.WFWorkflowActionParameters.WFInput.Value, {
+    Type: 'Variable',
+    VariableName: 'Repeat Item',
+  })
   assert.equal(
     repeatStarts[0].WFWorkflowActionParameters.GroupingIdentifier,
     repeatEnds[0].WFWorkflowActionParameters.GroupingIdentifier,

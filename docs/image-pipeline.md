@@ -76,7 +76,7 @@ Cloudflare Images 当前包含每月 5000 次唯一转换；相同原图与转�
 
 ## 上线顺序与验收
 
-1. 保留当前 Worker 部署版本作为回滚点，将 `cloudflare/images/` 独立部署；绑定现有 `blog-images` 桶和 Images，路由覆盖 `img.215320.xyz/webp/*` 与受 bearer token 保护的 `img.215320.xyz/internal/gallery/*`。
+1. 保留当前 Worker 部署版本作为回滚点，将 `cloudflare/images/` 独立部署；绑定 `blog-images` 原图桶、`blog-system` 私有相册记录桶、`blog-archive` 历史归档桶和 Images，路由覆盖 `img.215320.xyz/*`。相册写入接口继续受 bearer token 保护，旧原图及归档图片链接由 Worker 兼容读取。
 2. 直接请求 Cloudflare 域名，分别验证 `fit`、`landscape`、`full`、`info`、`original`，核对实际类型、文件头、宽高与内容；PNG 透明、竖图、小图、GIF 和 SVG 都应各取一个样本。
 3. 核对 EdgeOne 的回源域名与 Host 均为 `img.215320.xyz`，保留完整 `/webp/*` 路径；通过加速域名重复验证同一批链接。
 4. `/webp/*` 遵循源站 `Cache-Control`，回退重定向和错误响应不得强制缓存。新版 v2 固定 WebP，不再依赖 Vary；旧路径仍依赖 Accept 和查询串选择响应，必须保留查询串缓存键并核对 Vary，或绕过其缓存。新版博客使用 v2。

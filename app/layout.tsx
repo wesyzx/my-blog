@@ -3,7 +3,7 @@
  *
  * 所有页面都包裹在此布局中：
  *   <html> → <head>（主题防闪烁脚本） → <body>
- *     → <Header /> → <main>{children}</main> → <Footer />
+ *     → <Header /> → <SiteFrame>{children}</SiteFrame> → <Footer />
  *
  * 全局 SEO 元数据在此配置（标题、描述、OpenGraph），
  * 子页面可通过 generateMetadata 覆盖。
@@ -11,8 +11,7 @@
 import type { Metadata } from 'next'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
-import SiteSidebar from '@/components/SiteSidebar'
-import ThemeToggle from '@/components/ThemeToggle'
+import SiteFrame from '@/components/SiteFrame'
 import './globals.css'
 
 /**
@@ -72,16 +71,10 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeToggle />
         {/* 顶部导航栏 */}
         <Header />
 
-        <div className="site-frame">
-          <SiteSidebar />
-          <main className="site-content">
-            {children}
-          </main>
-        </div>
+        <SiteFrame>{children}</SiteFrame>
 
         {/* 底部版权信息栏 */}
         <Footer />

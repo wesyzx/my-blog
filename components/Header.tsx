@@ -59,12 +59,27 @@ export default function Header() {
 
   return (
     <>
-      <header className="site-header">
+      <header className={`site-header${pathname === '/' ? '' : ' site-header--interior'}`}>
         <div className="site-header-inner">
           <Link href="/" className="site-brand" aria-label="轨道之外首页">
             <Image src={AUTHOR_AVATAR} alt="" width={28} height={28} className="brand-avatar" unoptimized fetchPriority="high" />
             <span>轨道之外</span>
           </Link>
+
+          <nav className="desktop-nav" aria-label="顶部导航">
+            {SITE_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={isActive(item.href) ? 'active' : ''}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <ThemeToggle variant="header" />
 
           <button ref={menuButtonRef} type="button" className="mobile-menu-button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen} aria-controls="mobile-navigation" aria-label={menuOpen ? '关闭导航' : '打开导航'}>
             <Icon name={menuOpen ? 'close' : 'menu'} />

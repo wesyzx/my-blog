@@ -6,7 +6,7 @@ export interface SiteNavItem {
   icon: IconName
 }
 
-/** 桌面侧栏与移动菜单共用，避免两个端点出现不同的信息架构。 */
+/** 首页侧栏、内页顶栏与移动菜单共用同一套栏目。 */
 export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { label: '首页', href: '/', icon: 'orbit' },
   { label: '博文', href: '/posts', icon: 'post' },

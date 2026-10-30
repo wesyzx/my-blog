@@ -10,7 +10,7 @@ export default function MarkdownImage({ src, alt = '', ...props }: MarkdownImage
     preview = {
       src: blogImageUrl(src, { preset: 'fit' }),
       srcSet: BLOG_IMAGE_WIDTHS.map((width) => `${blogImageUrl(src, { preset: 'fit', width })} ${width}w`).join(', '),
-      sizes: props.sizes || '(max-width: 860px) calc(100vw - 40px), 680px',
+      sizes: props.sizes || '(max-width: 860px) calc(100vw - 40px), (max-width: 976px) calc(100vw - 48px), 880px',
     }
   } else if (typeof src === 'string' && URL.canParse(src, 'https://guanyan.me')) {
     const url = new URL(src, 'https://guanyan.me')
@@ -20,7 +20,7 @@ export default function MarkdownImage({ src, alt = '', ...props }: MarkdownImage
         alt,
         width: Number(props.width) || 1600,
         height: Number(props.height) || 1000,
-        sizes: props.sizes || '(max-width: 860px) calc(100vw - 40px), 680px',
+        sizes: props.sizes || '(max-width: 860px) calc(100vw - 40px), (max-width: 976px) calc(100vw - 48px), 880px',
       })
       preview = { src: optimized.src, srcSet: optimized.srcSet, sizes: optimized.sizes }
     }

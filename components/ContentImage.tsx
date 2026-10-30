@@ -6,10 +6,12 @@ export default function ContentImage({
   src,
   alt,
   fit = 'contain',
+  sizes = '(max-width: 720px) calc(100vw - 40px), 680px',
 }: {
   src: string
   alt: string
   fit?: 'contain' | 'cover'
+  sizes?: string
 }) {
   return (
     <ImageLightbox className={`content-image content-image-${fit}`}>
@@ -19,7 +21,7 @@ export default function ContentImage({
           src={src}
           alt={alt}
           fill
-          sizes="(max-width: 720px) calc(100vw - 40px), 680px"
+          sizes={sizes}
           unoptimized={process.env.NODE_ENV === 'development'}
           data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
         />

@@ -10,7 +10,7 @@ export default function PostCard({ post }: { post: PostMeta }) {
   return (
     <article className="item post-item">
       {post.cover ? (
-        <PostCover src={post.cover} title={post.title} date={post.date} href={href} />
+        <PostCover src={post.cover} title={post.title} date={post.date} href={href} sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1216px) calc(100vw - 96px), 1120px" />
       ) : (
         <>
           <time className="item-time" dateTime={post.date}>{dateLabel}</time>

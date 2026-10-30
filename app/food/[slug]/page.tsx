@@ -49,7 +49,7 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
 
         {post.cover && (
           <div className="article-cover">
-            <BlogImage preset="banner" src={post.cover} alt={post.title} fill fetchPriority="high" sizes="(max-width: 760px) 100vw, 720px" />
+            <BlogImage preset="banner" src={post.cover} alt={post.title} fill fetchPriority="high" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 976px) calc(100vw - 48px), 880px" />
           </div>
         )}
 
@@ -70,7 +70,7 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
                     src={src}
                     alt={`${post.title} 图片 ${index + 2}`}
                     fill
-                    sizes="(max-width: 760px) 50vw, 340px"
+                    sizes="(max-width: 860px) 50vw, 440px"
                     data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
                   />
                 </a>

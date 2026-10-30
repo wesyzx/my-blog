@@ -35,7 +35,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const categoryHref = `/posts?category=${encodeURIComponent(post.category)}`
 
   return (
-    /* song.al 的文章页不切换另一套壳：作者栏与 680px 阅读栏在全站始终对齐。 */
+    /* 内页移除作者侧栏，正文保留居中的阅读宽度。 */
     <div className="page-shell narrow article-shell animate-fade-up">
       <article className="article-detail">
         <header className="article-header">
@@ -66,7 +66,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               alt=""
               fill
               fetchPriority="high"
-              sizes="(max-width: 860px) calc(100vw - 40px), 680px"
+              sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 976px) calc(100vw - 48px), 880px"
             />
           </figure>
         )}

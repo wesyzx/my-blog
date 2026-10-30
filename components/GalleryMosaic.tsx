@@ -38,7 +38,7 @@ export default function GalleryMosaic({ images, title }: { images: Photo[]; titl
               preset="fit"
               alt={`${title}，第 ${index + 1} 张`}
               fill
-              sizes="(max-width: 560px) 50vw, (max-width: 860px) 25vw, 360px"
+              sizes={`(max-width: 560px) ${Math.ceil(100 * ratio / mobileRatios)}vw, (max-width: 1216px) ${Math.ceil(100 * ratio / desktopRatios)}vw, ${Math.ceil(1120 * ratio / desktopRatios)}px`}
               data-lightbox-src={blogImageUrl(image.src, { preset: 'full' })}
               data-lightbox-caption={`${index + 1}/${images.length}`}
               data-pswp-width={image.width}

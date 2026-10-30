@@ -11,6 +11,7 @@ export default function PostCover({
   href,
   label,
   headingLevel = 'h2',
+  sizes = '(max-width: 720px) calc(100vw - 32px), 680px',
 }: {
   src: string
   title: string
@@ -18,6 +19,7 @@ export default function PostCover({
   href: string
   label?: string
   headingLevel?: 'h2' | 'h3' | 'h4'
+  sizes?: string
 }) {
   const Heading = headingLevel
 
@@ -29,7 +31,7 @@ export default function PostCover({
           src={src}
           alt={title}
           fill
-          sizes="(max-width: 720px) calc(100vw - 32px), 680px"
+          sizes={sizes}
           unoptimized={process.env.NODE_ENV === 'development'}
           data-lightbox-src={blogImageUrl(src, { preset: 'full' })}
         />

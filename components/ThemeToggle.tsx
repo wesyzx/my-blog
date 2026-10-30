@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Icon from './Icon'
 
 type ThemeToggleProps = {
-  variant?: 'corner' | 'mobile'
+  variant?: 'corner' | 'mobile' | 'header'
 }
 
 export default function ThemeToggle({ variant = 'corner' }: ThemeToggleProps) {
@@ -41,7 +41,7 @@ export default function ThemeToggle({ variant = 'corner' }: ThemeToggleProps) {
   }
 
   return (
-    <button type="button" className="theme-toggle-corner" onClick={toggleTheme} aria-label={label} title={label}>
+    <button type="button" className={variant === 'header' ? 'theme-toggle-header' : 'theme-toggle-corner'} onClick={toggleTheme} aria-label={label} title={label}>
       <Icon name={isDark ? 'sun' : 'moon'} />
     </button>
   )

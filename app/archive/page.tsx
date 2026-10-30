@@ -52,7 +52,7 @@ export default async function ArchivePage() {
                 <h3 id={`archive-${year}-${month}`}>{month}</h3>
                 <span>{items.length}</span>
               </div>
-              <ContentStream updates={items} headingLevel="h4" />
+              <ContentStream updates={items} headingLevel="h4" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1216px) calc(100vw - 96px), 1120px" />
             </section>
           ))}
         </section>

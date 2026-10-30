@@ -631,7 +631,6 @@ button { font: inherit; }
   font-weight: 300;
   line-height: 1.55;
 }
-.site-frame:has(.gallery-page) { max-width: calc(var(--side-width) + 1080px + var(--content-gutter) * 2); }
 .page-shell.gallery-page { width: min(100%, calc(1080px + var(--content-gutter) * 2)); }
 .gallery-mosaic { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 .gallery-mosaic-photo {
@@ -719,4 +718,42 @@ button { font: inherit; }
 
 @media (max-width: 400px) {
   .home-shell { padding-left: 16px; padding-right: 16px; }
+}
+
+/* 首页保留作者侧栏；其余页面使用居中宽栏，导航收进顶部。 */
+.site-header--interior { display: block; }
+.site-header-inner { max-width: 1536px; }
+.desktop-nav { display: flex; align-items: center; gap: 26px; }
+.desktop-nav a { padding: 6px 0; border-bottom: 1px solid transparent; color: var(--color-text-muted); font-size: 14px; white-space: nowrap; }
+.desktop-nav a:hover, .desktop-nav a.active { color: var(--color-text-primary); }
+.desktop-nav a.active { border-bottom-color: currentColor; }
+.theme-toggle-header { display: none; flex-shrink: 0; width: 32px; height: 32px; padding: 0; place-items: center; border: 0; background: transparent; color: var(--color-text-muted); cursor: pointer; }
+.theme-toggle-header:hover { color: var(--color-text-primary); }
+.theme-toggle-header svg { width: 17px; height: 17px; }
+.site-frame--wide { --content-width: 1120px; --content-gutter: 48px; display: block; max-width: 1216px; }
+.site-frame--wide .site-content { padding-top: 56px; }
+.site-frame--wide .page-shell.narrow { --content-width: 880px; }
+.site-frame--wide .page-shell.gallery-page { width: 100%; }
+
+@media (min-width: 861px) {
+  .site-header--interior .site-header-inner { max-width: 1216px; height: 72px; padding: 0 48px; gap: 32px; }
+  .site-header--interior .desktop-nav { margin-left: auto; }
+  .site-header--interior .theme-toggle-header { display: grid; }
+}
+
+@media (max-width: 1100px) {
+  .site-frame--wide { --content-gutter: 24px; }
+  .desktop-nav { gap: 20px; }
+}
+
+@media (max-width: 860px) {
+  .desktop-nav { display: none; }
+  .site-frame--wide { --content-gutter: 20px; }
+  .site-frame--wide .site-content { padding-top: 32px; }
+  .site-header--interior .site-header-inner { height: 58px; padding: 0 20px; }
+  .site-header--interior .mobile-menu-button { display: grid; }
+}
+
+@media (max-width: 400px) {
+  .site-frame--wide { --content-gutter: 16px; }
 }

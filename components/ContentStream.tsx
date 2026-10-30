@@ -13,7 +13,7 @@ const LABELS: Record<SiteUpdate['kind'], string> = {
 
 type HeadingLevel = 'h2' | 'h3' | 'h4'
 
-function StreamItem({ update, headingLevel }: { update: SiteUpdate; headingLevel: HeadingLevel }) {
+function StreamItem({ update, headingLevel, sizes }: { update: SiteUpdate; headingLevel: HeadingLevel; sizes?: string }) {
   const Heading = headingLevel
 
   if (update.kind === 'gallery' && update.album) {
@@ -30,6 +30,7 @@ function StreamItem({ update, headingLevel }: { update: SiteUpdate; headingLevel
           href={update.href}
           label={LABELS.post}
           headingLevel={headingLevel}
+          sizes={sizes}
         />
         {update.detail && <p className="item-subtitle">{update.detail}</p>}
       </article>
@@ -47,12 +48,12 @@ function StreamItem({ update, headingLevel }: { update: SiteUpdate; headingLevel
       </Heading>
       {update.detail && <p className="item-subtitle">{update.detail}</p>}
       {update.cover && (
-        <ContentImage src={update.cover} alt={update.title} fit={update.kind === 'food' ? 'cover' : 'contain'} />
+        <ContentImage src={update.cover} alt={update.title} fit={update.kind === 'food' ? 'cover' : 'contain'} sizes={sizes} />
       )}
     </article>
   )
 }
 
-export default function ContentStream({ updates, headingLevel = 'h2' }: { updates: SiteUpdate[]; headingLevel?: HeadingLevel }) {
-  return <div className="home-stream">{updates.map((update) => <StreamItem update={update} headingLevel={headingLevel} key={update.id} />)}</div>
+export default function ContentStream({ updates, headingLevel = 'h2', sizes }: { updates: SiteUpdate[]; headingLevel?: HeadingLevel; sizes?: string }) {
+  return <div className="home-stream">{updates.map((update) => <StreamItem update={update} headingLevel={headingLevel} sizes={sizes} key={update.id} />)}</div>
 }

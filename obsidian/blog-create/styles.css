@@ -1,0 +1,222 @@
+.blog-create-title-setting .setting-item-control {
+  flex: 1;
+}
+
+.blog-create-title-setting input[type='text'] {
+  width: 100%;
+}
+
+.blog-hub-modal,
+.blog-gallery-manager {
+  min-width: min(680px, 80vw);
+}
+
+.blog-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.blog-hub-card {
+  display: flex;
+  min-height: 88px;
+  padding: 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  text-align: left;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.blog-hub-card:hover {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.blog-hub-card strong {
+  font-size: 1.05em;
+}
+
+.blog-hub-card span {
+  color: var(--text-muted);
+  font-size: 0.82em;
+  line-height: 1.45;
+}
+
+.blog-hub-card.is-manage {
+  border-color: color-mix(in srgb, var(--interactive-accent) 50%, var(--background-modifier-border));
+}
+
+.blog-hub-links,
+.blog-gallery-header-actions,
+.blog-gallery-row-actions,
+.blog-gallery-auth-actions,
+.blog-delete-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blog-hub-links {
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.blog-token-setting .setting-item-control {
+  flex: 1;
+}
+
+.blog-token-setting input[type='password'] {
+  width: 100%;
+}
+
+.blog-gallery-manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.blog-gallery-manager-header h2 {
+  margin-top: 0;
+}
+
+.blog-gallery-manager-header p {
+  margin-bottom: 0;
+}
+
+.blog-gallery-header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.blog-gallery-status {
+  min-height: 24px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-size: 0.86em;
+}
+
+.blog-gallery-status.is-success {
+  color: var(--interactive-accent);
+}
+
+.blog-gallery-status.is-error {
+  color: var(--text-error);
+}
+
+.blog-gallery-list {
+  display: flex;
+  max-height: min(58vh, 560px);
+  overflow-y: auto;
+  padding-right: 4px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blog-gallery-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 7px;
+  background: var(--background-secondary);
+}
+
+.blog-gallery-row-summary {
+  min-width: 0;
+}
+
+.blog-gallery-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.blog-gallery-title-line strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.blog-gallery-meta {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.8em;
+}
+
+.blog-gallery-state {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 0.72em;
+}
+
+.blog-gallery-state.is-published {
+  background: color-mix(in srgb, var(--interactive-accent) 16%, transparent);
+  color: var(--interactive-accent);
+}
+
+.blog-gallery-row-actions {
+  flex: 0 0 auto;
+}
+
+.blog-gallery-empty {
+  padding: 42px 20px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.blog-delete-summary {
+  display: flex;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 7px;
+  background: var(--background-secondary);
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blog-delete-summary span {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+.blog-delete-actions {
+  justify-content: flex-end;
+  margin-top: 22px;
+}
+
+@media (max-width: 700px) {
+  .blog-hub-modal,
+  .blog-gallery-manager {
+    min-width: 0;
+  }
+
+  .blog-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-gallery-manager-header,
+  .blog-gallery-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .blog-gallery-header-actions,
+  .blog-gallery-row-actions {
+    justify-content: flex-start;
+  }
+}

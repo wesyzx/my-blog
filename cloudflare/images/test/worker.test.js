@@ -395,6 +395,7 @@ test('a storage outage remains a non-cacheable error rather than a redirect loop
 function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) {
   const objects = new Map()
   const deployCalls = []
+  const deployState = { ok: deployOk }
   const env = {
     GALLERY_UPLOAD_TOKEN: token,
     EDGEONE_DEPLOY_WEBHOOK: 'https://edgeone.example/deploy',
@@ -405,6 +406,9 @@ function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) 
       },
       async put(key, body, options = {}) {
         objects.set(key, { body: typeof body === 'string' ? body : new Uint8Array(body), httpMetadata: options.httpMetadata })
+      },
+      async delete(key) {
+        objects.delete(key)
       },
       async list({ prefix }) {
         return { objects: [...objects.keys()].filter((key) => key.startsWith(prefix)).map((key) => ({ key })) }
@@ -420,7 +424,7 @@ function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) 
   globalThis.fetch = async (url, options) => {
     if (url === env.EDGEONE_DEPLOY_WEBHOOK) {
       deployCalls.push({ url, options })
-      return new Response(null, { status: deployOk ? 204 : 503 })
+      return new Response(null, { status: deployState.ok ? 204 : 503 })
     }
     return originalFetch(url, options)
   }
@@ -428,6 +432,7 @@ function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) 
     env,
     objects,
     deployCalls,
+    setDeployOk(value) { deployState.ok = value },
     restoreFetch() { globalThis.fetch = originalFetch },
   }
 }
@@ -501,6 +506,96 @@ test('creates, uploads, deduplicates and publishes a gallery album', async (t) =
   assert.equal(publicAlbum.title, '秋日散步')
   assert.equal(publicAlbum.images.length, 1)
   assert.equal(publicAlbum.cover, uploaded.image.src)
+})
+
+test('gallery admin page exposes the visual shell while album data stays authenticated', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+
+  const page = await worker.fetch(new Request('https://images.example/internal/gallery/admin'), gallery.env)
+  assert.equal(page.status, 200)
+  assert.match(page.headers.get('content-type'), /text\/html/)
+  assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/)
+  assert.match(await page.text(), /相册管理/)
+
+  const unauthorized = await worker.fetch(new Request('https://images.example/internal/gallery/albums'), gallery.env)
+  assert.equal(unauthorized.status, 401)
+
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '管理测试', date: '2026-10-30' }), contentType: 'application/json',
+  }), gallery.env)
+  assert.equal(created.status, 200)
+  const listed = await worker.fetch(galleryRequest('/internal/gallery/albums', { method: 'GET' }), gallery.env)
+  assert.equal(listed.status, 200)
+  const { albums } = await listed.json()
+  assert.equal(albums.length, 1)
+  assert.deepEqual(
+    { title: albums[0].title, date: albums[0].date, published: albums[0].published, photoCount: albums[0].photoCount },
+    { title: '管理测试', date: '2026-10-30', published: false, photoCount: 0 },
+  )
+})
+
+test('deleting a published gallery removes its record, photos and public manifest', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '待删除', date: '2026-10-30', slug: 'delete-me' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL, contentType: 'image/jpeg',
+  }), gallery.env)
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+  assert.ok([...gallery.objects.keys()].some((key) => key.startsWith('blog/obsidian/')))
+
+  const deleted = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}`, {
+    method: 'DELETE',
+  }), gallery.env)
+  assert.equal(deleted.status, 200)
+  assert.deepEqual(await deleted.json(), {
+    ok: true,
+    albumId,
+    slug: 'delete-me',
+    deletedPhotos: 1,
+    deployTriggered: true,
+    message: '相册已删除，网站更新已触发。',
+  })
+  assert.equal(gallery.deployCalls.length, 2)
+  assert.equal(gallery.objects.has(`internal/gallery/albums/${albumId}.json`), false)
+  assert.equal([...gallery.objects.keys()].some((key) => key.startsWith('blog/obsidian/')), false)
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.deepEqual((await manifest.json()).albums, [])
+  assert.equal((await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}`, {
+    method: 'DELETE',
+  }), gallery.env)).status, 404)
+})
+
+test('a failed delete deployment restores the album and keeps its photos', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '保留', date: '2026-10-30', slug: 'keep-me' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL, contentType: 'image/jpeg',
+  }), gallery.env)
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+
+  gallery.setDeployOk(false)
+  const deleted = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}`, {
+    method: 'DELETE',
+  }), gallery.env)
+  assert.equal(deleted.status, 502)
+  assert.match((await deleted.json()).error, /HTTP 503/)
+  const record = JSON.parse(gallery.objects.get(`internal/gallery/albums/${albumId}.json`).body)
+  assert.equal(record.published, true)
+  assert.equal(record.deletionRequestedAt, undefined)
+  assert.ok([...gallery.objects.keys()].some((key) => key.startsWith('blog/obsidian/')))
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.equal((await manifest.json()).albums.length, 1)
 })
 
 test('gallery upload rejects unsupported, oversized and missing albums', async (t) => {

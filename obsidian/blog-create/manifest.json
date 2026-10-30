@@ -1,0 +1,9 @@
+{
+  "id": "blog-create",
+  "name": "Blog Create",
+  "version": "1.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Unified Blog hub for creating content and managing published photo albums.",
+  "author": "wesyzx",
+  "isDesktopOnly": false
+}

@@ -141,3 +141,10 @@ LiveSync 在服务器上保存的是端到端加密块，不能直接作为图�
 日常在 Obsidian 中写作时，可把本地的 `OBSIDIAN_BLOG_DIR` 临时指向 Vault 内的 `Blog/`。
 发布到 Git/EdgeOne 时只同步 `content/obsidian` 这一份发布副本；不要把完整的私人 Vault
 或草稿提交到仓库。
+
+### Obsidian 统一管理入口
+
+`obsidian/blog-create/` 是可安装的本地 Obsidian 插件。它把新建博文、美食、相册，以及
+查看和删除 iPhone 快捷指令相册集中到一个“发布管理”入口。相册上传令牌只在当前
+Obsidian 会话内使用，不写入 Vault、LiveSync 或 Git。安装与更新方法见
+[`obsidian/blog-create/README.md`](obsidian/blog-create/README.md)。

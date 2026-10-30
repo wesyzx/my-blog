@@ -76,8 +76,15 @@ Quality is part of the preset contract: 75 for tiles and cards, 82 for `full`.
 - `/health` is a small, uncached health check.
 - `/internal/gallery/albums` creates a private album record. The Shortcut then
   uploads each converted JPEG to `/internal/gallery/albums/{id}/photos`.
+- `GET /internal/gallery/albums` lists album records for the protected manager,
+  and `DELETE /internal/gallery/albums/{id}` removes its source photos and record.
+  Deleting a published album first hides it, triggers EdgeOne, and restores the
+  album if the deployment request fails.
 - `/internal/gallery/albums/{id}/publish` marks the album public before calling
   `EDGEONE_DEPLOY_WEBHOOK`. A webhook failure restores the prior private state.
+- `/internal/gallery/admin` serves a small visual manager. The page shell is
+  public, but it cannot read or change albums until the user supplies the upload
+  token. The token remains in page memory and is never stored.
 - `/webp/gallery-manifest` returns only published albums and uses
   `Cache-Control: no-store`. The site combines them with Obsidian albums.
 

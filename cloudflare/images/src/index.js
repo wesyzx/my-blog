@@ -24,6 +24,8 @@ const V2_ROUTE = /^\/webp\/v2\/([^/]+)\/(\d+)\/([^/]+)\/blog\/obsidian\/(.+)$/
 const V2_ORIGINAL_ROUTE = /^\/webp\/v2\/original\/blog\/obsidian\/(.+)$/
 const INFO_ROUTE = /^\/webp\/v2\/info\/blog\/obsidian\/(.+)$/
 const GALLERY_ALBUM_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/(photos|publish)$/
+const GALLERY_ADMIN_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})$/
+const GALLERY_ADMIN_PATH = '/internal/gallery/admin'
 const GALLERY_MANIFEST_PATH = '/webp/gallery-manifest'
 const PRESETS = {
   fit: { ratio: null },
@@ -147,6 +149,37 @@ async function listGalleryAlbums(env) {
     cursor = page.truncated ? page.cursor : undefined
   } while (cursor)
   return entries
+}
+
+async function listGalleryAlbumRecords(env) {
+  const albums = []
+  for (const entry of await listGalleryAlbums(env)) {
+    const album = await readAlbum(env, entry.key.slice(GALLERY_ALBUM_PREFIX.length, -'.json'.length))
+    if (album?.id && album.slug && album.title && Array.isArray(album.images)) albums.push(album)
+  }
+  return albums.sort((left, right) =>
+    (right.date || '').localeCompare(left.date || '')
+    || (right.createdAt || '').localeCompare(left.createdAt || '')
+    || left.slug.localeCompare(right.slug))
+}
+
+async function listGalleryAlbumsForAdmin(request, env) {
+  if (request.method !== 'GET') return errorResponse(405, 'Method not allowed', { allow: 'GET' })
+  const albums = await listGalleryAlbumRecords(env)
+  return jsonResponse({
+    albums: albums.map((album) => ({
+      id: album.id,
+      slug: album.slug,
+      aliases: album.aliases || [],
+      title: album.title,
+      date: album.date,
+      category: album.category || '日常',
+      published: album.published === true,
+      photoCount: album.images.length,
+      createdAt: album.createdAt,
+      updatedAt: album.updatedAt,
+    })),
+  })
 }
 
 async function sha256Hex(buffer) {
@@ -312,10 +345,223 @@ async function publishGalleryAlbum(request, env, id) {
   })
 }
 
+async function deleteGalleryAlbum(request, env, id) {
+  if (request.method !== 'DELETE') return errorResponse(405, 'Method not allowed', { allow: 'DELETE' })
+  const album = await readAlbum(env, id)
+  if (!album) return errorResponse(404, 'Album not found')
+
+  const wasPublished = album.published === true
+  if (wasPublished && !env.EDGEONE_DEPLOY_WEBHOOK) {
+    return errorResponse(503, 'Gallery deployment is not configured')
+  }
+
+  // Hide a published album before asking EdgeOne to rebuild. If the webhook
+  // fails, the record can be restored because its images have not been removed.
+  if (wasPublished) {
+    album.published = false
+    album.deletionRequestedAt = new Date().toISOString()
+    await writeAlbum(env, album)
+    let response
+    try {
+      response = await fetch(env.EDGEONE_DEPLOY_WEBHOOK, { method: 'POST' })
+    } catch {
+      delete album.deletionRequestedAt
+      album.published = true
+      await writeAlbum(env, album)
+      return errorResponse(502, 'Deploy webhook request failed')
+    }
+    if (!response.ok) {
+      delete album.deletionRequestedAt
+      album.published = true
+      await writeAlbum(env, album)
+      return errorResponse(502, `Deploy webhook failed with HTTP ${response.status}`)
+    }
+  }
+
+  const [year, month] = String(album.date || '').split('-')
+  const prefix = year && month && album.date
+    ? `blog/obsidian/${year}/${month}/${album.date}-${album.id}-`
+    : ''
+  const objectKeys = []
+  let cursor
+  do {
+    const page = await env.IMAGES_BUCKET.list({
+      prefix,
+      ...(cursor ? { cursor } : {}),
+    })
+    objectKeys.push(...(page.objects || []).map((entry) => entry.key))
+    cursor = page.truncated ? page.cursor : undefined
+  } while (cursor)
+  for (const key of objectKeys) await env.IMAGES_BUCKET.delete(key)
+  await metadataBucket(env).delete(albumKey(id))
+
+  return jsonResponse({
+    ok: true,
+    albumId: id,
+    slug: album.slug,
+    deletedPhotos: objectKeys.length,
+    deployTriggered: wasPublished,
+    message: wasPublished
+      ? '相册已删除，网站更新已触发。'
+      : '私密相册已删除。',
+  })
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, (character) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   })[character])
+}
+
+function galleryAdminPage() {
+  return `<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>相册管理</title>
+<style>
+:root{color-scheme:light dark;--bg:#f8f7f4;--surface:#fff;--text:#242321;--muted:#76736d;--line:#dedbd4;--accent:#2f5d50;--danger:#a33b32;--danger-bg:#fff1ef}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{width:min(100% - 40px,960px);margin:0 auto;padding:56px 0 80px}header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:18px;border-bottom:1px solid var(--line)}h1{margin:0;font-size:30px;line-height:1.2}small,p{color:var(--muted)}header p{margin:8px 0 0}header a{color:inherit}.auth,.album{background:var(--surface);border:1px solid var(--line);border-radius:6px}.auth{margin:28px 0 20px;padding:20px}.auth label{display:block;margin-bottom:8px;font-weight:600}.auth-row{display:flex;gap:10px}.auth input{min-width:0;flex:1;height:42px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:transparent;color:inherit;font:inherit}button{height:42px;padding:0 16px;border:1px solid transparent;border-radius:4px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}button:disabled{cursor:wait;opacity:.55}.auth p{margin:10px 0 0;font-size:12px}#status{min-height:24px;margin:12px 0;color:var(--muted);font-size:13px}#list{display:grid;gap:12px}.album{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:center;padding:18px 20px}.album h2{margin:0;font-size:18px}.album-meta{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;color:var(--muted);font-size:12px}.state{display:inline-block;padding:2px 7px;border-radius:999px;background:#ece9e2;color:#5d5a54;font-size:11px}.state.published{background:#e7f1ec;color:var(--accent)}.album-actions{display:flex;align-items:center;gap:14px}.album-actions a{color:var(--accent);font-size:13px}.delete{border-color:#e6b7b1;background:transparent;color:var(--danger)}.delete:hover:not(:disabled){background:var(--danger-bg)}.empty{padding:40px 20px;text-align:center;border:1px dashed var(--line);border-radius:6px;color:var(--muted)}.success{color:var(--accent)}.error{color:var(--danger)}@media(prefers-color-scheme:dark){:root{--bg:#171816;--surface:#20211f;--text:#efeee9;--muted:#aaa69e;--line:#373833;--accent:#94c7b0;--danger:#ef9b91;--danger-bg:#3b2321}.auth button,.album-actions a{color:#171816}.state{background:#33342f;color:#c8c4bb}.state.published{background:#263d33;color:#b9dccb}}@media(max-width:640px){main{padding-top:32px}header{align-items:flex-start;flex-direction:column;gap:8px}.auth-row{align-items:stretch;flex-direction:column}.album{grid-template-columns:1fr}.album-actions{justify-content:space-between}}
+</style>
+<main>
+<header><div><h1>相册管理</h1><p>查看并删除通过快捷指令上传的相册。</p></div><a href="https://guanyan.me/gallery">返回相册页 →</a></header>
+<section class="auth">
+<form id="auth-form"><label for="token">上传令牌</label><div class="auth-row"><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="输入相册上传令牌" required><button type="submit">进入管理</button></div><p>令牌只保存在当前页面内存中，刷新后需重新输入。</p></form>
+</section>
+<div id="status" role="status" aria-live="polite">输入令牌后读取相册。</div>
+<section id="list"></section>
+</main>
+<script>
+let token = '';
+const authForm = document.getElementById('auth-form');
+const tokenInput = document.getElementById('token');
+const status = document.getElementById('status');
+const list = document.getElementById('list');
+
+function setStatus(message, kind) {
+  status.textContent = message;
+  status.className = kind || '';
+}
+
+async function api(path, options) {
+  const request = options || {};
+  request.headers = Object.assign({}, request.headers, { Authorization: 'Bearer ' + token });
+  const response = await fetch(path, request);
+  let data = {};
+  try { data = await response.json(); } catch {}
+  if (!response.ok) {
+    if (response.status === 401) {
+      token = '';
+      list.replaceChildren();
+    }
+    throw new Error(data.error || '请求失败（HTTP ' + response.status + '）');
+  }
+  return data;
+}
+
+function makeMeta(label, value) {
+  const item = document.createElement('span');
+  item.textContent = label + ' ' + value;
+  return item;
+}
+
+function renderAlbums(albums) {
+  list.replaceChildren();
+  if (!albums.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '还没有通过快捷指令创建的相册。';
+    list.append(empty);
+    return;
+  }
+
+  for (const album of albums) {
+    const article = document.createElement('article');
+    article.className = 'album';
+    const summary = document.createElement('div');
+    const title = document.createElement('h2');
+    title.textContent = album.title;
+    const meta = document.createElement('div');
+    meta.className = 'album-meta';
+    const state = document.createElement('span');
+    state.className = 'state' + (album.published ? ' published' : '');
+    state.textContent = album.published ? '已发布' : '私密';
+    meta.append(state, makeMeta('日期', album.date || '未知'), makeMeta('照片', String(album.photoCount)), makeMeta('链接', '/' + album.slug));
+    summary.append(title, meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'album-actions';
+    if (album.published) {
+      const link = document.createElement('a');
+      link.href = 'https://guanyan.me/gallery/' + encodeURIComponent(album.slug);
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      link.textContent = '查看相册';
+      actions.append(link);
+    }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'delete';
+    button.textContent = '删除';
+    button.addEventListener('click', async () => {
+      const prompt = '确定永久删除“' + album.title + '”及其 ' + album.photoCount + ' 张照片吗？'
+        + (album.published ? '删除后会触发网站更新。' : '此操作无法撤销。');
+      if (!window.confirm(prompt)) return;
+      button.disabled = true;
+      button.textContent = '正在删除…';
+      setStatus(album.published ? '正在删除相册并触发网站更新…' : '正在删除私密相册…');
+      try {
+        const result = await api('/internal/gallery/albums/' + encodeURIComponent(album.id), { method: 'DELETE' });
+        setStatus(result.message + ' 删除照片 ' + result.deletedPhotos + ' 张。', 'success');
+        await loadAlbums(false);
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = '删除';
+        setStatus(error.message, 'error');
+      }
+    });
+    actions.append(button);
+    article.append(summary, actions);
+    list.append(article);
+  }
+}
+
+async function loadAlbums(announce) {
+  if (announce !== false) setStatus('正在读取相册…');
+  try {
+    const data = await api('/internal/gallery/albums');
+    renderAlbums(data.albums || []);
+    if (announce !== false) setStatus('已读取 ' + (data.albums || []).length + ' 个相册。');
+  } catch (error) {
+    if (announce !== false) setStatus(error.message, 'error');
+    throw error;
+  }
+}
+
+authForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  token = tokenInput.value.trim();
+  if (!token) return;
+  try {
+    await loadAlbums();
+  } catch {}
+});
+</script>
+</html>`
+}
+
+function galleryAdminResponse(request) {
+  if (request.method !== 'GET') return errorResponse(405, 'Method not allowed', { allow: 'GET' })
+  return new Response(galleryAdminPage(), {
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      'x-robots-tag': 'noindex, nofollow',
+      'referrer-policy': 'no-referrer',
+      'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    },
+  })
 }
 
 async function galleryPublicationStatus(request, env, id) {
@@ -753,10 +999,13 @@ const worker = {
       }
       const publicationRoute = /^\/webp\/gallery-status\/([a-f0-9-]{36})$/.exec(url.pathname)
       if (publicationRoute) return await galleryPublicationStatus(request, env, publicationRoute[1])
+      if (url.pathname === GALLERY_ADMIN_PATH) return galleryAdminResponse(request)
 
       if (url.pathname === '/internal/gallery/albums') {
         if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
-        return await createGalleryAlbum(request, env)
+        return request.method === 'GET'
+          ? await listGalleryAlbumsForAdmin(request, env)
+          : await createGalleryAlbum(request, env)
       }
 
       const galleryRoute = GALLERY_ALBUM_ROUTE.exec(url.pathname)
@@ -766,6 +1015,11 @@ const worker = {
         return action === 'photos'
           ? await uploadGalleryPhoto(request, env, id)
           : await publishGalleryAlbum(request, env, id)
+      }
+      const galleryAdminRoute = GALLERY_ADMIN_ROUTE.exec(url.pathname)
+      if (galleryAdminRoute) {
+        if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
+        return await deleteGalleryAlbum(request, env, galleryAdminRoute[1])
       }
 
       return url.pathname.startsWith(PUBLIC_PREFIX)

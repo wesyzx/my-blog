@@ -25,6 +25,16 @@
 webhook 失败会撤回公开状态。照片按文件名顺序生成公开的 WebP 变体，灯箱仍可查看
 完整长边版本。`cloudflare/images/` 里的 Worker 负责这些接口和转换。
 
+## 查看和删除相册
+
+打开 `https://img.215320.xyz/internal/gallery/admin`，输入快捷指令使用的
+`GALLERY_UPLOAD_TOKEN` 后可以查看私密和已发布相册。删除已发布相册时会先隐藏相册并
+触发 EdgeOne 更新；如果部署请求失败，相册和照片会恢复。令牌只保存在当前网页内存中，
+刷新页面后需要重新输入。
+
+Obsidian 的 `Blog Create` 插件也提供同一个管理入口。令牌只保存在当前 Obsidian 会话内，
+不会写入 Vault、LiveSync 或 Git。
+
 ## 首次部署
 
 先在 Cloudflare Worker 配置两个 secret：

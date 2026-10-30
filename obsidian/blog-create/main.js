@@ -1,17 +1,14 @@
 const {
-  ItemView,
   Modal,
   Notice,
   Plugin,
   Setting,
   normalizePath,
   requestUrl,
-  setIcon,
 } = require('obsidian')
 
 const GALLERY_API_ORIGIN = 'https://img.215320.xyz'
 const GALLERY_PUBLIC_ORIGIN = 'https://guanyan.me/gallery'
-const BLOG_HUB_VIEW = 'blog-publishing-hub'
 
 const CONTENT_TYPES = {
   posts: {
@@ -222,7 +219,7 @@ class GalleryManagerModal extends Modal {
     contentEl.empty()
     contentEl.createEl('h2', { text: '管理线上相册' })
     contentEl.createEl('p', {
-      text: '输入相册上传令牌。令牌只保存在当前 Obsidian 会话内，不写入 Vault 或同步数据。',
+      text: '首次输入相册上传令牌后会自动保存在本机插件配置中，以后无需重复输入。',
       cls: 'setting-item-description',
     })
 
@@ -256,7 +253,7 @@ class GalleryManagerModal extends Modal {
       status.setText('正在验证令牌…')
       try {
         const response = await this.request('/internal/gallery/albums', token)
-        this.plugin.sessionToken = token
+        await this.plugin.setGalleryToken(token)
         this.renderAlbums(response.albums || [])
       } catch (error) {
         connect.disabled = false
@@ -275,7 +272,7 @@ class GalleryManagerModal extends Modal {
       throw: false,
     })
     if (response.status < 200 || response.status >= 300) {
-      if (response.status === 401) this.plugin.sessionToken = ''
+      if (response.status === 401) await this.plugin.clearGalleryToken()
       throw new Error(responseError(response, `请求失败（HTTP ${response.status}）`))
     }
     return response.json
@@ -332,8 +329,8 @@ class GalleryManagerModal extends Modal {
     const refresh = headerActions.createEl('button', { text: '刷新', attr: { type: 'button' } })
     refresh.addEventListener('click', () => this.loadAlbums())
     const logout = headerActions.createEl('button', { text: '更换令牌', attr: { type: 'button' } })
-    logout.addEventListener('click', () => {
-      this.plugin.sessionToken = ''
+    logout.addEventListener('click', async () => {
+      await this.plugin.clearGalleryToken()
       this.renderAuth()
     })
 
@@ -385,96 +382,24 @@ class GalleryManagerModal extends Modal {
   }
 }
 
-class BlogHubView extends ItemView {
-  constructor(leaf, plugin) {
-    super(leaf)
-    this.plugin = plugin
-  }
-
-  getViewType() {
-    return BLOG_HUB_VIEW
-  }
-
-  getDisplayText() {
-    return '发布管理'
-  }
-
-  getIcon() {
-    return 'layout-dashboard'
-  }
-
-  async onOpen() {
-    this.render()
-  }
-
-  render() {
-    const { contentEl } = this
-    contentEl.empty()
-    contentEl.addClass('blog-hub-view')
-    contentEl.createEl('h2', { text: '发布管理' })
-    contentEl.createEl('p', {
-      text: '选择要创建的内容类型，或管理 iPhone 上传的线上相册。',
-      cls: 'setting-item-description',
-    })
-
-    const list = contentEl.createDiv({ cls: 'blog-hub-list' })
-    const items = [
-      ...Object.entries(CONTENT_TYPES).map(([type, config]) => ({
-        title: `新建${config.label}`,
-        description: `在 Blog/${config.folder}/ 创建新${config.label}`,
-        icon: config.icon,
-        action: () => this.plugin.openCreate(type),
-      })),
-      {
-        title: '管理线上相册',
-        description: '查看、打开或删除快捷指令上传的相册',
-        icon: 'images',
-        action: () => this.plugin.openGalleryManager(),
-        manage: true,
-      },
-    ]
-
-    for (const item of items) {
-      const button = list.createEl('button', {
-        cls: `blog-hub-item${item.manage ? ' is-manage' : ''}`,
-        attr: { type: 'button' },
-      })
-      const icon = button.createSpan({ cls: 'blog-hub-item-icon' })
-      setIcon(icon, item.icon)
-      const copy = button.createSpan({ cls: 'blog-hub-item-copy' })
-      copy.createEl('strong', { text: item.title })
-      copy.createEl('span', { text: item.description })
-      const arrow = button.createSpan({ cls: 'blog-hub-item-arrow' })
-      setIcon(arrow, 'chevron-right')
-      button.addEventListener('click', item.action)
-    }
-
-    const actions = contentEl.createDiv({ cls: 'blog-hub-links' })
-    const website = actions.createEl('button', { text: '打开网站', attr: { type: 'button' } })
-    website.addEventListener('click', () => openExternal('https://guanyan.me'))
-    const gallery = actions.createEl('button', { text: '打开线上相册', attr: { type: 'button' } })
-    gallery.addEventListener('click', () => openExternal(GALLERY_PUBLIC_ORIGIN))
-  }
-
-  async onClose() {
-    this.contentEl.empty()
-  }
-}
-
 module.exports = class BlogCreatePlugin extends Plugin {
   async onload() {
-    this.sessionToken = ''
-    this.registerView(BLOG_HUB_VIEW, (leaf) => new BlogHubView(leaf, this))
+    const data = await this.loadData()
+    this.sessionToken = typeof data?.galleryToken === 'string' ? data.galleryToken : ''
 
-    this.addRibbonIcon('layout-dashboard', '打开发布管理', () => {
-      this.activateHubView()
+    this.addRibbonIcon('file-plus-2', '新建博文', () => {
+      this.openCreate('posts')
+    })
+    this.addRibbonIcon('utensils', '新建美食', () => {
+      this.openCreate('food')
+    })
+    this.addRibbonIcon('image-plus', '新建相册', () => {
+      this.openCreate('gallery')
+    })
+    this.addRibbonIcon('images', '管理线上相册', () => {
+      this.openGalleryManager()
     })
 
-    this.addCommand({
-      id: 'open-publishing-hub',
-      name: '打开发布管理',
-      callback: () => this.activateHubView(),
-    })
     this.addCommand({
       id: 'manage-gallery-albums',
       name: '管理线上相册',
@@ -490,26 +415,25 @@ module.exports = class BlogCreatePlugin extends Plugin {
     }
   }
 
-  onunload() {
-    this.app.workspace.detachLeavesOfType(BLOG_HUB_VIEW)
-  }
-
-  async activateHubView() {
-    let leaf = this.app.workspace.getLeavesOfType(BLOG_HUB_VIEW)[0]
-    if (!leaf) {
-      leaf = this.app.workspace.getRightLeaf(false)
-      if (!leaf) return
-      await leaf.setViewState({ type: BLOG_HUB_VIEW, active: true })
-    }
-    await this.app.workspace.revealLeaf(leaf)
-  }
-
   openCreate(type) {
     new TitleModal(this.app, type, (title) => this.createNote(type, title)).open()
   }
 
   openGalleryManager() {
     new GalleryManagerModal(this.app, this).open()
+  }
+
+  async setGalleryToken(token) {
+    const data = (await this.loadData()) || {}
+    this.sessionToken = token
+    await this.saveData({ ...data, galleryToken: token })
+  }
+
+  async clearGalleryToken() {
+    this.sessionToken = ''
+    const data = (await this.loadData()) || {}
+    delete data.galleryToken
+    await this.saveData(data)
   }
 
   async createNote(type, title) {

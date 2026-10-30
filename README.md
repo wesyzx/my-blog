@@ -144,7 +144,7 @@ LiveSync 在服务器上保存的是端到端加密块，不能直接作为图�
 
 ### Obsidian 统一管理入口
 
-`obsidian/blog-create/` 是可安装的本地 Obsidian 插件。它把新建博文、美食、相册，以及
-查看和删除 iPhone 快捷指令相册集中到一个“发布管理”入口。相册上传令牌只在当前
-Obsidian 会话内使用，不写入 Vault、LiveSync 或 Git。安装与更新方法见
+`obsidian/blog-create/` 是可安装的本地 Obsidian 插件。它在侧栏分别提供新建博文、美食、
+相册，以及查看和删除 iPhone 快捷指令相册的入口。相册上传令牌首次验证后会保存在插件
+本地的 `data.json` 配置中，便于后续直接使用；令牌不会进入博客源码仓库。安装与更新方法见
 [`obsidian/blog-create/README.md`](obsidian/blog-create/README.md)。

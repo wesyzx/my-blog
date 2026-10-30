@@ -90,7 +90,14 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   const publish = requests[2].WFWorkflowActionParameters
   assert.match(publish.WFURL.Value.string, /\/publish$/)
   assert.equal(publish.WFHTTPMethod, 'POST')
-  assert.equal(publish.WFHTTPBodyType, undefined)
+  assert.equal(publish.WFHTTPBodyType, 'JSON')
+  assert.deepEqual(publish.WFJSONValues.Value.WFDictionaryFieldValueItems, [])
+  const publishHeaders = publish.WFHTTPHeaders.Value.WFDictionaryFieldValueItems
+    .map((item) => [item.WFKey.Value.string, item.WFValue.Value.string])
+  assert.deepEqual(publishHeaders, [
+    ['Authorization', 'Bearer \ufffc'],
+    ['Content-Type', 'application/json'],
+  ])
   assert.ok(ids.includes('is.workflow.actions.previewdocument'))
   assert.ok(ids.includes('is.workflow.actions.openurl'))
 
@@ -176,6 +183,14 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
   const publish = requests[2].WFWorkflowActionParameters
   assert.match(publish.WFURL.Value.string, /\/publish$/)
   assert.equal(publish.WFHTTPMethod, 'POST')
+  assert.equal(publish.WFHTTPBodyType, 'JSON')
+  assert.deepEqual(publish.WFJSONValues.Value.WFDictionaryFieldValueItems, [])
+  const publishHeaders = publish.WFHTTPHeaders.Value.WFDictionaryFieldValueItems
+    .map((item) => [item.WFKey.Value.string, item.WFValue.Value.string])
+  assert.deepEqual(publishHeaders, [
+    ['Authorization', 'Bearer \ufffc'],
+    ['Content-Type', 'application/json'],
+  ])
   assert.ok(ids.includes('is.workflow.actions.previewdocument'))
   assert.ok(ids.includes('is.workflow.actions.openurl'))
 

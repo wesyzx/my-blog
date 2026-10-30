@@ -249,8 +249,11 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             '/publish',
         ),
         WFHTTPMethod='POST',
+        WFHTTPBodyType='JSON',
+        WFJSONValues=empty_dictionary(),
         WFHTTPHeaders=dictionary([
             ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
+            ('Content-Type', text('application/json'), 0),
         ]),
     )
     action('previewdocument', WFInput=attachment(output(publish_id, 'Contents of URL')))

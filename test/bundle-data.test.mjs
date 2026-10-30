@@ -200,7 +200,7 @@ function prepareGalleryBundle(cwd, gallerySource) {
     `export const bundleData = ${JSON.stringify({ posts: [], food: [], gallery: [], about: '' })};`)
 }
 
-function runGalleryBundle(cwd, fetchBody) {
+function runGalleryBundle(cwd, fetchBody, extraEnv = {}) {
   const probe = path.join(cwd, 'gallery-fetch-probe.mjs')
   writeFileSync(probe, `
     import assert from 'node:assert/strict'
@@ -221,6 +221,8 @@ function runGalleryBundle(cwd, fetchBody) {
       GALLERY_CONTENT_SOURCE: '',
       CONTENT_ALLOW_EMPTY: '1',
       OBSIDIAN_BLOG_DIR: path.join(cwd, 'content/obsidian'),
+      GALLERY_ALLOW_STALE: '',
+      ...extraEnv,
     },
     stdio: 'pipe',
     timeout: 10_000,
@@ -277,7 +279,7 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
   assert.deepEqual(r2Only.gallery.map((album) => album.slug), ['only'])
 })
 
-test('an invalid gallery manifest reuses only the previous R2 albums', (t) => {
+test('invalid gallery manifests stop publication; explicitly allowed previews may use a stale snapshot', (t) => {
   const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-gallery-fallback-'))
   t.after(() => rmSync(cwd, { recursive: true, force: true }))
   prepareGalleryBundle(cwd, 'r2')
@@ -291,6 +293,10 @@ test('an invalid gallery manifest reuses only the previous R2 albums', (t) => {
     about: '',
   }
   writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(previous)};`)
-  const bundle = runGalleryBundle(cwd, "return Response.json({})")
+  assert.throws(() => runGalleryBundle(cwd, "return Response.json({})"), /R2 相册清单读取失败/)
+  const bundle = runGalleryBundle(cwd, "return Response.json({})", { GALLERY_ALLOW_STALE: '1' })
   assert.deepEqual(bundle.gallery.map((album) => album.slug), ['saved-r2'])
+  const marker = JSON.parse(readFileSync(path.join(cwd, 'public/publish-status.json')))
+  assert.equal(marker.gallery_fresh, false)
+  assert.equal(marker.albums[0].revision, null)
 })

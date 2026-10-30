@@ -3,6 +3,9 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   async headers() {
     return [{
+      source: '/publish-status.json',
+      headers: [{ key: 'Cache-Control', value: 'no-store, max-age=0' }],
+    }, {
       source: '/(.*)',
       headers: [
         { key: 'X-Content-Type-Options', value: 'nosniff' },

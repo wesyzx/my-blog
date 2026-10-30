@@ -3,6 +3,9 @@ import { NotionToMarkdown } from 'notion-to-md'
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
+import { execFileSync } from 'node:child_process'
+import { obsidianRevision } from '../lib/obsidian-revision.mjs'
+import { albumRevision } from '../lib/publication-revision.mjs'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
 import { readImageSize } from '../lib/image-size.mjs'
 import { blogImageInfoUrl, isBlogImage } from '../lib/blog-images.mjs'
@@ -29,6 +32,8 @@ const GALLERY_MANIFEST_URL = process.env.GALLERY_MANIFEST_URL || 'https://img.21
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
 const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
 const OUTPUT_PATH = path.join(process.cwd(), 'lib/data-bundle.ts')
+let galleryManifestFresh = false
+let sourceRevision = null
 
 const notion = new Client({ auth: process.env.NOTION_TOKEN })
 const n2m = new NotionToMarkdown({ notionClient: notion })
@@ -170,6 +175,8 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const manifest = await response.json()
     if (!Array.isArray(manifest?.albums)) throw new Error('相册清单缺少 albums')
+    const revisions = new Map(await Promise.all(manifest.albums.filter((album) => album?.id && Array.isArray(album.images))
+      .map(async (album) => [album.id, await albumRevision(album)])))
     const used = new Set(reservedSlugs)
     const albums = manifest.albums.slice(0, 1000).flatMap((album) => {
       if (!album || typeof album.title !== 'string' || !Array.isArray(album.images)) return []
@@ -201,6 +208,8 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
         published: true,
         content: images.map((image, index) => `![${title} ${index + 1}](${image.src})`).join('\n\n'),
         source: 'r2',
+        albumId: album.id,
+        publicationRevision: revisions.get(album.id),
       }]
     }).sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
     const occupiedRoutes = new Set([...reservedSlugs, ...albums.map((album) => album.slug)])
@@ -211,8 +220,12 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
         return true
       })
     }
+    galleryManifestFresh = true
     return albums
   } catch (error) {
+    if (process.env.GALLERY_ALLOW_STALE !== '1') {
+      throw new Error(`R2 相册清单读取失败；为避免旧快照覆盖新相册，本次构建停止：${error.message}`)
+    }
     console.warn(`  R2 gallery manifest unavailable; using the previous shortcut albums: ${error.message}`)
     return (existing.gallery || [])
       .filter((album) => album.source === 'r2')
@@ -380,7 +393,8 @@ async function buildBundle() {
       previousImageSizes,
     })
     for (const section of obsidianSections) {
-      if (!local[section].length && existing[section]?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
+      const previous = section === 'gallery' ? existing.gallery?.filter((album) => album.source !== 'r2') : existing[section]
+      if (!local[section].length && previous?.length && process.env.CONTENT_ALLOW_EMPTY !== '1') {
         throw new Error(`Obsidian ${section} 发布区没有已发布文章或条目。若确实要清空，请设置 CONTENT_ALLOW_EMPTY=1`)
       }
       selected[section] = local[section]
@@ -397,12 +411,16 @@ async function buildBundle() {
         Object.assign(item, previousCoords.get(item.slug) || await geocode(item.location || item.address))
       }
     }
-    await mirrorPublishedAttachments({
+    const localPosts = obsidianSections.flatMap((section) => local[section])
+    const attachments = await mirrorPublishedAttachments({
       blogRoot: blogDirectory,
-      posts: obsidianSections.flatMap((section) => local[section]),
+      posts: localPosts,
       destinationRoot: path.join(process.cwd(), 'public/obsidian'),
       attachmentRoots: ['attachments'],
     })
+    sourceRevision = await obsidianRevision(blogDirectory, [
+      ...attachments, ...localPosts.map((post) => path.relative(blogDirectory, post.sourceFile)),
+    ])
   }
   if (CONTENT_SOURCES.gallery === 'r2' || CONTENT_SOURCES.gallery === 'hybrid') {
     const obsidianSlugs = new Set(selected.gallery.map((album) => album.slug).filter(Boolean))
@@ -421,6 +439,19 @@ async function buildBundle() {
   const tempPath = `${OUTPUT_PATH}.tmp`
   fs.writeFileSync(tempPath, output)
   fs.renameSync(tempPath, OUTPUT_PATH)
+  let commit = null
+  try { commit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() } catch { /* Isolated previews may have no repository. */ }
+  fs.mkdirSync(path.join(process.cwd(), 'public'), { recursive: true })
+  const statusPath = path.join(process.cwd(), 'public/publish-status.json')
+  fs.writeFileSync(`${statusPath}.tmp`, JSON.stringify({
+    version: 1, built_at: bundle.updatedAt, commit,
+    obsidian_revision: sourceRevision,
+    gallery_fresh: galleryManifestFresh,
+    albums: gallery.filter((album) => album.source === 'r2').map((album) => ({
+      id: album.albumId, slug: album.slug, revision: galleryManifestFresh ? album.publicationRevision : null,
+    })),
+  }))
+  fs.renameSync(`${statusPath}.tmp`, statusPath)
   console.log(`Bundled ${posts.length} posts, ${food.length} food entries and ${gallery.length} albums.`)
 }
 

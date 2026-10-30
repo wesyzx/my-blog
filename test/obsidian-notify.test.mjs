@@ -7,6 +7,7 @@ test('Bark suppresses brief errors, deduplicates sustained faults, and sends rec
   const modulePath = fileURLToPath(new URL('../ops/obsidian-publisher/notify.py', import.meta.url))
   const result = execFileSync('python3', ['-c', `
 import importlib.util, json, sys
+sys.path.insert(0, str(__import__('pathlib').Path(sys.argv[1]).parent))
 spec = importlib.util.spec_from_file_location("notifier", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)

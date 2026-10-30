@@ -9,6 +9,7 @@ out/
 
 # Generated public mirror of Obsidian publish attachments
 public/obsidian/
+public/publish-status.json
 
 # TypeScript build info
 *.tsbuildinfo

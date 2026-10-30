@@ -11,7 +11,9 @@
    的“相簿”，先进入该相簿再选择；共享相簿不用于发布。
 3. 输入博客相册标题和英文链接短名，例如 `tuotuo-first-month`。短名留空时自动命名；
    中文标题默认使用 `album`、`album-2` 等。公开版还会询问上传令牌；个人版已内置令牌。
-4. 等快捷指令完成。它会显示发布响应，并打开新相册的网址。
+4. 等快捷指令完成。它会显示发布响应，并打开相册发布状态页。
+   状态页区分“相册已提交”“网站构建已触发”和“页面已更新”，最后一项需要核对实际页面。
+   确认上线后点击“查看相册”。已安装的个人版也会打开状态页，无需重新导入。
 
 快捷指令每张图片都会先转成 JPEG。这样普通 Cloudflare Images 方案也能处理 iPhone
 常见的 HEIC 原片；Worker 也预留了 Enterprise 方案的 HEIC/HEIF 上传格式。单次最多
@@ -41,8 +43,14 @@ Obsidian 和 iPhone 原图统一放在 `blog-images/blog/obsidian/年/月/`；
 与替换链接的现有设置；不要把目录占位符直接填入不支持模板的上传路径字段。
 
 部署 Worker 后再部署博客。博客构建从
-`https://img.215320.xyz/webp/gallery-manifest` 读取公开清单；清单不可用时沿用上一版
-构建中已有的 R2 相册，Obsidian 相册照常读取。
+`https://img.215320.xyz/webp/gallery-manifest` 读取公开清单；清单不可用时停止本次构建，
+避免用旧快照覆盖新相册。仅本地离线预览可设置 `GALLERY_ALLOW_STALE=1`。
+
+发布接口返回 `stage: build_requested`，只代表部署请求已接受。
+`url` 和 `statusUrl` 为状态页，`albumUrl` 是正式相册链接。状态页
+`/webp/gallery-status/{albumId}` 仅对已公开相册可用，JSON 状态使用 `?format=json`。
+它同时核对网站的 `/publish-status.json` 和相册实际页面的版本，
+只有二者均与 R2 当前相册一致才返回 `stage: site_updated`。
 
 ## 重新生成和签名
 

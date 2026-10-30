@@ -3,7 +3,9 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
-import { loadObsidianContent, mirrorPublishedAttachments } from '../lib/obsidian-content.mjs'
+import { loadObsidianContent, copyPublishedAttachments } from '../lib/obsidian-content.mjs'
+import { obsidianRevision } from '../lib/obsidian-revision.mjs'
+import { recordPublicationIssue } from '../lib/publish-failure.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = path.resolve(process.env.OBSIDIAN_PUBLISH_REPO || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'))
@@ -103,36 +105,61 @@ async function stagePublish(source) {
     attachmentBaseUrl: '/obsidian',
     attachmentRoots: ['attachments'],
   })
-  const posts = Object.values(content).flat()
-  if (posts.length === 0) {
+  if (!Object.values(content).some((entries) => entries.length)) {
     throw new Error('The Vault Blog directory has no published content; refusing to erase the published copy')
   }
+  const heldSections = []
   for (const section of ['posts', 'food', 'gallery']) {
     const previous = await fs.readdir(path.join(DESTINATION_ROOT, section)).catch((error) => {
       if (error.code === 'ENOENT') return []
       throw error
     })
     if (!content[section].length && previous.some((file) => file.endsWith('.md'))) {
-      throw new Error(`Refusing to empty the existing ${section} publication without manual review`)
+      const saved = await loadObsidianContent({ blogRoot: DESTINATION_ROOT, sections: [section] })
+      if (!saved[section].length) throw new Error(`Cannot preserve the existing ${section} publication`)
+      content[section] = saved[section]
+      heldSections.push(section)
     }
   }
+  const posts = Object.values(content).flat()
 
   await fs.mkdir(TEMP_ROOT, { recursive: true })
   const staging = await fs.mkdtemp(path.join(TEMP_ROOT, 'obsidian-publish-'))
   try {
-    const attachments = await mirrorPublishedAttachments({
-      blogRoot: source,
-      posts,
-      destinationRoot: staging,
-      attachmentRoots: ['attachments'],
-    })
-    // The attachment mirror prunes everything it does not own, so create content afterwards.
-    for (const section of ['posts', 'food', 'gallery']) await fs.mkdir(path.join(staging, section), { recursive: true })
-    for (const post of posts) {
-      if (!post.sourceFile) throw new Error(`Missing source file metadata for ${post.slug}`)
-      await fs.copyFile(post.sourceFile, path.join(staging, path.relative(source, post.sourceFile)))
+    const activePosts = Object.entries(content).filter(([section]) => !heldSections.includes(section)).flatMap(([, entries]) => entries)
+    const savedPosts = heldSections.flatMap((section) => content[section])
+    const attachments = await copyPublishedAttachments({ blogRoot: source, posts: activePosts, destinationRoot: staging })
+    // Preserve only attachments referenced by held sections, detecting path collisions.
+    const savedStaging = await fs.mkdtemp(path.join(TEMP_ROOT, 'obsidian-held-'))
+    try {
+      const savedAttachments = await copyPublishedAttachments({
+        blogRoot: DESTINATION_ROOT, posts: savedPosts, destinationRoot: savedStaging,
+      })
+      for (const file of savedAttachments) {
+        const target = path.join(staging, file)
+        const saved = await fs.readFile(path.join(savedStaging, file))
+        if (await pathExists(target)) {
+          if (!(await fs.readFile(target)).equals(saved)) throw new Error('A retained attachment conflicts with updated content')
+        } else {
+          await fs.mkdir(path.dirname(target), { recursive: true })
+          await fs.writeFile(target, saved)
+          attachments.push(file)
+        }
+      }
+    } finally {
+      await fs.rm(savedStaging, { recursive: true, force: true })
     }
-    return { posts, content, attachments, staging }
+    for (const section of ['posts', 'food', 'gallery']) await fs.mkdir(path.join(staging, section), { recursive: true })
+    const files = [...attachments]
+    for (const [section, entries] of Object.entries(content)) {
+      for (const post of entries) {
+        if (!post.sourceFile) throw new Error(`Missing source file metadata for ${post.slug}`)
+        const relative = path.join(section, path.basename(post.sourceFile))
+        await fs.copyFile(post.sourceFile, path.join(staging, relative))
+        files.push(relative)
+      }
+    }
+    return { posts, content, attachments, staging, heldSections, revision: await obsidianRevision(staging, files) }
   } catch (error) {
     await fs.rm(staging, { recursive: true, force: true })
     throw error
@@ -180,7 +207,10 @@ async function commitAndPush(postCount, { noPush = false } = {}) {
       return true
     } catch (error) {
       lastError = error
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 5000))
+      if (attempt < 3) {
+        await updateRepository()
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500))
+      }
     }
   }
   throw lastError
@@ -202,8 +232,27 @@ async function updateRepository() {
   await git(['fetch', 'origin', 'main'])
   const { stdout: counts } = await git(['rev-list', '--left-right', '--count', 'HEAD...origin/main'])
   const [ahead, behind] = counts.trim().split(/\s+/).map(Number)
-  if (ahead && behind) throw new Error('Repository diverged; manual reconciliation required')
-  if (behind) await git(['merge', '--ff-only', 'origin/main'])
+  if (ahead && behind) {
+    await pushExistingCommit({ checkOnly: true })
+    // Never replay unknown/merge commits, or automatically reconcile two writers
+    // touching publication files (including change-then-revert histories).
+    const { stdout: commits } = await git(['log', '--format=%s', 'origin/main..HEAD'])
+    const { stdout: merges } = await git(['rev-list', '--merges', 'origin/main..HEAD'])
+    const { stdout: remotePaths } = await git(['log', '--format=', '--name-only', '-z', 'HEAD..origin/main'])
+    if (merges.trim() || commits.trim().split('\n').some((subject) => !/^publish: sync Obsidian content \(\d+ entr(?:y|ies)\)$/.test(subject))
+      || remotePaths.split('\0').flatMap((value) => value.split('\n')).some((file) => file === 'content/obsidian' || file.startsWith('content/obsidian/'))) {
+      throw new Error('Repository diverged; manual reconciliation required')
+    }
+    if ((await repositoryStatus()).length) throw new Error('Repository diverged with uncommitted publication changes')
+    const { stdout: base } = await git(['merge-base', 'HEAD', 'origin/main'])
+    try {
+      await git(['rebase', '--onto', 'origin/main', base.trim()])
+    } catch (error) {
+      await git(['rebase', '--abort']).catch(() => {})
+      throw error
+    }
+  }
+  else if (behind) await git(['merge', '--ff-only', 'origin/main'])
   await pushExistingCommit({ checkOnly: true })
 }
 
@@ -232,13 +281,25 @@ async function main() {
     staging = null
     await commitAndPush(result.posts.length, { noPush })
     if (!noPush) await pushExistingCommit()
+    const reportPath = process.env.OBSIDIAN_PUBLISH_RESULT_FILE
+    if (reportPath) {
+      const temporary = `${reportPath}.tmp`
+      await fs.writeFile(temporary, JSON.stringify({
+        held_sections: result.heldSections,
+        content_revision: result.revision,
+        effective_counts: Object.fromEntries(Object.entries(result.content).map(([section, entries]) => [section, entries.length])),
+      }), { mode: 0o600 })
+      await fs.rename(temporary, reportPath)
+    }
+    if (result.heldSections.length) console.warn(`Retained previous publication for empty sections: ${result.heldSections.join(', ')}`)
   } finally {
     if (staging) await fs.rm(staging, { recursive: true, force: true })
     await release()
   }
 }
 
-main().catch((error) => {
+main().catch(async (error) => {
+  await recordPublicationIssue(error).catch(() => {})
   console.error(`Obsidian publish failed: ${error.message}`)
   process.exitCode = 1
 })

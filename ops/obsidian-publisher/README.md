@@ -38,15 +38,45 @@ are read-only. The timer checks once per minute and requires 90 seconds of stabl
 article content before publishing. Git commits include only `content/obsidian`.
 Unrelated changes, conflicts, invalid metadata, missing attachments, or a snapshot
 changing during export stop publication and preserve the previous site.
-Empty publication and emptying an existing section are rejected to prevent
-accidental mass deletion. Templates and nested directories are not exported.
+An entirely empty source is rejected. If only one section becomes empty, its
+previous published Markdown and referenced attachments are retained while other
+sections continue updating. The status records `held_sections` and
+`effective_counts`, and notifications identify the hold. Shared attachment paths
+with different bytes stop publication rather than overwriting retained content.
+Templates and nested directories are not exported.
+
+Only pending commits with the publisher's known commit subject, touching only
+`content/obsidian`, and containing no merge commits may be replayed. If remote
+history changed any publication path, automatic reconciliation stops. Independent
+website changes are fetched and pending publisher commits are replayed before a
+normal push, including a bounded retry when a push races with a remote update.
+No force push or source database write is used.
 
 The publisher notices article changes, commits and pushes them to `main`.
 EdgeOne must use this repository's `main` branch and must not force
 `CONTENT_SOURCE=notion`, `FOOD_CONTENT_SOURCE=notion`, or
 `GALLERY_CONTENT_SOURCE=notion`. Its build and deployment are separate from Git
-delivery. The checked-in source configuration selects Obsidian for all three
-sections.
+delivery. The checked-in configuration selects Obsidian for posts and food, and
+hybrid Obsidian/R2 for gallery. Keep the server as the only automatic Obsidian Git
+writer; the iPhone uploader writes album records to R2, not this checkout.
+
+## Publication verification
+
+`publication-result.json` contains only content digests, counts and held section
+names. `status.json` separates `git_status: submitted` from `site.status`:
+`waiting`, `verified`, or `delayed` after 15 minutes without confirmation.
+`verify_site.py` checks the deployed `/publish-status.json` with a cache-busting
+query and compares the approved content digest. It runs on idle cycles too, so
+verification continues after the Git delivery has completed. Network failure
+leaves the site unverified without changing the Git delivery result.
+
+The build marker contains only the Git revision, approved-content digest and
+public album IDs/digests. No private titles, paths, credentials or source note
+contents are included. R2 manifest fetches fail the build by default; the
+explicit `GALLERY_ALLOW_STALE=1` preview mode marks its gallery unverified.
+For phone albums, the Worker also checks the actual album page's content
+revision before reporting `site_updated`. Existing shortcuts open the returned
+status page without needing reinstallation; `albumUrl` is the canonical album URL.
 
 ## Alerts
 
@@ -54,8 +84,15 @@ The existing secure Bark helper sends one notification after three consecutive
 failed cycles and one on recovery. Healthy unchanged checks remain silent.
 Delivery failure is retried. Messages identify reading/validation or Git submission
 failures without note titles, content, secrets or file paths.
-These alerts do not detect EdgeOne build failures or guarantee a published page
-is reachable. Existing LiveSync monitoring continues separately.
+Held sections and a deployment unverified for over 15 minutes are deduplicated
+notices. Site verification detects missing content versions, not the provider's
+internal build job status. Existing LiveSync monitoring continues separately.
+
+Upgrade only the publisher bundle and its Python helpers together. Preserve the
+installed pinned reader unless rebuilding and validating that reader explicitly.
+The helpers include `failure_reasons.py` and `verify_site.py`. Keep a root-only
+backup, pause the timer, wait for the running service to finish, validate the new
+publisher with `--dry-run` as `obsidian-publisher`, then restore the timer.
 
 ## Operations
 

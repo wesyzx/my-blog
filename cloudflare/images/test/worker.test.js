@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import worker from '../src/index.js'
+import { albumRevision } from '../../../lib/publication-revision.mjs'
 
 const ORIGINAL = new Uint8Array([0xff, 0xd8, 0xff, 0xd9])
 const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x04, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])
@@ -556,6 +557,45 @@ test('gallery publish remains private without a deploy webhook', async (t) => {
   assert.equal(publish.status, 503)
   const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
   assert.deepEqual((await manifest.json()).albums, [])
+})
+
+test('publication verification requires both the current build marker and the actual album page', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Status <test>', date: '2026-10-30', slug: 'status-test' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  const statusUrl = `https://images.example/webp/gallery-status/${albumId}`
+  assert.equal((await worker.fetch(new Request(statusUrl), gallery.env)).status, 404)
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL, contentType: 'image/jpeg',
+  }), gallery.env)
+  const published = await (await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)).json()
+  assert.equal(published.stage, 'build_requested')
+  assert.equal(published.url, statusUrl)
+  assert.match(published.albumUrl, /guanyan.me\/gallery\/status-test$/)
+  const html = await (await worker.fetch(new Request(statusUrl), gallery.env)).text()
+  assert.ok(html.includes('Status &lt;test&gt;'))
+  const rawAlbum = JSON.parse(gallery.objects.get(`internal/gallery/albums/${albumId}.json`).body)
+  const revision = await albumRevision(rawAlbum)
+  let markerRevision = 'old'
+  let pageRevision = 'old'
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('/publish-status.json')) {
+      return Response.json({ version: 1, gallery_fresh: true, albums: [{ id: albumId, slug: 'status-test', revision: markerRevision }] })
+    }
+    return new Response(`<div data-gallery-revision="${pageRevision}"></div>`)
+  }
+  const status = async () => (await worker.fetch(new Request(`${statusUrl}?format=json`), gallery.env)).json()
+  assert.equal((await status()).siteUpdated, false)
+  markerRevision = revision
+  assert.equal((await status()).siteUpdated, false, 'a fresh marker alone cannot verify an old page')
+  pageRevision = revision
+  assert.equal((await status()).stage, 'site_updated')
+  globalThis.fetch = async () => { throw new Error('network unavailable') }
+  assert.equal((await status()).siteUpdated, false, 'network failures cannot claim publication')
 })
 
 test('gallery accepts HEIC bytes when the Images binding can decode them', async (t) => {

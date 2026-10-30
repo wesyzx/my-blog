@@ -10,7 +10,7 @@ import GalleryMosaic from './GalleryMosaic'
 
 export default function GalleryDetail({ album }: { album: GalleryItem }) {
   return (
-    <div className="page-shell gallery-page animate-fade-up">
+    <div className="page-shell gallery-page animate-fade-up" data-gallery-revision={album.publicationRevision}>
       <PageHeader title={album.title} eyebrow={formatItemDate(album.date)} description={album.excerpt} />
       {album.images.length > 0 ? (
         <GalleryMosaic images={album.images} title={album.title} />

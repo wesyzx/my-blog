@@ -6,6 +6,7 @@ import { bundleData } from './data-bundle'
 import { decodeRouteSlug } from './slug'
 
 export interface GalleryMeta {
+  publicationRevision?: string
   slug: string
   aliases?: string[]
   title: string

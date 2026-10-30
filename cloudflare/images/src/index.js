@@ -1,3 +1,5 @@
+import { albumRevision } from '../../../lib/publication-revision.mjs'
+
 const IMAGE_EXTENSION = /\.(?:gif|heic|heif|jpe?g|png|svg|webp)$/i
 const STATIC_ASSET_PATH = /^\/(?:favicon\.ico|robots\.txt)$/i
 const PUBLIC_PREFIX = '/webp/'
@@ -282,6 +284,9 @@ async function publishGalleryAlbum(request, env, id) {
     await writeAlbum(env, album)
     return errorResponse(502, `Deploy webhook failed with HTTP ${response.status}`)
   }
+  album.deployment = { requestedAt: new Date().toISOString(), revision: await albumRevision(album) }
+  await writeAlbum(env, album)
+  const statusUrl = `${new URL(request.url).origin}/webp/gallery-status/${id}`
 
   return jsonResponse({
     ok: true,
@@ -290,7 +295,59 @@ async function publishGalleryAlbum(request, env, id) {
     photos: album.images.length,
     deployTriggered: true,
     deployStatus: response.status,
-    url: `https://guanyan.me/gallery/${encodeURIComponent(album.slug)}`,
+    stage: 'build_requested',
+    message: '相册已提交，网站构建已触发；打开状态页确认上线。',
+    statusUrl,
+    albumUrl: `https://guanyan.me/gallery/${encodeURIComponent(album.slug)}`,
+    // Existing installed shortcuts open this field; route them through verification.
+    url: statusUrl,
+  })
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character])
+}
+
+async function galleryPublicationStatus(request, env, id) {
+  if (request.method !== 'GET') return errorResponse(405, 'Method not allowed', { allow: 'GET' })
+  const album = await readAlbum(env, id)
+  if (!album?.published || !album.images?.length) return errorResponse(404, 'Album not found')
+  const url = new URL(request.url)
+  const albumUrl = `https://guanyan.me/gallery/${encodeURIComponent(album.slug)}`
+  if (url.searchParams.get('format') !== 'json') {
+    const body = `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>相册发布状态</title><style>body{font:16px/1.8 system-ui,sans-serif;background:#f8f7f4;color:#252525;margin:0;padding:64px 24px}main{max-width:520px;margin:auto}h1{font-size:28px}li{margin:12px 0}a{display:inline-block;margin-top:24px;color:inherit}[hidden]{display:none}small{color:#666}</style>
+<main><small>相册发布</small><h1>${escapeHtml(album.title)}</h1><ol><li>相册已提交</li><li>${album.deployment?.requestedAt ? '网站构建已触发' : '正在核对网站发布状态'}</li><li id="status" role="status" aria-live="polite">正在检查页面是否更新…</li></ol>
+<p id="detail">此页面会自动检查。关闭页面不会中断构建。</p><a id="view" href="${escapeHtml(albumUrl)}" hidden>查看相册 →</a><p><small>构建通常需要等待。只有确认页面版本一致，才会显示“已上线”。</small></p></main>
+<script>let attempts=0;async function check(){try{const response=await fetch(location.pathname+'?format=json',{cache:'no-store'});if(!response.ok)throw Error();const data=await response.json();if(data.stage==='site_updated'){document.getElementById('status').textContent='页面已更新，相册已上线';document.getElementById('detail').textContent='已核对相册页面与本次照片版本一致。';document.getElementById('view').hidden=false;return}document.getElementById('status').textContent='等待网站构建和页面更新';document.getElementById('detail').textContent='相册已保存；尚未核实新版本上线。'}catch{document.getElementById('status').textContent='暂时无法核对上线状态，正在重试';}if(++attempts<120)setTimeout(check,10000);else document.getElementById('detail').textContent='仍未确认上线，请稍后刷新此页面。';}check();</script></html>`
+    return new Response(body, { headers: {
+      'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer',
+      'content-security-policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+    } })
+  }
+  const revision = await albumRevision(album)
+  let verified = false
+  try {
+    const marker = await fetch(`https://guanyan.me/publish-status.json?_=${Date.now()}`, {
+      cache: 'no-store', signal: AbortSignal.timeout(8000),
+    })
+    const status = marker.ok ? await marker.json() : null
+    if (status?.version === 1 && status.gallery_fresh === true
+      && status.albums?.some((entry) => entry.id === id && entry.slug === album.slug && entry.revision === revision)) {
+      const page = await fetch(`${albumUrl}?_publication=${revision}`, {
+        cache: 'no-store', signal: AbortSignal.timeout(8000),
+      })
+      verified = page.ok && (await page.text()).includes(`data-gallery-revision="${revision}"`)
+    }
+  } catch { /* Pending is honest when a build, cache, or network cannot be verified. */ }
+  return jsonResponse({
+    stage: verified ? 'site_updated' : 'build_requested',
+    submitted: true, buildTriggered: Boolean(album.deployment?.requestedAt),
+    siteUpdated: verified, albumUrl,
+    checkedAt: new Date().toISOString(),
   })
 }
 
@@ -686,6 +743,8 @@ const worker = {
       if (url.pathname === GALLERY_MANIFEST_PATH) {
         return await serveGalleryManifest(request, env)
       }
+      const publicationRoute = /^\/webp\/gallery-status\/([a-f0-9-]{36})$/.exec(url.pathname)
+      if (publicationRoute) return await galleryPublicationStatus(request, env, publicationRoute[1])
 
       if (url.pathname === '/internal/gallery/albums') {
         if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')

@@ -2,12 +2,16 @@
 
 Custom Obsidian plugin for the Blog publishing area.
 
-It adds one **发布管理** ribbon entry and command. From that hub you can:
+It adds one **发布管理** ribbon entry and command. The entry opens a right-side
+workspace panel with four separate actions:
 
 - create a post, food note, or gallery from the templates in `Blog/templates/`;
-- open the website and public gallery;
 - load albums created by the iPhone Shortcut;
 - permanently delete a Private or published album.
+
+The published-album manager opens in a wide modal so album titles, links and
+actions remain visible. The sidebar also has links for the website and public
+gallery.
 
 The upload token is entered in the album manager and kept only in memory for
 the current Obsidian session. It is never written to plugin settings, the

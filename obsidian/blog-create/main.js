@@ -1,7 +1,17 @@
-const { Modal, Notice, Plugin, Setting, normalizePath, requestUrl } = require('obsidian')
+const {
+  ItemView,
+  Modal,
+  Notice,
+  Plugin,
+  Setting,
+  normalizePath,
+  requestUrl,
+  setIcon,
+} = require('obsidian')
 
 const GALLERY_API_ORIGIN = 'https://img.215320.xyz'
 const GALLERY_PUBLIC_ORIGIN = 'https://guanyan.me/gallery'
+const BLOG_HUB_VIEW = 'blog-publishing-hub'
 
 const CONTENT_TYPES = {
   posts: {
@@ -198,6 +208,7 @@ class GalleryManagerModal extends Modal {
   }
 
   onOpen() {
+    this.modalEl.addClass('blog-gallery-modal')
     this.contentEl.addClass('blog-gallery-manager')
     if (this.plugin.sessionToken) {
       this.loadAlbums()
@@ -374,45 +385,69 @@ class GalleryManagerModal extends Modal {
   }
 }
 
-class BlogHubModal extends Modal {
-  constructor(app, plugin) {
-    super(app)
+class BlogHubView extends ItemView {
+  constructor(leaf, plugin) {
+    super(leaf)
     this.plugin = plugin
   }
 
-  onOpen() {
+  getViewType() {
+    return BLOG_HUB_VIEW
+  }
+
+  getDisplayText() {
+    return '发布管理'
+  }
+
+  getIcon() {
+    return 'layout-dashboard'
+  }
+
+  async onOpen() {
+    this.render()
+  }
+
+  render() {
     const { contentEl } = this
-    contentEl.addClass('blog-hub-modal')
+    contentEl.empty()
+    contentEl.addClass('blog-hub-view')
     contentEl.createEl('h2', { text: '发布管理' })
     contentEl.createEl('p', {
-      text: '从一个入口新建内容或管理线上相册。Obsidian 仍负责文稿、分类和自动发布。',
+      text: '选择要创建的内容类型，或管理 iPhone 上传的线上相册。',
       cls: 'setting-item-description',
     })
 
-    const grid = contentEl.createDiv({ cls: 'blog-hub-grid' })
-    for (const [type, config] of Object.entries(CONTENT_TYPES)) {
-      const button = grid.createEl('button', {
-        cls: 'blog-hub-card',
+    const list = contentEl.createDiv({ cls: 'blog-hub-list' })
+    const items = [
+      ...Object.entries(CONTENT_TYPES).map(([type, config]) => ({
+        title: `新建${config.label}`,
+        description: `在 Blog/${config.folder}/ 创建新${config.label}`,
+        icon: config.icon,
+        action: () => this.plugin.openCreate(type),
+      })),
+      {
+        title: '管理线上相册',
+        description: '查看、打开或删除快捷指令上传的相册',
+        icon: 'images',
+        action: () => this.plugin.openGalleryManager(),
+        manage: true,
+      },
+    ]
+
+    for (const item of items) {
+      const button = list.createEl('button', {
+        cls: `blog-hub-item${item.manage ? ' is-manage' : ''}`,
         attr: { type: 'button' },
       })
-      button.createEl('strong', { text: `新建${config.label}` })
-      button.createEl('span', { text: `在 Blog/${config.folder}/ 创建新${config.label}` })
-      button.addEventListener('click', () => {
-        this.close()
-        new TitleModal(this.app, type, (title) => this.plugin.createNote(type, title)).open()
-      })
+      const icon = button.createSpan({ cls: 'blog-hub-item-icon' })
+      setIcon(icon, item.icon)
+      const copy = button.createSpan({ cls: 'blog-hub-item-copy' })
+      copy.createEl('strong', { text: item.title })
+      copy.createEl('span', { text: item.description })
+      const arrow = button.createSpan({ cls: 'blog-hub-item-arrow' })
+      setIcon(arrow, 'chevron-right')
+      button.addEventListener('click', item.action)
     }
-
-    const manage = grid.createEl('button', {
-      cls: 'blog-hub-card is-manage',
-      attr: { type: 'button' },
-    })
-    manage.createEl('strong', { text: '管理线上相册' })
-    manage.createEl('span', { text: '查看快捷指令相册，删除并触发网站更新' })
-    manage.addEventListener('click', () => {
-      this.close()
-      new GalleryManagerModal(this.app, this.plugin).open()
-    })
 
     const actions = contentEl.createDiv({ cls: 'blog-hub-links' })
     const website = actions.createEl('button', { text: '打开网站', attr: { type: 'button' } })
@@ -421,7 +456,7 @@ class BlogHubModal extends Modal {
     gallery.addEventListener('click', () => openExternal(GALLERY_PUBLIC_ORIGIN))
   }
 
-  onClose() {
+  async onClose() {
     this.contentEl.empty()
   }
 }
@@ -429,30 +464,52 @@ class BlogHubModal extends Modal {
 module.exports = class BlogCreatePlugin extends Plugin {
   async onload() {
     this.sessionToken = ''
+    this.registerView(BLOG_HUB_VIEW, (leaf) => new BlogHubView(leaf, this))
+
     this.addRibbonIcon('layout-dashboard', '打开发布管理', () => {
-      new BlogHubModal(this.app, this).open()
+      this.activateHubView()
     })
 
     this.addCommand({
       id: 'open-publishing-hub',
       name: '打开发布管理',
-      callback: () => new BlogHubModal(this.app, this).open(),
+      callback: () => this.activateHubView(),
     })
     this.addCommand({
       id: 'manage-gallery-albums',
       name: '管理线上相册',
-      callback: () => new GalleryManagerModal(this.app, this).open(),
+      callback: () => this.openGalleryManager(),
     })
 
     for (const [type, config] of Object.entries(CONTENT_TYPES)) {
       this.addCommand({
         id: `new-${type}`,
         name: `新建${config.label}`,
-        callback: () => {
-          new TitleModal(this.app, type, (title) => this.createNote(type, title)).open()
-        },
+        callback: () => this.openCreate(type),
       })
     }
+  }
+
+  onunload() {
+    this.app.workspace.detachLeavesOfType(BLOG_HUB_VIEW)
+  }
+
+  async activateHubView() {
+    let leaf = this.app.workspace.getLeavesOfType(BLOG_HUB_VIEW)[0]
+    if (!leaf) {
+      leaf = this.app.workspace.getRightLeaf(false)
+      if (!leaf) return
+      await leaf.setViewState({ type: BLOG_HUB_VIEW, active: true })
+    }
+    await this.app.workspace.revealLeaf(leaf)
+  }
+
+  openCreate(type) {
+    new TitleModal(this.app, type, (title) => this.createNote(type, title)).open()
+  }
+
+  openGalleryManager() {
+    new GalleryManagerModal(this.app, this).open()
   }
 
   async createNote(type, title) {

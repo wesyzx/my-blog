@@ -7,6 +7,36 @@ const ORIGINAL = new Uint8Array([0xff, 0xd8, 0xff, 0xd9])
 const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x04, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])
 const MP4 = new Uint8Array([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 1, 2, 3, 4])
 
+function isoBox(type, payload) {
+  const result = new Uint8Array(8 + payload.byteLength)
+  const view = new DataView(result.buffer)
+  view.setUint32(0, result.byteLength)
+  for (let index = 0; index < 4; index += 1) {
+    result[4 + index] = type.charCodeAt(index)
+  }
+  result.set(payload, 8)
+  return result
+}
+
+function portraitMov(width, height) {
+  const trackHeader = new Uint8Array(84)
+  const view = new DataView(trackHeader.buffer)
+  view.setUint32(76, width * 65536)
+  view.setUint32(80, height * 65536)
+  const boxes = [
+    isoBox('ftyp', new Uint8Array([0x71, 0x74, 0, 0])),
+    isoBox('mdat', new Uint8Array([1, 2, 3, 4])),
+    isoBox('moov', isoBox('trak', isoBox('tkhd', trackHeader))),
+  ]
+  const result = new Uint8Array(boxes.reduce((sum, box) => sum + box.byteLength, 0))
+  let offset = 0
+  for (const box of boxes) {
+    result.set(box, offset)
+    offset += box.byteLength
+  }
+  return result
+}
+
 function object(body = ORIGINAL, contentType = 'image/jpeg') {
   return {
     body,
@@ -606,6 +636,24 @@ test('uploads, deduplicates, publishes and range-serves gallery videos', async (
   assert.equal(head.status, 200)
   assert.equal(head.headers.get('content-length'), String(MP4.byteLength))
   assert.equal(await head.text(), '')
+})
+
+test('reads portrait dimensions from iPhone video track metadata', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '竖屏视频', date: '2026-10-31', slug: 'portrait-video' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  const uploaded = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/videos`, {
+    body: portraitMov(1080, 1920),
+    contentType: 'video/quicktime',
+  }), gallery.env)
+  assert.equal(uploaded.status, 200)
+  const result = await uploaded.json()
+  assert.equal(result.video.width, 1080)
+  assert.equal(result.video.height, 1920)
 })
 
 test('gallery admin page exposes the visual shell while album data stays authenticated', async (t) => {

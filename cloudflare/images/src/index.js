@@ -351,11 +351,89 @@ async function uploadGalleryPhoto(request, env, id) {
   return jsonResponse({ ok: true, duplicate: false, image: publicImage })
 }
 
-function videoDimensions(request) {
+function isoBox(buffer, offset, limit) {
+  if (offset + 8 > limit) return null
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+  let size = view.getUint32(offset)
+  let headerSize = 8
+  if (size === 1) {
+    if (offset + 16 > limit) return null
+    const high = view.getUint32(offset + 8)
+    const low = view.getUint32(offset + 12)
+    size = high * 2 ** 32 + low
+    headerSize = 16
+  } else if (size === 0) {
+    size = limit - offset
+  }
+  if (size < headerSize || offset + size > limit) return null
+  return {
+    type: String.fromCharCode(
+      buffer[offset + 4],
+      buffer[offset + 5],
+      buffer[offset + 6],
+      buffer[offset + 7],
+    ),
+    bodyOffset: offset + headerSize,
+    endOffset: offset + size,
+  }
+}
+
+function forEachIsoBox(buffer, start, end, visit) {
+  for (let offset = start; offset < end;) {
+    const box = isoBox(buffer, offset, end)
+    if (!box) return
+    visit(box)
+    offset = box.endOffset
+  }
+}
+
+function trackHeaderDimensions(buffer, box) {
+  if (box.bodyOffset + 84 > box.endOffset) return null
+  const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+  const version = buffer[box.bodyOffset]
+  const dimensionsOffset = box.bodyOffset + (version === 1 ? 88 : 76)
+  if (dimensionsOffset + 8 > box.endOffset) return null
+  const width = Math.round(view.getUint32(dimensionsOffset) / 65536)
+  const height = Math.round(view.getUint32(dimensionsOffset + 4) / 65536)
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null
+  return { width, height }
+}
+
+/**
+ * iPhone writes the displayed width and height into the QuickTime track header,
+ * including for portrait clips. Read that small amount of container metadata
+ * instead of assuming every upload without explicit headers is landscape.
+ */
+function videoTrackDimensions(buffer) {
+  let dimensions = null
+  forEachIsoBox(buffer, 0, buffer.byteLength, (box) => {
+    if (box.type !== 'moov') return
+    forEachIsoBox(buffer, box.bodyOffset, box.endOffset, (child) => {
+      if (child.type !== 'trak') return
+      forEachIsoBox(buffer, child.bodyOffset, child.endOffset, (trackBox) => {
+        if (trackBox.type !== 'tkhd') return
+        const candidate = trackHeaderDimensions(buffer, trackBox)
+        if (candidate && (!dimensions || candidate.width * candidate.height > dimensions.width * dimensions.height)) {
+          dimensions = candidate
+        }
+      })
+    })
+  })
+  return dimensions
+}
+
+function videoDimensions(request, buffer) {
   const width = Number(request.headers.get('x-video-width'))
   const height = Number(request.headers.get('x-video-height'))
   if (Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0) {
     return { width: Math.min(width, 16384), height: Math.min(height, 16384) }
+  }
+  const storedDimensions = videoTrackDimensions(new Uint8Array(buffer))
+  if (storedDimensions) {
+    return {
+      width: Math.min(storedDimensions.width, 16384),
+      height: Math.min(storedDimensions.height, 16384),
+    }
   }
   return request.headers.get('x-video-orientation') === 'portrait'
     ? { width: 1080, height: 1920 }
@@ -396,7 +474,7 @@ async function uploadGalleryVideo(request, env, id) {
     httpMetadata: { contentType },
   })
 
-  const dimensions = videoDimensions(request)
+  const dimensions = videoDimensions(request, buffer)
   const duration = Number(request.headers.get('x-video-duration'))
   const video = {
     kind: 'video',

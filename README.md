@@ -5,9 +5,10 @@
 ## 项目结构
 
 - `app/`、`components/`、`lib/`：Next.js 主站，部署于 EdgeOne。
-- `scripts/bundle-data.mjs`：生成内容快照；博文、美食与相册均来自同一 Obsidian Vault。`content/about.md` 管理关于页。
+- `scripts/bundle-data.mjs`：生成内容快照；博文与美食来自 Obsidian，相册合并 Obsidian 和 iPhone 发布到 R2 的相册。`content/about.md` 管理关于页。
 - `cloudflare/workouts/`：运动数据 Worker、D1 迁移与测试，是运动页面的数据服务。
-- `cloudflare/images/`：Blog 图片的只读 WebP 转换 Worker。
+- `cloudflare/images/`：Blog 图片 WebP 转换，以及需要 bearer token 的相册上传/发布接口。
+- `cloudflare/gallery/`：从 iPhone 照片相簿发布博客相册的快捷指令生成器。
 - `cloudflare/workouts/shortcuts/`：三个正式运动快捷指令及生成器，日常使用见该目录的 README。
 - `scripts/import-apple-health.py`：Apple 健康历史数据批量导入工具。
 - `docs/`：灯箱说明与保留的主题设计提案。
@@ -32,6 +33,8 @@ npm run check
 npm test
 npm run check --prefix cloudflare/workouts
 npm test --prefix cloudflare/workouts
+pnpm test --prefix cloudflare/images
+pnpm test --prefix cloudflare/gallery
 npm run build
 ```
 
@@ -75,7 +78,7 @@ OBSIDIAN_BLOG_DIR="/path/to/Obsidian/Blog" \
 npm run obsidian:preview
 ```
 
-仓库的 `content/source.json` 已将博文、美食和相册设为 Obsidian；`CONTENT_SOURCE` 可覆盖博文来源，
+仓库的 `content/source.json` 已将博文、美食设为 Obsidian，相册设为 `hybrid`；`CONTENT_SOURCE` 可覆盖博文来源，
 `FOOD_CONTENT_SOURCE` 和 `GALLERY_CONTENT_SOURCE` 可分别覆盖美食与相册来源，留空使用仓库配置。
 三个板块全部使用 Obsidian 时，构建不再请求 Notion。
 默认读取仓库内 `content/obsidian`，该目录只保存已批准发布的副本，不包含私人 Vault 或草稿。
@@ -99,6 +102,8 @@ npm run obsidian:preview
 也可同时留空（优先复用已有坐标，配置高德 Key 后可查询新地点）。
 相册增加 `category`（默认「日常」），直接把图片插入正文即可，也支持 frontmatter
 中的 `images` 地址列表。本地图片自动读取真实尺寸；未指定封面时使用第一张图片。
+iPhone 发布的 R2 相册会与这些 Obsidian 相册合并，原有相册不需要迁移。使用方式见
+`cloudflare/gallery/README.md`；R2 相册先在 Worker 中保持私密，最后发布时才进入网站清单并触发 EdgeOne 构建。
 同名文件可分别放在不同板块中，链接和 slug 分别按板块处理。
 每个板块撤下最后一条已发布内容时会停止自动发布，需要人工检查，避免误清空整个板块。
 

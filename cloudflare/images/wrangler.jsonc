@@ -8,6 +8,10 @@
     {
       "pattern": "img.215320.xyz/webp/*",
       "zone_name": "215320.xyz"
+    },
+    {
+      "pattern": "img.215320.xyz/internal/gallery/*",
+      "zone_name": "215320.xyz"
     }
   ],
   "observability": {

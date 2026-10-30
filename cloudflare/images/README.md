@@ -1,6 +1,7 @@
 # Blog image WebP Worker
 
-This Worker exposes a read-only WebP view of the existing `blog-images` R2 bucket.
+This Worker exposes a WebP view of the existing `blog-images` R2 bucket and the
+authenticated gallery endpoints used by the iPhone Shortcut.
 The original JPEG, PNG and other R2 objects stay unchanged. The public URL keeps
 the original object key, so the Obsidian plugin can insert a `.webp` public URL
 without renaming or overwriting the uploaded object.
@@ -73,6 +74,29 @@ Quality is part of the preset contract: 75 for tiles and cards, 82 for `full`.
   vectors, and `info` answers `415` for them.
 - `HEAD` returns the same metadata for either representation, without a body.
 - `/health` is a small, uncached health check.
+- `/internal/gallery/albums` creates a private album record. The Shortcut then
+  uploads each converted JPEG to `/internal/gallery/albums/{id}/photos`.
+- `/internal/gallery/albums/{id}/publish` marks the album public before calling
+  `EDGEONE_DEPLOY_WEBHOOK`. A webhook failure restores the prior private state.
+- `/webp/gallery-manifest` returns only published albums and uses
+  `Cache-Control: no-store`. The site combines them with Obsidian albums.
+
+All `/internal/gallery/*` requests require
+`Authorization: Bearer $GALLERY_UPLOAD_TOKEN`. The Worker route must therefore
+cover both:
+
+```text
+img.215320.xyz/webp/*
+img.215320.xyz/internal/gallery/*
+```
+
+Album records stay under the private R2 prefix `internal/gallery/albums/`.
+Photos retain their uploaded bytes under
+`blog/obsidian/gallery/{year}/{month}/{slug}/`; `.webp` is a public view generated
+at request time. The API allows 100 photos per album and 20 MiB per photo, the
+Images binding's documented input limit. The iPhone Shortcut converts HEIC to
+JPEG first. The Worker also accepts `image/heic` and `image/heif` for Enterprise
+Cloudflare Images plans that can decode them.
 
 Legacy links (`/webp/blog/obsidian/...`) keep working. The old Next.js loader
 appends `?imageMogr2/thumbnail/{w}x/quality/{q}/format/webp`; the Worker parses
@@ -106,6 +130,8 @@ EdgeOne costs are separate. Versioned variants are explicit WebP resources and d
 Deploy with:
 
 ```sh
+pnpm dlx wrangler@latest secret put GALLERY_UPLOAD_TOKEN --config cloudflare/images/wrangler.jsonc
+pnpm dlx wrangler@latest secret put EDGEONE_DEPLOY_WEBHOOK --config cloudflare/images/wrangler.jsonc
 pnpm dlx wrangler@latest deploy --config cloudflare/images/wrangler.jsonc
 ```
 

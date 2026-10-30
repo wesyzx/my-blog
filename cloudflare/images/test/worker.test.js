@@ -171,13 +171,15 @@ test('rejects missing images and traversal paths before R2 access', async (t) =>
   assert.equal((await worker.fetch(imageRequest('/webp/blog/obsidian/2026/10/missing.webp'), env)).status, 404)
   assert.equal((await worker.fetch(imageRequest('/webp/blog/%2e%2e/private.webp'), env)).status, 404)
   assert.equal((await worker.fetch(imageRequest('/blog/obsidian/2026/10/photo.jpg'), env)).status, 404)
-  assert.equal(calls.filter((call) => call.type === 'get').length, 6)
-  assert.deepEqual(calls.slice(0, 6).map((call) => call.key), [
+  assert.equal(calls.filter((call) => call.type === 'get').length, 8)
+  assert.deepEqual(calls.slice(0, 8).map((call) => call.key), [
     'blog/obsidian/2026/10/missing.webp',
     'blog/obsidian/2026/10/missing.jpg',
     'blog/obsidian/2026/10/missing.jpeg',
     'blog/obsidian/2026/10/missing.png',
     'blog/obsidian/2026/10/missing.gif',
+    'blog/obsidian/2026/10/missing.heic',
+    'blog/obsidian/2026/10/missing.heif',
     'blog/obsidian/2026/10/missing.svg',
   ])
 })
@@ -375,4 +377,238 @@ test('a storage outage remains a non-cacheable error rather than a redirect loop
   assert.equal(response.status, 502)
   assert.equal(response.headers.get('cache-control'), 'no-store')
   assert.equal(response.headers.has('location'), false)
+})
+
+// --- authenticated gallery ingest -------------------------------------------
+
+function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) {
+  const objects = new Map()
+  const deployCalls = []
+  const env = {
+    GALLERY_UPLOAD_TOKEN: token,
+    EDGEONE_DEPLOY_WEBHOOK: 'https://edgeone.example/deploy',
+    IMAGES_BUCKET: {
+      async get(key) {
+        const entry = objects.get(key)
+        return entry ? { body: entry.body, httpMetadata: entry.httpMetadata } : null
+      },
+      async put(key, body, options = {}) {
+        objects.set(key, { body: typeof body === 'string' ? body : new Uint8Array(body), httpMetadata: options.httpMetadata })
+      },
+      async list({ prefix }) {
+        return { objects: [...objects.keys()].filter((key) => key.startsWith(prefix)).map((key) => ({ key })) }
+      },
+    },
+    IMAGES: {
+      async info() {
+        return { width: 4032, height: 3024, format: 'image/jpeg', fileSize: ORIGINAL.byteLength }
+      },
+    },
+  }
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url, options) => {
+    if (url === env.EDGEONE_DEPLOY_WEBHOOK) {
+      deployCalls.push({ url, options })
+      return new Response(null, { status: deployOk ? 204 : 503 })
+    }
+    return originalFetch(url, options)
+  }
+  return {
+    env,
+    objects,
+    deployCalls,
+    restoreFetch() { globalThis.fetch = originalFetch },
+  }
+}
+
+function galleryRequest(path, {
+  method = 'POST',
+  token = 'gallery-secret',
+  body,
+  contentType,
+} = {}) {
+  const headers = new Headers()
+  if (token) headers.set('authorization', `Bearer ${token}`)
+  if (contentType) headers.set('content-type', contentType)
+  return new Request(`https://images.example${path}`, { method, headers, body })
+}
+
+test('creates, uploads, deduplicates and publishes a gallery album', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+
+  const unauthorized = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    token: 'wrong', body: '{}', contentType: 'application/json',
+  }), gallery.env)
+  assert.equal(unauthorized.status, 401)
+
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '秋日散步', date: '2026-10-30', category: '日常' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  assert.equal(created.status, 200)
+  const album = await created.json()
+  assert.match(album.albumId, /^[a-f0-9-]{36}$/)
+  assert.equal(album.slug, '2026-10-30-秋日散步')
+
+  const first = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
+    body: ORIGINAL,
+    contentType: 'image/jpeg',
+  }), gallery.env)
+  assert.equal(first.status, 200)
+  const uploaded = await first.json()
+  assert.equal(uploaded.duplicate, false)
+  assert.deepEqual(uploaded.image, {
+    src: uploaded.image.src,
+    width: 4032,
+    height: 3024,
+    order: 0,
+  })
+  assert.match(uploaded.image.src, /\/gallery\/2026\/10\/2026-10-30-秋日散步\/001-[a-f0-9]{12}\.webp$/)
+
+  const duplicate = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
+    body: ORIGINAL,
+    contentType: 'image/jpeg',
+  }), gallery.env)
+  assert.equal(duplicate.status, 200)
+  assert.equal((await duplicate.json()).duplicate, true)
+
+  const privateManifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.equal(privateManifest.status, 200)
+  assert.equal(privateManifest.headers.get('cache-control'), 'no-store')
+  assert.deepEqual((await privateManifest.json()).albums, [])
+
+  const published = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/publish`), gallery.env)
+  assert.equal(published.status, 200)
+  assert.equal((await published.json()).deployTriggered, true)
+  assert.equal(gallery.deployCalls.length, 1)
+
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.equal(manifest.status, 200)
+  const publicAlbum = (await manifest.json()).albums[0]
+  assert.equal(publicAlbum.id, album.albumId)
+  assert.equal(publicAlbum.title, '秋日散步')
+  assert.equal(publicAlbum.images.length, 1)
+  assert.equal(publicAlbum.cover, uploaded.image.src)
+})
+
+test('gallery upload rejects unsupported, oversized and missing albums', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Test', date: '2026-10-30' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+
+  assert.equal((await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL, contentType: 'text/plain',
+  }), gallery.env)).status, 415)
+  assert.equal((await worker.fetch(galleryRequest('/internal/gallery/albums/00000000-0000-0000-0000-000000000000/photos', {
+    body: ORIGINAL, contentType: 'image/jpeg',
+  }), gallery.env)).status, 404)
+  const publish = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+  assert.equal(publish.status, 409)
+})
+
+test('gallery publish reports an EdgeOne webhook failure without claiming success', async (t) => {
+  const gallery = galleryEnvironment({ deployOk: false })
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Test', date: '2026-10-30' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL, contentType: 'image/jpeg',
+  }), gallery.env)
+  const publish = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+  assert.equal(publish.status, 502)
+  assert.match((await publish.json()).error, /HTTP 503/)
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.deepEqual((await manifest.json()).albums, [])
+})
+
+test('gallery publish remains private without a deploy webhook', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  delete gallery.env.EDGEONE_DEPLOY_WEBHOOK
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Test', date: '2026-10-30' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL,
+    contentType: 'image/jpeg',
+  }), gallery.env)
+  const publish = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+  assert.equal(publish.status, 503)
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  assert.deepEqual((await manifest.json()).albums, [])
+})
+
+test('gallery accepts HEIC bytes when the Images binding can decode them', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'HEIC', date: '2026-10-30' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  const uploaded = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
+    body: ORIGINAL,
+    contentType: 'image/heic',
+  }), gallery.env)
+  assert.equal(uploaded.status, 200)
+  assert.ok([...gallery.objects.keys()].some((key) => key.endsWith('.heic')))
+})
+
+test('gallery makes duplicate album slugs unique and manifest pagination complete', async (t) => {
+  const objects = new Map()
+  const env = {
+    GALLERY_UPLOAD_TOKEN: 'gallery-secret',
+    EDGEONE_DEPLOY_WEBHOOK: 'https://edgeone.example/deploy',
+    IMAGES_BUCKET: {
+      async get(key) {
+        const entry = objects.get(key)
+        return entry ? { body: entry.body, httpMetadata: entry.httpMetadata } : null
+      },
+      async put(key, body, options = {}) {
+        objects.set(key, { body: typeof body === 'string' ? body : new Uint8Array(body), httpMetadata: options.httpMetadata })
+      },
+      async list({ prefix, cursor }) {
+        const keys = [...objects.keys()].filter((key) => key.startsWith(prefix))
+        if (cursor) return { objects: keys.slice(1).map((key) => ({ key })), truncated: false }
+        return { objects: keys.slice(0, 1).map((key) => ({ key })), truncated: keys.length > 1, cursor: 'next' }
+      },
+    },
+    IMAGES: { async info() { return { width: 10, height: 20 } } },
+  }
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    assert.equal(url, env.EDGEONE_DEPLOY_WEBHOOK)
+    return new Response(null, { status: 204 })
+  }
+  t.after(() => { globalThis.fetch = originalFetch })
+  const created = []
+  for (let index = 0; index < 2; index += 1) {
+    const response = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+      body: JSON.stringify({ title: '同名', date: '2026-10-30' }),
+      contentType: 'application/json',
+    }), env)
+    created.push(await response.json())
+  }
+  assert.notEqual(created[0].slug, created[1].slug)
+  assert.match(created[1].slug, /-[a-f0-9]{8}$/)
+
+  for (const album of created) {
+    const photo = await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/photos`, {
+      body: ORIGINAL, contentType: 'image/jpeg',
+    }), env)
+    assert.equal(photo.status, 200)
+    await worker.fetch(galleryRequest(`/internal/gallery/albums/${album.albumId}/publish`), env)
+  }
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), env)
+  assert.equal((await manifest.json()).albums.length, 2)
 })

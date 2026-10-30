@@ -1,7 +1,7 @@
-const IMAGE_EXTENSION = /\.(?:gif|jpe?g|png|svg|webp)$/i
+const IMAGE_EXTENSION = /\.(?:gif|heic|heif|jpe?g|png|svg|webp)$/i
 const STATIC_ASSET_PATH = /^\/(?:favicon\.ico|robots\.txt)$/i
 const PUBLIC_PREFIX = '/webp/'
-const SOURCE_EXTENSIONS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.svg']
+const SOURCE_EXTENSIONS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.heic', '.heif', '.svg']
 
 // The site's older image loader appends `?imageMogr2/thumbnail/{w}x/quality/{q}`.
 // Parsing it keeps existing links working; new links use the versioned route.
@@ -21,6 +21,8 @@ const QUALITY_LADDER = [60, 70, 75, 80, 82, 90]
 const V2_ROUTE = /^\/webp\/v2\/([^/]+)\/(\d+)\/([^/]+)\/blog\/obsidian\/(.+)$/
 const V2_ORIGINAL_ROUTE = /^\/webp\/v2\/original\/blog\/obsidian\/(.+)$/
 const INFO_ROUTE = /^\/webp\/v2\/info\/blog\/obsidian\/(.+)$/
+const GALLERY_ALBUM_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/(photos|publish)$/
+const GALLERY_MANIFEST_PATH = '/webp/gallery-manifest'
 const PRESETS = {
   fit: { ratio: null },
   full: { ratio: null },
@@ -35,6 +37,16 @@ const PRESETS = {
 // keeps headroom that center-cropping a portrait would cut off.
 const FOCUS = new Set(['auto', 'center', 'top', 'face'])
 const SVG_TYPE = 'image/svg+xml'
+// Cloudflare Images supports HEIC/HEIF on Enterprise plans. The iPhone
+// Shortcut converts to JPEG for standard plans, while accepting HEIC here also
+// lets Enterprise users upload it without rebuilding the Shortcut.
+const GALLERY_IMAGE_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
+])
+// This is the Images binding's documented maximum input size.
+const GALLERY_IMAGE_LIMIT = 20 * 1024 * 1024
+const GALLERY_ALBUM_PREFIX = 'internal/gallery/albums/'
+const GALLERY_PUBLIC_ORIGIN = 'https://img.guanyan.me/webp'
 
 function errorResponse(status, message, headers = {}) {
   return new Response(JSON.stringify({ error: message }), {
@@ -43,6 +55,279 @@ function errorResponse(status, message, headers = {}) {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
       ...headers,
+    },
+  })
+}
+
+function jsonResponse(value, status = 200, headers = {}) {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      ...headers,
+    },
+  })
+}
+
+function cleanText(value, maximum) {
+  if (typeof value !== 'string') return ''
+  return value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maximum)
+}
+
+function cleanDate(value) {
+  const date = cleanText(value, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : new Date().toISOString().slice(0, 10)
+}
+
+function albumSlug(title, date, id) {
+  const preferred = title.normalize('NFKC')
+    .replace(/[\/?#%\\]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72)
+  return `${date}-${preferred || id.slice(0, 8)}`
+}
+
+function uniqueAlbumSlug(title, date, id, used) {
+  const preferred = albumSlug(title, date, id)
+  if (!used.has(preferred)) return preferred
+  return `${preferred}-${id.slice(0, 8)}`
+}
+
+function sameSecret(actual, expected) {
+  if (!actual || !expected || actual.length !== expected.length) return false
+  let difference = 0
+  for (let index = 0; index < actual.length; index += 1) {
+    difference |= actual.charCodeAt(index) ^ expected.charCodeAt(index)
+  }
+  return difference === 0
+}
+
+function galleryAuthorized(request, env) {
+  const authorization = request.headers.get('authorization') || ''
+  return authorization.startsWith('Bearer ')
+    && sameSecret(authorization.slice('Bearer '.length), env.GALLERY_UPLOAD_TOKEN || '')
+}
+
+function albumKey(id) {
+  return `${GALLERY_ALBUM_PREFIX}${id}.json`
+}
+
+async function readAlbum(env, id) {
+  const object = await env.IMAGES_BUCKET.get(albumKey(id))
+  if (!object?.body) return null
+  try {
+    return JSON.parse(await new Response(object.body).text())
+  } catch {
+    return null
+  }
+}
+
+async function writeAlbum(env, album) {
+  album.updatedAt = new Date().toISOString()
+  await env.IMAGES_BUCKET.put(albumKey(album.id), JSON.stringify(album), {
+    httpMetadata: { contentType: 'application/json; charset=utf-8' },
+  })
+}
+
+async function listGalleryAlbums(env) {
+  const entries = []
+  let cursor
+  do {
+    const page = await env.IMAGES_BUCKET.list({
+      prefix: GALLERY_ALBUM_PREFIX,
+      ...(cursor ? { cursor } : {}),
+    })
+    entries.push(...(page.objects || []))
+    cursor = page.truncated ? page.cursor : undefined
+  } while (cursor)
+  return entries
+}
+
+async function sha256Hex(buffer) {
+  const digest = await crypto.subtle.digest('SHA-256', buffer)
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function createGalleryAlbum(request, env) {
+  if (request.method !== 'POST') return errorResponse(405, 'Method not allowed', { allow: 'POST' })
+  let metadata
+  try {
+    metadata = await request.json()
+  } catch {
+    return errorResponse(400, 'Invalid album metadata')
+  }
+
+  const title = cleanText(metadata?.title, 120)
+  if (!title) return errorResponse(400, 'Album title is required')
+  const date = cleanDate(metadata?.date)
+  const id = crypto.randomUUID()
+  const used = new Set()
+  for (const entry of await listGalleryAlbums(env)) {
+    const existing = await readAlbum(env, entry.key.slice(GALLERY_ALBUM_PREFIX.length, -'.json'.length))
+    if (existing?.slug) used.add(existing.slug)
+  }
+  const album = {
+    id,
+    slug: uniqueAlbumSlug(title, date, id, used),
+    title,
+    date,
+    category: cleanText(metadata?.category, 40) || '日常',
+    excerpt: cleanText(metadata?.excerpt, 500),
+    createdAt: new Date().toISOString(),
+    published: false,
+    images: [],
+  }
+  await writeAlbum(env, album)
+  return jsonResponse({ ok: true, albumId: id, slug: album.slug })
+}
+
+async function uploadGalleryPhoto(request, env, id) {
+  if (request.method !== 'POST') return errorResponse(405, 'Method not allowed', { allow: 'POST' })
+  const album = await readAlbum(env, id)
+  if (!album) return errorResponse(404, 'Album not found')
+  if (album.published === true) return errorResponse(409, 'Published albums are immutable')
+  if (album.images.length >= 100) return errorResponse(413, 'Album photo limit reached')
+
+  const contentType = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+  if (!GALLERY_IMAGE_TYPES.has(contentType)) return errorResponse(415, 'Unsupported photo format')
+  const declaredLength = Number(request.headers.get('content-length'))
+  if (declaredLength > GALLERY_IMAGE_LIMIT) return errorResponse(413, 'Photo is too large')
+
+  const buffer = await request.arrayBuffer()
+  if (!buffer.byteLength) return errorResponse(400, 'Photo body is empty')
+  if (buffer.byteLength > GALLERY_IMAGE_LIMIT) return errorResponse(413, 'Photo is too large')
+
+  const hash = await sha256Hex(buffer)
+  const duplicate = album.images.find((image) => image.hash === hash)
+  if (duplicate) {
+    const publicImage = {
+      src: duplicate.src,
+      width: duplicate.width,
+      height: duplicate.height,
+      order: duplicate.order,
+    }
+    return jsonResponse({ ok: true, duplicate: true, image: publicImage })
+  }
+
+  let info
+  try {
+    info = await env.IMAGES.info(buffer)
+  } catch {
+    return errorResponse(415, 'Photo could not be decoded')
+  }
+  if (!info?.width || !info?.height) return errorResponse(415, 'Photo dimensions are unavailable')
+
+  const extension = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/heic': 'heic',
+    'image/heif': 'heif',
+  }[contentType]
+  const [year, month] = album.date.split('-')
+  const order = String(album.images.length + 1).padStart(3, '0')
+  const objectKey = `blog/obsidian/gallery/${year}/${month}/${album.slug}/${order}-${hash.slice(0, 12)}.${extension}`
+  await env.IMAGES_BUCKET.put(objectKey, buffer, {
+    httpMetadata: { contentType },
+  })
+
+  const publicStem = objectKey.replace(/\.[^.]+$/, '')
+  const image = {
+    src: `${GALLERY_PUBLIC_ORIGIN}/${publicStem}.webp`,
+    width: info.width,
+    height: info.height,
+    order: album.images.length,
+    hash,
+  }
+  album.images.push(image)
+  await writeAlbum(env, album)
+  const publicImage = {
+    src: image.src,
+    width: image.width,
+    height: image.height,
+    order: image.order,
+  }
+  return jsonResponse({ ok: true, duplicate: false, image: publicImage })
+}
+
+async function publishGalleryAlbum(request, env, id) {
+  if (request.method !== 'POST') return errorResponse(405, 'Method not allowed', { allow: 'POST' })
+  const album = await readAlbum(env, id)
+  if (!album) return errorResponse(404, 'Album not found')
+  if (!album.images.length) return errorResponse(409, 'Album has no photos')
+  if (!env.EDGEONE_DEPLOY_WEBHOOK) {
+    return errorResponse(503, 'Gallery publish is not configured')
+  }
+
+  // A deployment reads the public manifest, so the album must be visible
+  // before the webhook fires. A failure rolls the flag back to its prior value.
+  const wasPublished = album.published === true
+  album.published = true
+  await writeAlbum(env, album)
+
+  let response
+  try {
+    response = await fetch(env.EDGEONE_DEPLOY_WEBHOOK, { method: 'POST' })
+  } catch {
+    album.published = wasPublished
+    await writeAlbum(env, album)
+    return errorResponse(502, 'Deploy webhook request failed')
+  }
+  if (!response.ok) {
+    album.published = wasPublished
+    await writeAlbum(env, album)
+    return errorResponse(502, `Deploy webhook failed with HTTP ${response.status}`)
+  }
+
+  return jsonResponse({
+    ok: true,
+    albumId: id,
+    slug: album.slug,
+    photos: album.images.length,
+    deployTriggered: true,
+    deployStatus: response.status,
+    url: `https://guanyan.me/gallery/${encodeURIComponent(album.slug)}`,
+  })
+}
+
+async function serveGalleryManifest(request, env) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
+  }
+  const albums = []
+  for (const entry of await listGalleryAlbums(env)) {
+    const object = await env.IMAGES_BUCKET.get(entry.key)
+    if (!object?.body) continue
+    try {
+      const album = JSON.parse(await new Response(object.body).text())
+      if (!album?.id || !album.slug || !album.title || !Array.isArray(album.images)) continue
+      if (album.published !== true) continue
+      if (!album.images.length) continue
+      albums.push({
+        id: album.id,
+        slug: album.slug,
+        title: album.title,
+        date: album.date,
+        category: album.category || '日常',
+        excerpt: album.excerpt || '',
+        cover: album.images[0].src,
+        images: album.images.slice()
+          .sort((left, right) => left.order - right.order)
+          .map(({ src, width, height }) => ({ src, width, height })),
+      })
+    } catch {
+      // One malformed private record must not hide the rest of the albums.
+    }
+  }
+  albums.sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
+  const body = JSON.stringify({ albums, updatedAt: new Date().toISOString() })
+  return new Response(request.method === 'HEAD' ? null : body, {
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
     },
   })
 }
@@ -191,7 +476,8 @@ function sourceContentType(object, key) {
   const extension = key.slice(key.lastIndexOf('.')).toLowerCase()
   return {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-    '.gif': 'image/gif', '.svg': SVG_TYPE, '.webp': 'image/webp',
+    '.gif': 'image/gif', '.heic': 'image/heic', '.heif': 'image/heif',
+    '.svg': SVG_TYPE, '.webp': 'image/webp',
   }[extension] || 'application/octet-stream'
 }
 
@@ -363,14 +649,37 @@ const worker = {
     }
 
     try {
+      if (url.pathname === GALLERY_MANIFEST_PATH) {
+        return await serveGalleryManifest(request, env)
+      }
+
+      if (url.pathname === '/internal/gallery/albums') {
+        if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
+        return await createGalleryAlbum(request, env)
+      }
+
+      const galleryRoute = GALLERY_ALBUM_ROUTE.exec(url.pathname)
+      if (galleryRoute) {
+        if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
+        const [, id, action] = galleryRoute
+        return action === 'photos'
+          ? await uploadGalleryPhoto(request, env, id)
+          : await publishGalleryAlbum(request, env, id)
+      }
+
       return await serveImage(request, env, url)
     } catch (error) {
       console.error(JSON.stringify({
-        message: 'Image conversion failed',
+        message: url.pathname.startsWith('/internal/gallery/')
+          ? 'Gallery request failed'
+          : 'Image conversion failed',
         path: url.pathname,
         error: error instanceof Error ? error.name : 'UnknownError',
       }))
-      return errorResponse(502, 'Image conversion failed')
+      return errorResponse(
+        502,
+        url.pathname.startsWith('/internal/gallery/') ? 'Gallery request failed' : 'Image conversion failed',
+      )
     }
   },
 }

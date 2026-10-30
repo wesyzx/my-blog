@@ -24,6 +24,7 @@ const CONTENT_SOURCES = Object.fromEntries(['posts', 'food', 'gallery'].map((sec
   return [section, (override || repositoryContentSources[section] || 'notion').trim().toLowerCase()]
 }))
 const OBSIDIAN_BLOG_DIR = process.env.OBSIDIAN_BLOG_DIR || path.join(process.cwd(), 'content/obsidian')
+const GALLERY_MANIFEST_URL = process.env.GALLERY_MANIFEST_URL || 'https://img.215320.xyz/webp/gallery-manifest'
 
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
 const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
@@ -151,6 +152,62 @@ async function fetchImageMeta(imageUrl, lastKnown) {
   }
 }
 
+function cleanText(value, maximum) {
+  return typeof value === 'string'
+    ? value.replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, maximum)
+    : ''
+}
+
+async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
+  try {
+    const manifestUrl = new URL(GALLERY_MANIFEST_URL)
+    manifestUrl.searchParams.set('_', String(Date.now()))
+    const response = await fetch(manifestUrl, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(8000),
+      cache: 'no-store',
+    })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const manifest = await response.json()
+    if (!Array.isArray(manifest?.albums)) throw new Error('相册清单缺少 albums')
+    const used = new Set(reservedSlugs)
+    return manifest.albums.slice(0, 1000).flatMap((album) => {
+      if (!album || typeof album.title !== 'string' || !Array.isArray(album.images)) return []
+      const images = album.images.slice(0, 100).flatMap((image) => {
+        if (!isBlogImage(image?.src)) return []
+        const width = Number(image.width)
+        const height = Number(image.height)
+        if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) return []
+        return [{ src: image.src, width, height }]
+      })
+      if (!images.length) return []
+      const title = cleanText(album.title, 120)
+      if (!title) return []
+      const albumDate = /^\d{4}-\d{2}-\d{2}$/.test(album.date)
+        ? album.date
+        : new Date().toISOString().slice(0, 10)
+      const slug = uniqueSlug(album.slug, title, album.id || `${albumDate}-${title}`, used)
+      return [{
+        slug,
+        title,
+        date: albumDate,
+        category: cleanText(album.category, 40) || '日常',
+        cover: images[0].src,
+        images,
+        excerpt: cleanText(album.excerpt, 500),
+        published: true,
+        content: images.map((image, index) => `![${title} ${index + 1}](${image.src})`).join('\n\n'),
+        source: 'r2',
+      }]
+    }).sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
+  } catch (error) {
+    console.warn(`  R2 gallery manifest unavailable; using the previous shortcut albums: ${error.message}`)
+    return (existing.gallery || [])
+      .filter((album) => album.source === 'r2')
+      .map((album) => ({ ...album, source: 'r2' }))
+  }
+}
+
 async function geocode(address) {
   if (!address || !process.env.AMAP_KEY) return { lng: 0, lat: 0 }
   const cleanAddress = address.replace(/\(.*?\)|（.*?）/g, '').trim()
@@ -265,8 +322,12 @@ async function fetchNotionContent(existing, previousCoords, previousImageSizes, 
 }
 
 async function buildBundle() {
-  if (Object.values(CONTENT_SOURCES).some((source) => !['notion', 'obsidian'].includes(source))) {
-    throw new Error('内容源只能是 notion 或 obsidian')
+  if (Object.values(CONTENT_SOURCES).some((source) => !['notion', 'obsidian', 'r2', 'hybrid'].includes(source))) {
+    throw new Error('内容源只能是 notion、obsidian、r2 或 hybrid')
+  }
+  if (CONTENT_SOURCES.posts === 'r2' || CONTENT_SOURCES.food === 'r2'
+    || CONTENT_SOURCES.posts === 'hybrid' || CONTENT_SOURCES.food === 'hybrid') {
+    throw new Error('r2 与 hybrid 目前只支持相册板块')
   }
   console.log(`Bundling content: ${JSON.stringify(CONTENT_SOURCES)}...`)
   const existing = loadExistingBundle()
@@ -294,7 +355,9 @@ async function buildBundle() {
     }
     for (const section of notionSections) selected[section] = remote[section] || []
   }
-  const obsidianSections = Object.keys(selected).filter((section) => CONTENT_SOURCES[section] === 'obsidian')
+  const obsidianSections = Object.keys(selected).filter((section) =>
+    CONTENT_SOURCES[section] === 'obsidian'
+    || (section === 'gallery' && CONTENT_SOURCES[section] === 'hybrid'))
   if (obsidianSections.length) {
     const blogDirectory = path.resolve(OBSIDIAN_BLOG_DIR)
     const local = await loadObsidianContent({
@@ -310,7 +373,7 @@ async function buildBundle() {
       }
       selected[section] = local[section]
     }
-    if (CONTENT_SOURCES.gallery === 'obsidian') {
+    if (CONTENT_SOURCES.gallery === 'obsidian' || CONTENT_SOURCES.gallery === 'hybrid') {
       await Promise.all(selected.gallery.flatMap((album) => album.images.map(async (image) => {
         if (isBlogImage(image.src)) {
           Object.assign(image, await fetchImageMeta(image.src, previousImageSizes.get(image.src) || image))
@@ -328,6 +391,14 @@ async function buildBundle() {
       destinationRoot: path.join(process.cwd(), 'public/obsidian'),
       attachmentRoots: ['attachments'],
     })
+  }
+  if (CONTENT_SOURCES.gallery === 'r2' || CONTENT_SOURCES.gallery === 'hybrid') {
+    const obsidianSlugs = new Set(selected.gallery.map((album) => album.slug).filter(Boolean))
+    const remoteGallery = await fetchR2Gallery(existing, obsidianSlugs)
+    selected.gallery = CONTENT_SOURCES.gallery === 'hybrid'
+      ? [...selected.gallery, ...remoteGallery]
+        .sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
+      : remoteGallery
   }
   const { posts, food, gallery } = selected
 

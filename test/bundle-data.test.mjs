@@ -186,3 +186,109 @@ test('Obsidian R2 albums use source metadata and survive a metadata endpoint rol
     }, mode)
   }
 })
+
+function prepareGalleryBundle(cwd, gallerySource) {
+  mkdirSync(path.join(cwd, 'lib'))
+  mkdirSync(path.join(cwd, 'content/obsidian/posts'), { recursive: true })
+  mkdirSync(path.join(cwd, 'content/obsidian/food'), { recursive: true })
+  mkdirSync(path.join(cwd, 'content/obsidian/gallery'), { recursive: true })
+  writeFileSync(path.join(cwd, 'content/about.md'), 'About\n')
+  writeFileSync(path.join(cwd, 'content/source.json'), JSON.stringify({
+    posts: 'obsidian', food: 'obsidian', gallery: gallerySource,
+  }))
+  writeFileSync(path.join(cwd, 'lib/data-bundle.ts'),
+    `export const bundleData = ${JSON.stringify({ posts: [], food: [], gallery: [], about: '' })};`)
+}
+
+function runGalleryBundle(cwd, fetchBody) {
+  const probe = path.join(cwd, 'gallery-fetch-probe.mjs')
+  writeFileSync(probe, `
+    import assert from 'node:assert/strict'
+    globalThis.fetch = async (url, options = {}) => {
+      const parsed = new URL(String(url))
+      assert.equal(parsed.origin + parsed.pathname, 'https://img.215320.xyz/webp/gallery-manifest')
+      assert.equal(parsed.searchParams.has('_'), true)
+      assert.equal(options.cache, 'no-store')
+      ${fetchBody}
+    }
+  `)
+  execFileSync(process.execPath, ['--import', probe, fileURLToPath(new URL('../scripts/bundle-data.mjs', import.meta.url))], {
+    cwd,
+    env: {
+      ...process.env,
+      NOTION_TOKEN: '',
+      CONTENT_SOURCE: '',
+      GALLERY_CONTENT_SOURCE: '',
+      CONTENT_ALLOW_EMPTY: '1',
+      OBSIDIAN_BLOG_DIR: path.join(cwd, 'content/obsidian'),
+    },
+    stdio: 'pipe',
+    timeout: 10_000,
+  })
+  const output = readFileSync(path.join(cwd, 'lib/data-bundle.ts'), 'utf8')
+  return JSON.parse(output.split('export const bundleData = ')[1].trim().replace(/;$/, ''))
+}
+
+test('the gallery source builds R2-only and hybrid albums with valid metadata', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-hybrid-gallery-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  prepareGalleryBundle(cwd, 'hybrid')
+  writeFileSync(path.join(cwd, 'content/obsidian/gallery/obsidian.md'),
+    '---\npublished: true\nslug: obsidian\ntitle: Obsidian Album\ndate: 2026-10-22\nimages: [https://example.com/local.jpg]\n---\nBody\n')
+  const validImage = 'https://img.215320.xyz/webp/blog/obsidian/gallery/2026/10/album/001-aabbccddeeff.webp'
+  const bundle = runGalleryBundle(cwd, `return Response.json({ albums: [
+    {
+      id: 'remote-one', slug: 'remote', title: 'Remote Album', date: '2026-10-30',
+      category: '旅行', excerpt: 'Remote', images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
+    },
+    {
+      id: 'remote-two', slug: 'obsidian', title: 'R2 capture', date: '2026-10-29',
+      images: [{ src: ${JSON.stringify(validImage.replace('001-aabbccddeeff', '002-aabbccddeeff'))}, width: 3024, height: 4032 }],
+    },
+    {
+      id: 'invalid', slug: 'invalid', title: '', date: '2026-10-28',
+      images: [{ src: 'https://example.com/not-owned.jpg', width: 100, height: 100 }],
+    },
+  ] })`)
+  assert.deepEqual(bundle.gallery.map((album) => album.slug), [
+    'remote', 'R2-capture', 'obsidian',
+  ])
+  assert.equal(bundle.gallery[0].source, 'r2')
+  assert.deepEqual(bundle.gallery[1].images[0], {
+    src: validImage.replace('001-aabbccddeeff', '002-aabbccddeeff'),
+    width: 3024,
+    height: 4032,
+  })
+  assert.equal(bundle.gallery[2].source, undefined)
+
+  writeFileSync(path.join(cwd, 'content/source.json'), JSON.stringify({
+    posts: 'obsidian', food: 'obsidian', gallery: 'r2',
+  }))
+  writeFileSync(path.join(cwd, 'lib/data-bundle.ts'),
+    `export const bundleData = ${JSON.stringify({ posts: [], food: [], gallery: [], about: '' })};`)
+  const r2Only = runGalleryBundle(cwd, `return Response.json({ albums: [
+    {
+      id: 'only', slug: 'only', title: 'Only R2', date: '2026-10-31',
+      images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
+    },
+  ] })`)
+  assert.deepEqual(r2Only.gallery.map((album) => album.slug), ['only'])
+})
+
+test('an invalid gallery manifest reuses only the previous R2 albums', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-gallery-fallback-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  prepareGalleryBundle(cwd, 'r2')
+  const previous = {
+    posts: [],
+    food: [],
+    gallery: [
+      { slug: 'saved-r2', title: 'Saved', date: '2026-10-20', source: 'r2', images: [] },
+      { slug: 'saved-obsidian', title: 'Obsidian', date: '2026-10-19', images: [] },
+    ],
+    about: '',
+  }
+  writeFileSync(path.join(cwd, 'lib/data-bundle.ts'), `export const bundleData = ${JSON.stringify(previous)};`)
+  const bundle = runGalleryBundle(cwd, "return Response.json({})")
+  assert.deepEqual(bundle.gallery.map((album) => album.slug), ['saved-r2'])
+})

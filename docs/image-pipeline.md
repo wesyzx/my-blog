@@ -16,6 +16,20 @@ Obsidian 粘贴 / 拖入图片
 
 这里是**访问时转换**。插入图片触发原图上传和链接替换；首个访问者请求某种规格时才生成对应的 WebP。R2 原文件、原后缀与本地附件保持完整，不必在上传时永久裁掉内容，也不必改写历史笔记为多个规格。
 
+iPhone 相册走同一套图片 Worker，但使用独立的私有管理接口：
+
+```text
+照片 App 的指定相簿
+  → 快捷指令逐张转为 JPEG 并上传 R2
+  → Worker 创建“未发布”相册记录
+  → 发布接口先开放清单，再调用 EdgeOne 部署 webhook
+  → 网站构建读取已发布清单，与 Obsidian 相册合并
+```
+
+普通相簿随 iCloud Photos 在登录同一 Apple ID 的设备间同步；快捷指令读取当前
+iPhone 上同名相簿中的静态图片。iCloud 共享相簿是另一类独立对象，本流程不创建、
+写入或管理共享相簿。上传阶段和失败后的发布不会出现在公开清单中。
+
 直接通过 Images binding 处理 R2 字节可以避开两家 CDN 间的源图 URL 抓取和递归回源。此方案使用 Cloudflare Images 转换服务，Worker 本身只负责路由、尺寸策略和错误处理，不在 JavaScript 内实现图像编码。
 
 ## 线上复核结果
@@ -62,7 +76,7 @@ Cloudflare Images 当前包含每月 5000 次唯一转换；相同原图与转�
 
 ## 上线顺序与验收
 
-1. 保留当前 Worker 部署版本作为回滚点，将 `cloudflare/images/` 独立部署；绑定现有 `blog-images` 桶和 Images，路由仅覆盖 `img.215320.xyz/webp/*`。
+1. 保留当前 Worker 部署版本作为回滚点，将 `cloudflare/images/` 独立部署；绑定现有 `blog-images` 桶和 Images，路由覆盖 `img.215320.xyz/webp/*` 与受 bearer token 保护的 `img.215320.xyz/internal/gallery/*`。
 2. 直接请求 Cloudflare 域名，分别验证 `fit`、`landscape`、`full`、`info`、`original`，核对实际类型、文件头、宽高与内容；PNG 透明、竖图、小图、GIF 和 SVG 都应各取一个样本。
 3. 核对 EdgeOne 的回源域名与 Host 均为 `img.215320.xyz`，保留完整 `/webp/*` 路径；通过加速域名重复验证同一批链接。
 4. `/webp/*` 遵循源站 `Cache-Control`，回退重定向和错误响应不得强制缓存。新版 v2 固定 WebP，不再依赖 Vary；旧路径仍依赖 Accept 和查询串选择响应，必须保留查询串缓存键并核对 Vary，或绕过其缓存。新版博客使用 v2。
@@ -71,7 +85,7 @@ Cloudflare Images 当前包含每月 5000 次唯一转换；相同原图与转�
 7. 桌面与手机检查卡片构图、竖图、横竖混排、透明图、文字截图、灯箱缩放和左右切换；确认 `crop=off` 没有被 CSS 再次裁掉。对少数裁错的图片指定 focus。
 8. 必要时清理旧 `/webp/*` 的 406、错误图片或混用参数缓存。v2 路径是新缓存空间；回滚博客后再回滚 Worker，保留旧版 URL 的兼容处理。
 
-部署操作已获用户授权。未修改 EdgeOne 控制台或重新安装 Obsidian 插件；实体手机视觉验收仍需另行进行。
+部署操作已获用户授权。EdgeOne 控制台规则和部署 webhook 需与 Worker secret 一起核对；实体手机视觉验收仍需另行进行。
 
 ## 验证范围
 
@@ -91,3 +105,5 @@ Cloudflare Images 当前包含每月 5000 次唯一转换；相同原图与转�
 - 两个域名均通过：4:3 裁剪 640×480（21460 字节），方形裁剪 384×384（13960 字节），完整灯箱 2880×3840（332710 字节）。
 - 实测 EdgeOne 缓存不区分 Accept。因此 v2 改为固定 WebP；在两种请求顺序与 MISS/HIT 下，均返回相同的正确 WebP，不再依赖 Vary 协商。未修改 EdgeOne 控制台规则。
 - 最新生产分支的独立发布副本已完成内容构建与 Next.js 生产构建；不会发布本地旧内容快照或其他未提交的发布器改动。博客由 GitHub main 推送触发 EdgeOne 部署。
+
+最终发布确认：GitHub main 提交 `1499ea7ad4c8edff00edaa9345a10af9da69b091` 已在 `https://guanyan.me/` 生效，页面生成 v2 预览及 full 灯箱链接。浏览器验证灯箱打开、前后切图、完整竖图显示和关闭；发布副本 108 项测试及生产构建通过。现有原始工作区的其他修改和内容快照未随本次提交发布。

@@ -20,7 +20,9 @@ export async function generateMetadata({
     title: `${item.title} - 相册`,
     description: item.excerpt || `${item.title}相册`,
     path: `/gallery/${encodeURIComponent(item.slug)}`,
-    images: item.cover ? [item.cover] : item.images.slice(0, 1).map((image) => image.src),
+    images: item.cover
+      ? [item.cover]
+      : item.images.filter((media) => media.kind !== 'video').slice(0, 1).map((media) => media.src),
   })
 }
 

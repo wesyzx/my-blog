@@ -238,11 +238,15 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
   writeFileSync(path.join(cwd, 'content/obsidian/gallery/obsidian.md'),
     '---\npublished: true\nslug: obsidian\ntitle: Obsidian Album\ndate: 2026-10-22\nimages: [https://example.com/local.jpg]\n---\nBody\n')
   const validImage = 'https://img.215320.xyz/webp/blog/obsidian/gallery/2026/10/album/001-aabbccddeeff.webp'
+  const validVideo = 'https://img.guanyan.me/webp/video/blog/obsidian/2026/10/2026-10-30-abcdefgh-001.mp4'
   const bundle = runGalleryBundle(cwd, `return Response.json({ albums: [
     {
       id: 'remote-one', slug: 'remote', title: 'Remote Album', date: '2026-10-30',
       aliases: ['2026-10-30-旧相册-12345678', 'obsidian', 'R2-capture', '../secret', '', '   '],
-      category: '旅行', excerpt: 'Remote', images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
+      category: '旅行', excerpt: 'Remote', images: [
+        { kind: 'image', src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 },
+        { kind: 'video', src: ${JSON.stringify(validVideo)}, width: 1920, height: 1080, duration: 12.5, mimeType: 'video/mp4' },
+      ],
     },
     {
       id: 'remote-two', slug: 'obsidian', title: 'R2 capture', date: '2026-10-29',
@@ -259,10 +263,14 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
   assert.equal(bundle.gallery[0].source, 'r2')
   assert.deepEqual(bundle.gallery[0].aliases, ['2026-10-30-旧相册-12345678'])
   assert.deepEqual(bundle.gallery[1].images[0], {
+    kind: 'image',
     src: validImage.replace('001-aabbccddeeff', '002-aabbccddeeff'),
     width: 3024,
     height: 4032,
   })
+  assert.equal(bundle.gallery[0].images[1].kind, 'video')
+  assert.equal(bundle.gallery[0].images[1].duration, 12.5)
+  assert.equal(bundle.gallery[0].cover, validImage)
   assert.equal(bundle.gallery[2].source, undefined)
 
   writeFileSync(path.join(cwd, 'content/source.json'), JSON.stringify({

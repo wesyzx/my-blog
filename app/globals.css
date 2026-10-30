@@ -634,7 +634,11 @@ button { font: inherit; }
   aspect-ratio: var(--photo-ratio); overflow: hidden; background: var(--color-bg-surface);
 }
 .gallery-mosaic-photo img { object-fit: cover; transition: transform .35s ease; }
-.gallery-mosaic-photo:hover img { transform: scale(1.035); }
+.gallery-mosaic-photo video {
+  display: block; width: 100%; height: 100%; object-fit: contain;
+  background: #111; color-scheme: dark;
+}
+.gallery-mosaic-photo a:hover img { transform: scale(1.035); }
 .gallery-mosaic-photo:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
 @media (max-width: 560px) {
   .gallery-mosaic { gap: 4px; }
@@ -642,7 +646,7 @@ button { font: inherit; }
 }
 @media (prefers-reduced-motion: reduce) {
   .gallery-mosaic-photo img { transition: none; }
-  .gallery-mosaic-photo:hover img { transform: none; }
+  .gallery-mosaic-photo a:hover img { transform: none; }
 }
 
 /* 归档页按年与月分层，但条目继续沿用首页内容语法。 */

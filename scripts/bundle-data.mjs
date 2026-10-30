@@ -163,6 +163,16 @@ function cleanText(value, maximum) {
     : ''
 }
 
+function isGalleryVideo(value) {
+  try {
+    const url = new URL(value)
+    return ['https://img.guanyan.me', 'https://img.215320.xyz'].includes(url.origin)
+      && /^\/webp\/video\/blog\/obsidian\/.+\.(?:m4v|mov|mp4|webm)$/i.test(url.pathname)
+  } catch {
+    return false
+  }
+}
+
 async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
   try {
     const manifestUrl = new URL(GALLERY_MANIFEST_URL)
@@ -180,12 +190,24 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
     const used = new Set(reservedSlugs)
     const albums = manifest.albums.slice(0, 1000).flatMap((album) => {
       if (!album || typeof album.title !== 'string' || !Array.isArray(album.images)) return []
-      const images = album.images.slice(0, 100).flatMap((image) => {
-        if (!isBlogImage(image?.src)) return []
-        const width = Number(image.width)
-        const height = Number(image.height)
+      const images = album.images.slice(0, 100).flatMap((media) => {
+        const kind = media?.kind === 'video' ? 'video' : 'image'
+        if (kind === 'video' ? !isGalleryVideo(media?.src) : !isBlogImage(media?.src)) return []
+        const width = Number(media.width)
+        const height = Number(media.height)
         if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) return []
-        return [{ src: image.src, width, height }]
+        const duration = Number(media.duration)
+        return [{
+          kind,
+          src: media.src,
+          width,
+          height,
+          ...(kind === 'video' && Number.isFinite(duration) && duration > 0 ? { duration } : {}),
+          ...(kind === 'video' && typeof media.poster === 'string' && media.poster ? { poster: media.poster } : {}),
+          ...(kind === 'video' && typeof media.mimeType === 'string' && media.mimeType
+            ? { mimeType: media.mimeType }
+            : {}),
+        }]
       })
       if (!images.length) return []
       const title = cleanText(album.title, 120)
@@ -202,11 +224,13 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
         title,
         date: albumDate,
         category: cleanText(album.category, 40) || '日常',
-        cover: images[0].src,
+        cover: images.find((media) => media.kind === 'image')?.src || '',
         images,
         excerpt: cleanText(album.excerpt, 500),
         published: true,
-        content: images.map((image, index) => `![${title} ${index + 1}](${image.src})`).join('\n\n'),
+        content: images.map((media, index) => media.kind === 'video'
+          ? `<video controls playsinline preload="metadata" src="${media.src}" aria-label="${cleanText(title, 120)} 视频 ${index + 1}"></video>`
+          : `![${title} ${index + 1}](${media.src})`).join('\n\n'),
         source: 'r2',
         albumId: album.id,
         publicationRevision: revisions.get(album.id),
@@ -402,7 +426,7 @@ async function buildBundle() {
     }
     if (CONTENT_SOURCES.gallery === 'obsidian' || CONTENT_SOURCES.gallery === 'hybrid') {
       await Promise.all(selected.gallery.flatMap((album) => album.images.map(async (image) => {
-        if (isBlogImage(image.src)) {
+        if (image.kind !== 'video' && isBlogImage(image.src)) {
           Object.assign(image, await fetchImageMeta(image.src, previousImageSizes.get(image.src) || image))
         }
       })))

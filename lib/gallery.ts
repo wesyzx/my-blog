@@ -5,6 +5,27 @@
 import { bundleData } from './data-bundle'
 import { decodeRouteSlug } from './slug'
 
+export interface GalleryImage {
+  kind?: 'image'
+  src: string
+  width: number
+  height: number
+  order?: number
+}
+
+export interface GalleryVideo {
+  kind: 'video'
+  src: string
+  width: number
+  height: number
+  order?: number
+  duration?: number
+  poster?: string
+  mimeType?: string
+}
+
+export type GalleryMedia = GalleryImage | GalleryVideo
+
 export interface GalleryMeta {
   publicationRevision?: string
   slug: string
@@ -13,7 +34,7 @@ export interface GalleryMeta {
   date: string
   category: string // 旅游 / 美食 / 日常 / 摄影
   cover: string
-  images: { src: string; width: number; height: number }[]
+  images: GalleryMedia[]
   excerpt: string
   published: boolean
 }

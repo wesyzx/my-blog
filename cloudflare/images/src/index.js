@@ -1,6 +1,7 @@
 import { albumRevision } from '../../../lib/publication-revision.mjs'
 
 const IMAGE_EXTENSION = /\.(?:gif|heic|heif|jpe?g|png|svg|webp)$/i
+const VIDEO_EXTENSION = /\.(?:m4v|mov|mp4|webm)$/i
 const STATIC_ASSET_PATH = /^\/(?:favicon\.ico|robots\.txt)$/i
 const PUBLIC_PREFIX = '/webp/'
 const SOURCE_EXTENSIONS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.heic', '.heif', '.svg']
@@ -23,7 +24,7 @@ const QUALITY_LADDER = [60, 70, 75, 80, 82, 90]
 const V2_ROUTE = /^\/webp\/v2\/([^/]+)\/(\d+)\/([^/]+)\/blog\/obsidian\/(.+)$/
 const V2_ORIGINAL_ROUTE = /^\/webp\/v2\/original\/blog\/obsidian\/(.+)$/
 const INFO_ROUTE = /^\/webp\/v2\/info\/blog\/obsidian\/(.+)$/
-const GALLERY_ALBUM_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/(photos|publish)$/
+const GALLERY_ALBUM_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/(photos|videos|publish)$/
 const GALLERY_ADMIN_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})$/
 const GALLERY_ADMIN_PATH = '/internal/gallery/admin'
 const GALLERY_MANIFEST_PATH = '/webp/gallery-manifest'
@@ -47,10 +48,21 @@ const SVG_TYPE = 'image/svg+xml'
 const GALLERY_IMAGE_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif',
 ])
+const GALLERY_VIDEO_TYPES = new Map([
+  ['video/mp4', 'mp4'],
+  ['video/quicktime', 'mov'],
+  ['video/webm', 'webm'],
+  ['video/x-m4v', 'm4v'],
+])
 // This is the Images binding's documented maximum input size.
 const GALLERY_IMAGE_LIMIT = 20 * 1024 * 1024
+// Workers requests top out at 100 MiB. Keeping videos within that boundary
+// avoids buffering a larger upload in the Worker isolate.
+const GALLERY_VIDEO_LIMIT = 100 * 1024 * 1024
 const GALLERY_ALBUM_PREFIX = 'internal/gallery/albums/'
 const GALLERY_PUBLIC_ORIGIN = 'https://img.guanyan.me/webp'
+const GALLERY_VIDEO_PUBLIC_ORIGIN = 'https://img.guanyan.me/webp/video'
+const GALLERY_VIDEO_ROUTE = /^\/webp\/video\/(blog\/obsidian\/.+)$/
 
 function errorResponse(status, message, headers = {}) {
   return new Response(JSON.stringify({ error: message }), {
@@ -100,6 +112,54 @@ function uniqueAlbumSlug(title, requested, used) {
 }
 
 function metadataBucket(env) { return env.METADATA_BUCKET || env.IMAGES_BUCKET }
+
+/**
+ * Older gallery records used a `{src,width,height}` shape for every item.
+ * Treating a missing kind as an image keeps those albums readable while all
+ * new records carry an explicit media type.
+ */
+function normalizeGalleryMedia(media, index = 0) {
+  if (!media || typeof media.src !== 'string') return null
+  const width = Number(media.width)
+  const height = Number(media.height)
+  if (!Number.isInteger(width) || width <= 0 || !Number.isInteger(height) || height <= 0) return null
+  const kind = media.kind === 'video' ? 'video' : 'image'
+  const normalized = {
+    kind,
+    src: media.src,
+    width,
+    height,
+    order: Number.isInteger(media.order) ? media.order : index,
+  }
+  if (kind === 'video') {
+    const duration = Number(media.duration)
+    if (Number.isFinite(duration) && duration > 0) normalized.duration = duration
+    if (typeof media.poster === 'string' && media.poster) normalized.poster = media.poster
+    if (typeof media.mimeType === 'string' && media.mimeType) normalized.mimeType = media.mimeType
+  }
+  return normalized
+}
+
+function publicGalleryMedia(media, index = 0) {
+  const normalized = normalizeGalleryMedia(media, index)
+  if (!normalized) return null
+  return {
+    kind: normalized.kind,
+    src: normalized.src,
+    width: normalized.width,
+    height: normalized.height,
+    order: normalized.order,
+    ...(normalized.duration ? { duration: normalized.duration } : {}),
+    ...(normalized.poster ? { poster: normalized.poster } : {}),
+    ...(normalized.mimeType ? { mimeType: normalized.mimeType } : {}),
+  }
+}
+
+function firstImageSource(album) {
+  return album.images
+    .map((media, index) => normalizeGalleryMedia(media, index))
+    .find((media) => media?.kind === 'image')?.src || ''
+}
 
 function sameSecret(actual, expected) {
   if (!actual || !expected || actual.length !== expected.length) return false
@@ -175,14 +235,10 @@ async function listGalleryAlbumsForAdmin(request, env) {
       date: album.date,
       category: album.category || '日常',
       published: album.published === true,
+      mediaCount: album.images.length,
       photoCount: album.images.length,
-      cover: album.images[0]?.src || '',
-      images: album.images.map((image, index) => ({
-        src: image.src,
-        width: image.width,
-        height: image.height,
-        order: image.order ?? index,
-      })),
+      cover: firstImageSource(album),
+      images: album.images.map(publicGalleryMedia).filter(Boolean),
       createdAt: album.createdAt,
       updatedAt: album.updatedAt,
     })),
@@ -253,12 +309,7 @@ async function uploadGalleryPhoto(request, env, id) {
   const hash = await sha256Hex(buffer)
   const duplicate = album.images.find((image) => image.hash === hash)
   if (duplicate) {
-    const publicImage = {
-      src: duplicate.src,
-      width: duplicate.width,
-      height: duplicate.height,
-      order: duplicate.order,
-    }
+    const publicImage = publicGalleryMedia(duplicate, duplicate.order)
     return jsonResponse({ ok: true, duplicate: true, image: publicImage })
   }
 
@@ -287,6 +338,7 @@ async function uploadGalleryPhoto(request, env, id) {
 
   const publicStem = objectKey.replace(/\.[^.]+$/, '')
   const image = {
+    kind: 'image',
     src: `${GALLERY_PUBLIC_ORIGIN}/${publicStem}.webp`,
     width: info.width,
     height: info.height,
@@ -295,13 +347,74 @@ async function uploadGalleryPhoto(request, env, id) {
   }
   album.images.push(image)
   await writeAlbum(env, album)
-  const publicImage = {
-    src: image.src,
-    width: image.width,
-    height: image.height,
-    order: image.order,
-  }
+  const publicImage = publicGalleryMedia(image, image.order)
   return jsonResponse({ ok: true, duplicate: false, image: publicImage })
+}
+
+function videoDimensions(request) {
+  const width = Number(request.headers.get('x-video-width'))
+  const height = Number(request.headers.get('x-video-height'))
+  if (Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0) {
+    return { width: Math.min(width, 16384), height: Math.min(height, 16384) }
+  }
+  return request.headers.get('x-video-orientation') === 'portrait'
+    ? { width: 1080, height: 1920 }
+    : { width: 1920, height: 1080 }
+}
+
+async function uploadGalleryVideo(request, env, id) {
+  if (request.method !== 'POST') return errorResponse(405, 'Method not allowed', { allow: 'POST' })
+  const album = await readAlbum(env, id)
+  if (!album) return errorResponse(404, 'Album not found')
+  if (album.published === true) return errorResponse(409, 'Published albums are immutable')
+  if (album.images.length >= 100) return errorResponse(413, 'Album media limit reached')
+
+  const contentType = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+  const extension = GALLERY_VIDEO_TYPES.get(contentType)
+  if (!extension) return errorResponse(415, 'Unsupported video format')
+  const declaredLength = Number(request.headers.get('content-length'))
+  if (declaredLength > GALLERY_VIDEO_LIMIT) return errorResponse(413, 'Video is too large')
+
+  const buffer = await request.arrayBuffer()
+  if (!buffer.byteLength) return errorResponse(400, 'Video body is empty')
+  if (buffer.byteLength > GALLERY_VIDEO_LIMIT) return errorResponse(413, 'Video is too large')
+
+  const hash = await sha256Hex(buffer)
+  const duplicate = album.images.find((media) => media.hash === hash)
+  if (duplicate) {
+    return jsonResponse({
+      ok: true,
+      duplicate: true,
+      video: publicGalleryMedia(duplicate, duplicate.order),
+    })
+  }
+
+  const [year, month] = album.date.split('-')
+  const order = String(album.images.length + 1).padStart(3, '0')
+  const objectKey = `blog/obsidian/${year}/${month}/${album.date}-${album.id}-${order}.${extension}`
+  await env.IMAGES_BUCKET.put(objectKey, buffer, {
+    httpMetadata: { contentType },
+  })
+
+  const dimensions = videoDimensions(request)
+  const duration = Number(request.headers.get('x-video-duration'))
+  const video = {
+    kind: 'video',
+    src: `${GALLERY_VIDEO_PUBLIC_ORIGIN}/${objectKey}`,
+    width: dimensions.width,
+    height: dimensions.height,
+    order: album.images.length,
+    hash,
+    mimeType: contentType,
+    ...(Number.isFinite(duration) && duration > 0 ? { duration } : {}),
+  }
+  album.images.push(video)
+  await writeAlbum(env, album)
+  return jsonResponse({
+    ok: true,
+    duplicate: false,
+    video: publicGalleryMedia(video, video.order),
+  })
 }
 
 async function publishGalleryAlbum(request, env, id) {
@@ -493,7 +606,8 @@ function renderAlbums(albums) {
     const state = document.createElement('span');
     state.className = 'state' + (album.published ? ' published' : '');
     state.textContent = album.published ? '已发布' : '私密';
-    meta.append(state, makeMeta('日期', album.date || '未知'), makeMeta('照片', String(album.photoCount)), makeMeta('链接', '/' + album.slug));
+    const mediaCount = album.mediaCount ?? album.photoCount;
+    meta.append(state, makeMeta('日期', album.date || '未知'), makeMeta('内容', String(mediaCount)), makeMeta('链接', '/' + album.slug));
     summary.append(title, meta);
 
     const actions = document.createElement('div');
@@ -511,7 +625,7 @@ function renderAlbums(albums) {
     button.className = 'delete';
     button.textContent = '删除';
     button.addEventListener('click', async () => {
-      const prompt = '确定永久删除“' + album.title + '”及其 ' + album.photoCount + ' 张照片吗？'
+      const prompt = '确定永久删除“' + album.title + '”及其 ' + mediaCount + ' 个图片或视频吗？'
         + (album.published ? '删除后会触发网站更新。' : '此操作无法撤销。');
       if (!window.confirm(prompt)) return;
       button.disabled = true;
@@ -519,7 +633,7 @@ function renderAlbums(albums) {
       setStatus(album.published ? '正在删除相册并触发网站更新…' : '正在删除私密相册…');
       try {
         const result = await api('/internal/gallery/albums/' + encodeURIComponent(album.id), { method: 'DELETE' });
-        setStatus(result.message + ' 删除照片 ' + result.deletedPhotos + ' 张。', 'success');
+        setStatus(result.message + ' 删除文件 ' + result.deletedPhotos + ' 个。', 'success');
         await loadAlbums(false);
       } catch (error) {
         button.disabled = false;
@@ -633,10 +747,11 @@ async function serveGalleryManifest(request, env) {
         date: album.date,
         category: album.category || '日常',
         excerpt: album.excerpt || '',
-        cover: album.images[0].src,
+        cover: firstImageSource(album),
         images: album.images.slice()
           .sort((left, right) => left.order - right.order)
-          .map(({ src, width, height }) => ({ src, width, height })),
+          .map(publicGalleryMedia)
+          .filter(Boolean),
       })
     } catch {
       // One malformed private record must not hide the rest of the albums.
@@ -739,6 +854,23 @@ function safeKey(key) {
     return null
   }
   if (!decoded.startsWith('blog/obsidian/') || !IMAGE_EXTENSION.test(decoded)) return null
+  if (decoded.split('/').some((part) => part === '..' || part === '.')) return null
+  return decoded
+}
+
+function safeVideoKey(key) {
+  if (!key || key.includes('\0')) return null
+  let decoded
+  try {
+    const segments = key.split('/').map((segment) => decodeURIComponent(segment))
+    if (segments.some((segment) => !segment || segment === '.' || segment === '..'
+      || /[\\/\u0000-\u001f\u007f]/.test(segment)
+      || /%(?:2e|2f|5c|25)/i.test(segment))) return null
+    decoded = segments.join('/')
+  } catch {
+    return null
+  }
+  if (!decoded.startsWith('blog/obsidian/') || !VIDEO_EXTENSION.test(decoded)) return null
   if (decoded.split('/').some((part) => part === '..' || part === '.')) return null
   return decoded
 }
@@ -858,6 +990,82 @@ function originalResponse(request, object, sourceKey, cacheControl = 'public, ma
   return new Response(object.body, { status: 200, headers })
 }
 
+function videoContentType(object, key) {
+  const stored = object.httpMetadata?.contentType
+  if (stored && stored !== 'application/octet-stream') return stored
+  return {
+    '.m4v': 'video/x-m4v',
+    '.mov': 'video/quicktime',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+  }[key.slice(key.lastIndexOf('.')).toLowerCase()] || 'application/octet-stream'
+}
+
+function parseVideoRange(value, size) {
+  if (!value) return null
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(value.trim())
+  if (!match || (!match[1] && !match[2]) || !Number.isInteger(size) || size <= 0) return false
+  let start
+  let end
+  if (!match[1]) {
+    const suffixLength = Number(match[2])
+    if (!Number.isInteger(suffixLength) || suffixLength <= 0) return false
+    start = Math.max(0, size - suffixLength)
+    end = size - 1
+  } else {
+    start = Number(match[1])
+    end = match[2] ? Number(match[2]) : size - 1
+  }
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start || start >= size) {
+    return false
+  }
+  return { start, end: Math.min(end, size - 1) }
+}
+
+/**
+ * Native video elements request byte ranges instead of downloading a whole
+ * clip. Use R2's own range read so a seek does not buffer the entire file in
+ * the Worker isolate, and return 206 responses with stable validators.
+ */
+async function serveGalleryVideo(request, env, key) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
+  }
+  const bucket = env.IMAGES_BUCKET
+  const metadata = typeof bucket.head === 'function'
+    ? await bucket.head(key)
+    : await bucket.get(key)
+  if (!metadata) return errorResponse(404, 'Video not found')
+
+  const size = Number(metadata.size)
+  const requestedRange = request.headers.get('range')
+  const range = parseVideoRange(requestedRange, size)
+  const headers = new Headers({
+    'accept-ranges': 'bytes',
+    'cache-control': 'public, max-age=31536000, immutable',
+    'content-type': videoContentType(metadata, key),
+    'x-content-type-options': 'nosniff',
+  })
+  if (metadata.httpEtag) headers.set('etag', metadata.httpEtag)
+
+  if (range === false) {
+    headers.set('content-range', `bytes */${size}`)
+    return new Response(null, { status: 416, headers })
+  }
+  const object = range
+    ? await bucket.get(key, { range: { offset: range.start, length: range.end - range.start + 1 } })
+    : request.method === 'HEAD' ? metadata : await bucket.get(key)
+  if (!object || (request.method === 'GET' && !object.body)) return errorResponse(404, 'Video not found')
+
+  const responseSize = range ? range.end - range.start + 1 : size
+  headers.set('content-length', String(responseSize))
+  if (range) headers.set('content-range', `bytes ${range.start}-${range.end}/${size}`)
+  return new Response(request.method === 'HEAD' ? null : object.body, {
+    status: range ? 206 : 200,
+    headers,
+  })
+}
+
 function variantTransform(options) {
   const { preset, width, focus } = options
   if (PRESETS[preset].ratio === null) {
@@ -961,6 +1169,12 @@ async function serveImage(request, env, url) {
     return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
   }
 
+  const video = GALLERY_VIDEO_ROUTE.exec(url.pathname)
+  if (video) {
+    const key = safeVideoKey(video[1])
+    return key ? serveGalleryVideo(request, env, key) : errorResponse(404, 'Video not found')
+  }
+
   const info = INFO_ROUTE.exec(url.pathname)
   if (info) {
     const key = safeKey(`blog/obsidian/${info[1]}`)
@@ -1019,9 +1233,9 @@ const worker = {
       if (galleryRoute) {
         if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
         const [, id, action] = galleryRoute
-        return action === 'photos'
-          ? await uploadGalleryPhoto(request, env, id)
-          : await publishGalleryAlbum(request, env, id)
+        if (action === 'photos') return await uploadGalleryPhoto(request, env, id)
+        if (action === 'videos') return await uploadGalleryVideo(request, env, id)
+        return await publishGalleryAlbum(request, env, id)
       }
       const galleryAdminRoute = GALLERY_ADMIN_ROUTE.exec(url.pathname)
       if (galleryAdminRoute) {

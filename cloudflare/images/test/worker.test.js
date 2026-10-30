@@ -5,6 +5,7 @@ import { albumRevision } from '../../../lib/publication-revision.mjs'
 
 const ORIGINAL = new Uint8Array([0xff, 0xd8, 0xff, 0xd9])
 const WEBP = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x04, 0, 0, 0, 0x57, 0x45, 0x42, 0x50])
+const MP4 = new Uint8Array([0, 0, 0, 24, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 1, 2, 3, 4])
 
 function object(body = ORIGINAL, contentType = 'image/jpeg') {
   return {
@@ -400,12 +401,38 @@ function galleryEnvironment({ token = 'gallery-secret', deployOk = true } = {}) 
     GALLERY_UPLOAD_TOKEN: token,
     EDGEONE_DEPLOY_WEBHOOK: 'https://edgeone.example/deploy',
     IMAGES_BUCKET: {
-      async get(key) {
+      async get(key, options = {}) {
         const entry = objects.get(key)
-        return entry ? { body: entry.body, httpMetadata: entry.httpMetadata } : null
+        if (!entry) return null
+        const source = typeof entry.body === 'string' ? new TextEncoder().encode(entry.body) : entry.body
+        const range = options.range
+        const body = range
+          ? source.slice(range.offset, range.offset + range.length)
+          : source
+        return {
+          body,
+          size: source.byteLength,
+          httpEtag: entry.httpEtag,
+          httpMetadata: entry.httpMetadata,
+          ...(range ? { range } : {}),
+        }
+      },
+      async head(key) {
+        const entry = objects.get(key)
+        if (!entry) return null
+        const source = typeof entry.body === 'string' ? new TextEncoder().encode(entry.body) : entry.body
+        return {
+          size: source.byteLength,
+          httpEtag: entry.httpEtag,
+          httpMetadata: entry.httpMetadata,
+        }
       },
       async put(key, body, options = {}) {
-        objects.set(key, { body: typeof body === 'string' ? body : new Uint8Array(body), httpMetadata: options.httpMetadata })
+        objects.set(key, {
+          body: typeof body === 'string' ? body : new Uint8Array(body),
+          httpEtag: `"${key}"`,
+          httpMetadata: options.httpMetadata,
+        })
       },
       async delete(key) {
         objects.delete(key)
@@ -442,10 +469,12 @@ function galleryRequest(path, {
   token = 'gallery-secret',
   body,
   contentType,
+  headers: extraHeaders = {},
 } = {}) {
   const headers = new Headers()
   if (token) headers.set('authorization', `Bearer ${token}`)
   if (contentType) headers.set('content-type', contentType)
+  for (const [name, value] of Object.entries(extraHeaders)) headers.set(name, value)
   return new Request(`https://images.example${path}`, { method, headers, body })
 }
 
@@ -475,6 +504,7 @@ test('creates, uploads, deduplicates and publishes a gallery album', async (t) =
   const uploaded = await first.json()
   assert.equal(uploaded.duplicate, false)
   assert.deepEqual(uploaded.image, {
+    kind: 'image',
     src: uploaded.image.src,
     width: 4032,
     height: 3024,
@@ -506,6 +536,76 @@ test('creates, uploads, deduplicates and publishes a gallery album', async (t) =
   assert.equal(publicAlbum.title, '秋日散步')
   assert.equal(publicAlbum.images.length, 1)
   assert.equal(publicAlbum.cover, uploaded.image.src)
+  assert.equal(publicAlbum.images[0].kind, 'image')
+})
+
+test('uploads, deduplicates, publishes and range-serves gallery videos', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: '满月视频', date: '2026-10-30', slug: 'first-month-film' }),
+    contentType: 'application/json',
+  }), gallery.env)
+  const { albumId } = await created.json()
+  const uploadPath = `/internal/gallery/albums/${albumId}/videos`
+  const uploadedResponse = await worker.fetch(galleryRequest(uploadPath, {
+    body: MP4,
+    contentType: 'video/mp4',
+    headers: {
+      'x-video-width': '1920',
+      'x-video-height': '1080',
+      'x-video-duration': '12.5',
+    },
+  }), gallery.env)
+  assert.equal(uploadedResponse.status, 200)
+  const uploaded = await uploadedResponse.json()
+  assert.equal(uploaded.duplicate, false)
+  assert.deepEqual(uploaded.video, {
+    kind: 'video',
+    src: uploaded.video.src,
+    width: 1920,
+    height: 1080,
+    order: 0,
+    duration: 12.5,
+    mimeType: 'video/mp4',
+  })
+  assert.match(uploaded.video.src, /^https:\/\/img\.guanyan\.me\/webp\/video\/blog\/obsidian\/2026\/10\/2026-10-30-[a-f0-9-]{36}-001\.mp4$/)
+  const videoKey = uploaded.video.src.split('/webp/video/')[1]
+  assert.equal(gallery.objects.get(videoKey).httpMetadata.contentType, 'video/mp4')
+
+  const duplicate = await worker.fetch(galleryRequest(uploadPath, {
+    body: MP4,
+    contentType: 'video/mp4',
+  }), gallery.env)
+  assert.equal((await duplicate.json()).duplicate, true)
+
+  const publish = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
+  assert.equal(publish.status, 200)
+  const manifest = await worker.fetch(new Request('https://images.example/webp/gallery-manifest'), gallery.env)
+  const publicAlbum = (await manifest.json()).albums[0]
+  assert.equal(publicAlbum.cover, '')
+  assert.equal(publicAlbum.images[0].kind, 'video')
+  assert.equal(publicAlbum.images[0].duration, 12.5)
+
+  const videoUrl = uploaded.video.src.replace('https://img.guanyan.me', 'https://images.example')
+  const full = await worker.fetch(new Request(videoUrl), gallery.env)
+  assert.equal(full.status, 200)
+  assert.equal(full.headers.get('content-type'), 'video/mp4')
+  assert.equal(full.headers.get('accept-ranges'), 'bytes')
+  assert.equal(full.headers.get('content-length'), String(MP4.byteLength))
+  assert.deepEqual(new Uint8Array(await full.arrayBuffer()), MP4)
+
+  const range = await worker.fetch(new Request(videoUrl, {
+    headers: { range: 'bytes=2-5' },
+  }), gallery.env)
+  assert.equal(range.status, 206)
+  assert.equal(range.headers.get('content-range'), `bytes 2-5/${MP4.byteLength}`)
+  assert.deepEqual(new Uint8Array(await range.arrayBuffer()), MP4.slice(2, 6))
+
+  const head = await worker.fetch(new Request(videoUrl, { method: 'HEAD' }), gallery.env)
+  assert.equal(head.status, 200)
+  assert.equal(head.headers.get('content-length'), String(MP4.byteLength))
+  assert.equal(await head.text(), '')
 })
 
 test('gallery admin page exposes the visual shell while album data stays authenticated', async (t) => {
@@ -560,6 +660,9 @@ test('deleting a published gallery removes its record, photos and public manifes
   await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/photos`, {
     body: ORIGINAL, contentType: 'image/jpeg',
   }), gallery.env)
+  await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/videos`, {
+    body: MP4, contentType: 'video/mp4',
+  }), gallery.env)
   await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
   assert.ok([...gallery.objects.keys()].some((key) => key.startsWith('blog/obsidian/')))
 
@@ -571,7 +674,7 @@ test('deleting a published gallery removes its record, photos and public manifes
     ok: true,
     albumId,
     slug: 'delete-me',
-    deletedPhotos: 1,
+    deletedPhotos: 2,
     deployTriggered: true,
     message: '相册已删除，网站更新已触发。',
   })
@@ -627,6 +730,14 @@ test('gallery upload rejects unsupported, oversized and missing albums', async (
   assert.equal((await worker.fetch(galleryRequest('/internal/gallery/albums/00000000-0000-0000-0000-000000000000/photos', {
     body: ORIGINAL, contentType: 'image/jpeg',
   }), gallery.env)).status, 404)
+  assert.equal((await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/videos`, {
+    body: MP4, contentType: 'application/octet-stream',
+  }), gallery.env)).status, 415)
+  assert.equal((await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/videos`, {
+    body: MP4,
+    contentType: 'video/mp4',
+    headers: { 'content-length': String(100 * 1024 * 1024 + 1) },
+  }), gallery.env)).status, 413)
   const publish = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/publish`), gallery.env)
   assert.equal(publish.status, 409)
 })

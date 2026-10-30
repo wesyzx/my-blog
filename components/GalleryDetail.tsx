@@ -15,7 +15,7 @@ export default function GalleryDetail({ album }: { album: GalleryItem }) {
       {album.images.length > 0 ? (
         <GalleryMosaic images={album.images} title={album.title} />
       ) : (
-        <div className="empty-state">本相册暂无照片。</div>
+        <div className="empty-state">本相册暂无内容。</div>
       )}
       <section className="comments-section">
         <h2 className="section-title">评论</h2>

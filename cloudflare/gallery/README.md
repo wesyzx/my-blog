@@ -1,8 +1,12 @@
-# iPhone 相簿同步到博客
+# iPhone 相簿和视频同步到博客
 
 公开快捷指令 [`相册同步到博客.shortcut`](./shortcuts/相册同步到博客.shortcut)
 打开系统照片选择器，把手动选中的静态图片直接上传到博客相册，
 最后发布并触发 EdgeOne 构建。
+
+公开快捷指令 [`视频同步到博客.shortcut`](./shortcuts/视频同步到博客.shortcut)
+使用同一套流程发布视频；选择器只显示视频，博客中的原生播放器可以直接播放，
+也支持拖动进度条和按需加载。
 
 ## 日常用法
 
@@ -20,6 +24,16 @@
 快捷指令每张图片都会先转成 JPEG。这样普通 Cloudflare Images 方案也能处理 iPhone
 常见的 HEIC 原片；Worker 也预留了 Enterprise 方案的 HEIC/HEIF 上传格式。单次最多
 100 张、单张最多 20 MiB，这是服务端与 Cloudflare Images 的硬限制。超限时请先分批。
+
+图片和视频可以分别发布，也可以连续上传到同一个相册。运行“视频同步到博客”，在系统
+选择器中选择视频，再填写与图片版相同的日期、标题和链接短名即可。视频保留 iPhone
+生成的 QuickTime/MOV 原格式，单次相册仍以 100 个项目为上限，单个视频最多 100 MiB。
+博客使用浏览器原生 `<video>` 播放器，不把视频送进图片灯箱；视频不会计入图片灯箱的
+“第几张照片”。
+
+iPhone 默认可能使用 HEVC/H.265 编码。Safari 和大多数 iPhone 可以直接播放，但部分
+Chrome、Android 或 Windows 环境是否支持取决于设备解码能力。若要在所有常见浏览器
+稳定播放，需要在发布前提供 H.264 MP4 转码；当前快捷指令保留原始视频，不执行转码。
 
 上传中的相册不会出现在网站。只有最后的 `/publish` 成功时才进入公开清单；部署
 webhook 失败会撤回公开状态。照片按文件名顺序生成公开的 WebP 变体，灯箱仍可查看
@@ -75,12 +89,27 @@ shortcuts sign --mode anyone \
   --output cloudflare/gallery/shortcuts/相册同步到博客.shortcut
 ```
 
+视频版使用相同流程，生成时增加 `--media video`，并替换文件名：
+
+```sh
+python3 cloudflare/gallery/shortcuts/build.py \
+  --media video \
+  --name 视频同步到博客 \
+  --output-dir /private/tmp/gallery-shortcut-build
+shortcuts sign --mode anyone \
+  --input /private/tmp/gallery-shortcut-build/视频同步到博客-unsigned.shortcut \
+  --output cloudflare/gallery/shortcuts/视频同步到博客.shortcut
+```
+
 个人版可以把令牌内联，避免每次输入。生成器强制把它写到
 `/private/tmp/personal-gallery-shortcuts/`，目录权限为 `0700`，文件权限为 `0600`：
 
 ```sh
 GALLERY_UPLOAD_TOKEN="实际令牌" \
 python3 cloudflare/gallery/shortcuts/build.py --personal
+
+GALLERY_UPLOAD_TOKEN="实际令牌" \
+python3 cloudflare/gallery/shortcuts/build.py --personal --media video
 ```
 
 不要把个人版快捷指令从私有目录复制到仓库或发给他人。若要分发给别人，只能使用

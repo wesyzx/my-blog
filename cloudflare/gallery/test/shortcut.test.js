@@ -33,12 +33,26 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   const ids = actions.map((entry) => entry.WFWorkflowActionIdentifier)
 
   assert.equal(workflow.WFWorkflowName, '相册同步到博客')
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 3)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 4)
   assert.ok(actions[0].WFWorkflowActionParameters.WFCommentActionText.includes('照片'))
   assert.equal(statSync(path).mode & 0o777, 0o600)
 
   const selectPhotos = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.selectphoto')
   assert.equal(selectPhotos.WFWorkflowActionParameters.WFSelectMultiplePhotos, true)
+  const datePrompt = actions.find((entry) =>
+    entry.WFWorkflowActionIdentifier === 'is.workflow.actions.ask'
+    && entry.WFWorkflowActionParameters.CustomOutputName === 'Gallery Date')
+  assert.match(datePrompt.WFWorkflowActionParameters.WFAskActionPrompt, /YYYY-MM-DD/)
+  assert.equal(datePrompt.WFWorkflowActionParameters.WFAskActionDefaultAnswer.Value.string, '\ufffc')
+  const defaultDate = datePrompt.WFWorkflowActionParameters.WFAskActionDefaultAnswer.Value
+    .attachmentsByRange['{0, 1}']
+  assert.deepEqual(defaultDate, {
+    Type: 'ActionOutput',
+    OutputUUID: actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.format.date')
+      .WFWorkflowActionParameters.UUID,
+    OutputName: 'Formatted Date',
+  })
+  assert.ok(actions.indexOf(datePrompt) > actions.indexOf(selectPhotos))
 
   assert.equal(ids.includes('is.workflow.actions.filter.photos'), false)
   assert.equal(ids.includes('is.workflow.actions.filter.images'), false)
@@ -52,8 +66,14 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   assert.equal(requests[0].WFWorkflowActionParameters.WFURL, 'https://img.215320.xyz/internal/gallery/albums')
   assert.equal(requests[0].WFWorkflowActionParameters.WFHTTPBodyType, 'JSON')
   const createKeys = requests[0].WFWorkflowActionParameters.WFJSONValues.Value.WFDictionaryFieldValueItems
-    .map((item) => item.WFKey.Value.string)
-  assert.deepEqual(createKeys, ['title', 'slug', 'date'])
+  assert.deepEqual(createKeys.map((item) => item.WFKey.Value.string), ['title', 'slug', 'date'])
+  const createDate = createKeys.find((item) => item.WFKey.Value.string === 'date')
+  assert.equal(createDate.WFValue.Value.string, '\ufffc')
+  assert.deepEqual(createDate.WFValue.Value.attachmentsByRange['{0, 1}'], {
+    Type: 'ActionOutput',
+    OutputUUID: datePrompt.WFWorkflowActionParameters.UUID,
+    OutputName: 'Gallery Date',
+  })
 
   const upload = requests[1].WFWorkflowActionParameters
   assert.match(upload.WFURL.Value.string, /^https:\/\/img\.215320\.xyz\/internal\/gallery\/albums\/.*\/photos$/)

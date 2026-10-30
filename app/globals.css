@@ -224,11 +224,8 @@ button { font: inherit; }
 .detail-gallery > div { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .detail-gallery a { display: block; overflow: hidden; border-radius: 3px; }
 .detail-gallery img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: var(--radius-image); }
-/* 页面标题区 —— 对齐 ueno 的 .main_mark + .main_head：
-   左侧 4px 强调竖条（80px 高），标题 32px/600，底部一条细线。 */
+/* 页面标题区：标题 32px/600，底部保留一条细线。 */
 .page-header { position: relative; margin-bottom: 2em; padding: 0 0 1em; border-bottom: 1px solid var(--gray-a4); }
-/* Ueno 的标记位于 680px 阅读栏之外的 80px 内边距中，而不是贴着标题。 */
-.page-header::before { content: ""; position: absolute; top: 0; left: calc(-1 * var(--content-gutter)); width: 4px; height: 80px; background: var(--color-accent); }
 .page-header-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 16px 32px; }
 .page-kicker { margin: 0 0 5px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
@@ -407,7 +404,6 @@ button { font: inherit; }
   .sidebar-verse { display: none; }
   .site-content { padding: 40px 0; }
   .home-shell, .page-shell, .page-shell.narrow { padding: 0 24px; }
-  .page-header::before { display: none; }
 }
 
 /* 860px 以下：左栏整体隐藏，交给顶栏 + 抽屉（保留原有可访问性实现） */

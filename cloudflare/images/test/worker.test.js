@@ -522,6 +522,38 @@ test('gallery upload rejects unsupported, oversized and missing albums', async (
   assert.equal(publish.status, 409)
 })
 
+test('gallery album dates accept leap days, default when omitted and reject invalid values', async (t) => {
+  const gallery = galleryEnvironment()
+  t.after(gallery.restoreFetch)
+
+  for (const date of ['2025-02-29', '2026-13-01', '30-10-2026', '2026-10-30-extra']) {
+    const response = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+      body: JSON.stringify({ title: 'Invalid date', date }), contentType: 'application/json',
+    }), gallery.env)
+    assert.equal(response.status, 400, date)
+    assert.match((await response.json()).error, /YYYY-MM-DD/)
+  }
+
+  const leapDay = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Leap day', date: '2024-02-29' }), contentType: 'application/json',
+  }), gallery.env)
+  assert.equal(leapDay.status, 200)
+  const leapRecord = JSON.parse(gallery.objects.get(
+    `internal/gallery/albums/${(await leapDay.json()).albumId}.json`,
+  ).body)
+  assert.equal(leapRecord.date, '2024-02-29')
+
+  const omitted = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Today' }), contentType: 'application/json',
+  }), gallery.env)
+  assert.equal(omitted.status, 200)
+  const omittedRecord = JSON.parse(gallery.objects.get(
+    `internal/gallery/albums/${(await omitted.json()).albumId}.json`,
+  ).body)
+  assert.match(omittedRecord.date, /^\d{4}-\d{2}-\d{2}$/)
+  assert.equal(new Date(`${omittedRecord.date}T00:00:00.000Z`).toISOString().slice(0, 10), omittedRecord.date)
+})
+
 test('gallery publish reports an EdgeOne webhook failure without claiming success', async (t) => {
   const gallery = galleryEnvironment({ deployOk: false })
   t.after(gallery.restoreFetch)

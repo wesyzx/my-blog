@@ -97,6 +97,22 @@ def build(personal_token=None, workflow_name='相册同步到博客'):
         'selectphoto',
         WFSelectMultiplePhotos=True,
     )
+    current_date_id = action('date', WFDateActionMode='Current Date')
+    formatted_date_id = action(
+        'format.date',
+        WFDate=text('', output(current_date_id, 'Date')),
+        WFDateFormatStyle='Custom',
+        WFDateFormat='yyyy-MM-dd',
+    )
+    gallery_date_id = action(
+        'ask',
+        CustomOutputName='Gallery Date',
+        WFAskActionPrompt=(
+            '照片日期（YYYY-MM-DD，例如 2016-03-12；默认今天）'
+        ),
+        WFAskActionDefaultAnswer=text('', output(formatted_date_id, 'Formatted Date')),
+        WFInputType='Text',
+    )
     album_title_id = action(
         'ask',
         CustomOutputName='Gallery Title',
@@ -116,14 +132,6 @@ def build(personal_token=None, workflow_name='相册同步到博客'):
         WFInputType='Text',
     )
 
-    current_date_id = action('date', WFDateActionMode='Current Date')
-    formatted_date_id = action(
-        'format.date',
-        WFDate=text('', output(current_date_id, 'Date')),
-        WFDateFormatStyle='Custom',
-        WFDateFormat='yyyy-MM-dd',
-    )
-
     action('comment', WFCommentActionText='先创建一条尚未公开的相册记录，取得服务端相册编号。')
     create_headers = dictionary([
         ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
@@ -132,7 +140,7 @@ def build(personal_token=None, workflow_name='相册同步到博客'):
     create_body = dictionary([
         ('title', text('', output(album_title_id, 'Gallery Title')), 0),
         ('slug', text('', output(album_slug_id, 'Gallery Link')), 0),
-        ('date', text('', output(formatted_date_id, 'Formatted Date')), 0),
+        ('date', text('', output(gallery_date_id, 'Gallery Date')), 0),
     ])
     create_id = action(
         'downloadurl',

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 /**
  * 所有一级栏目共用同一个页头。
- * 视觉标记由 CSS 放在 680px 阅读栏之外的左侧留白里，对齐 Ueno 的 main_mark。
+ * 标题与底部细线组成简洁的栏目标题区。
  */
 export default function PageHeader({
   title,

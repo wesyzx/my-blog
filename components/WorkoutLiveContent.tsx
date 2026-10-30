@@ -95,12 +95,17 @@ function Heatmap({ data, year, lastUpdated }: { data: HeatmapNode[]; year: numbe
       </div>
       <div className="workout-heatmap-scroll">
         <div className="workout-heatmap-chart" style={{ minWidth: `${weekCount * 12 - 3}px` }}>
-          <div className="workout-heatmap-months" style={{ gridTemplateColumns: `repeat(${weekCount}, 9px)` }} aria-hidden="true">
+          <div className="workout-heatmap-months" style={{ gridTemplateColumns: `repeat(${weekCount}, minmax(0, 1fr))` }} aria-hidden="true">
             {monthLabels.map((month) => (
               <span key={`${month.label}-${month.column}`} style={{ gridColumnStart: month.column }}>{month.label}</span>
             ))}
           </div>
-          <div className="workout-heatmap-grid" role="img" aria-label={`${year} 年共有 ${activeDays} 个运动日`}>
+          <div
+            className="workout-heatmap-grid"
+            style={{ gridTemplateColumns: `repeat(${weekCount}, minmax(0, 1fr))` }}
+            role="img"
+            aria-label={`${year} 年共有 ${activeDays} 个运动日`}
+          >
             {Array.from({ length: leadingEmptyCells }, (_, index) => <span key={`lead-${index}`} className="is-empty" />)}
             {days.map((date) => {
               const count = entries.get(date)?.activityCount ?? 0

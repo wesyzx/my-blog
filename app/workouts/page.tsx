@@ -17,7 +17,7 @@ export default async function WorkoutsPage() {
   const data = await getWorkoutsData()
 
   return (
-    <div className="page-shell narrow animate-fade-up">
+    <div className="page-shell animate-fade-up">
       <PageHeader title="运动" />
       <WorkoutLiveContent initialData={data} />
     </div>

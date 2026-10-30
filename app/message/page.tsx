@@ -6,7 +6,7 @@ export const metadata = createPageMetadata({ title: '留言板', description: '�
 
 export default function MessagePage() {
   return (
-    <div className="page-shell narrow animate-fade-up">
+    <div className="page-shell animate-fade-up">
       <PageHeader title="留言板" />
       <ArtalkComments pageKey="/message" pageTitle="留言板" />
     </div>

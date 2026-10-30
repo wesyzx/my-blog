@@ -46,6 +46,56 @@ function safeFileName(title) {
     .trim()
 }
 
+function mirrorFileName(album) {
+  const title = safeFileName(album.title) || '未命名相册'
+  return `${title}-${album.id.slice(0, 8)}.md`
+}
+
+function yamlString(value) {
+  return JSON.stringify(String(value || ''))
+}
+
+function galleryMirrorContent(album) {
+  const images = Array.isArray(album.images) ? album.images : []
+  const cover = album.cover || images[0]?.src || ''
+  const publicUrl = album.published
+    ? `${GALLERY_PUBLIC_ORIGIN}/${encodeURIComponent(album.slug)}`
+    : ''
+  const state = album.published ? '已发布' : '私密'
+  const lines = [
+    '---',
+    'published: false',
+    `title: ${yamlString(album.title)}`,
+    `date: ${yamlString(album.date)}`,
+    `category: ${yamlString(album.category || '日常')}`,
+    'managedBy: blog-create-online-gallery',
+    `remoteAlbumId: ${yamlString(album.id)}`,
+    `remoteSlug: ${yamlString(album.slug)}`,
+    `remoteState: ${yamlString(album.published ? 'published' : 'private')}`,
+    `cover: ${yamlString(cover)}`,
+    '---',
+    '',
+    `> [!info] 线上相册 · ${state}`,
+    `> ${album.date || '日期未知'} · ${album.photoCount} 张照片`,
+    ...(publicUrl ? [`> [在博客中打开](${publicUrl})`] : ['> 这个相册尚未发布到博客。']),
+    '',
+    `# ${album.title}`,
+    '',
+    '此笔记由 Blog Create 根据线上相册自动生成，手动修改会在下次同步时覆盖。',
+  ]
+
+  if (cover) {
+    lines.push('', `![${album.title} 封面](${cover})`)
+  }
+  if (images.length) {
+    lines.push('', '## 相册照片', '')
+    images.forEach((image, index) => {
+      if (image.src) lines.push(`![${album.title} ${index + 1}](${image.src})`, '')
+    })
+  }
+  return `${lines.join('\n').trimEnd()}\n`
+}
+
 function fillFrontmatter(source, title) {
   const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
   if (!match) {
@@ -265,17 +315,7 @@ class GalleryManagerModal extends Modal {
   }
 
   async request(path, token = this.plugin.sessionToken, method = 'GET') {
-    const response = await requestUrl({
-      url: `${GALLERY_API_ORIGIN}${path}`,
-      method,
-      headers: { Authorization: `Bearer ${token}` },
-      throw: false,
-    })
-    if (response.status < 200 || response.status >= 300) {
-      if (response.status === 401) await this.plugin.clearGalleryToken()
-      throw new Error(responseError(response, `请求失败（HTTP ${response.status}）`))
-    }
-    return response.json
+    return this.plugin.requestGallery(path, token, method)
   }
 
   async loadAlbums(message = '正在读取相册…') {
@@ -283,7 +323,14 @@ class GalleryManagerModal extends Modal {
     this.loading = true
     try {
       const response = await this.request('/internal/gallery/albums')
-      this.renderAlbums(response.albums || [], message === '正在读取相册…' ? '' : message)
+      const albums = response.albums || []
+      try {
+        await this.plugin.mirrorOnlineAlbums(albums)
+      } catch (error) {
+        console.warn('Blog Create: unable to mirror online albums', error)
+        new Notice(`线上相册已读取，但无法同步到 Blog/gallery：${error.message}`)
+      }
+      this.renderAlbums(albums, message === '正在读取相册…' ? '' : message)
     } catch (error) {
       if (!this.plugin.sessionToken) {
         this.renderAuth('令牌已失效，请重新输入。')
@@ -405,6 +452,23 @@ module.exports = class BlogCreatePlugin extends Plugin {
       name: '管理线上相册',
       callback: () => this.openGalleryManager(),
     })
+    this.addCommand({
+      id: 'sync-online-gallery',
+      name: '同步线上相册到 Blog/gallery',
+      callback: async () => {
+        if (!this.sessionToken) {
+          new Notice('请先打开“管理线上相册”并输入令牌')
+          this.openGalleryManager()
+          return
+        }
+        try {
+          const result = await this.syncOnlineAlbums()
+          new Notice(`已同步 ${result.albumCount} 个线上相册到 Blog/gallery/线上相册`)
+        } catch (error) {
+          new Notice(`同步线上相册失败：${error.message}`)
+        }
+      },
+    })
 
     for (const [type, config] of Object.entries(CONTENT_TYPES)) {
       this.addCommand({
@@ -412,6 +476,14 @@ module.exports = class BlogCreatePlugin extends Plugin {
         name: `新建${config.label}`,
         callback: () => this.openCreate(type),
       })
+    }
+
+    if (this.sessionToken) {
+      window.setTimeout(() => {
+        this.syncOnlineAlbums().catch((error) => {
+          console.warn('Blog Create: automatic gallery sync failed', error)
+        })
+      }, 1000)
     }
   }
 
@@ -434,6 +506,62 @@ module.exports = class BlogCreatePlugin extends Plugin {
     const data = (await this.loadData()) || {}
     delete data.galleryToken
     await this.saveData(data)
+  }
+
+  async requestGallery(path, token = this.sessionToken, method = 'GET') {
+    const response = await requestUrl({
+      url: `${GALLERY_API_ORIGIN}${path}`,
+      method,
+      headers: { Authorization: `Bearer ${token}` },
+      throw: false,
+    })
+    if (response.status < 200 || response.status >= 300) {
+      if (response.status === 401) await this.clearGalleryToken()
+      throw new Error(responseError(response, `请求失败（HTTP ${response.status}）`))
+    }
+    return response.json
+  }
+
+  async syncOnlineAlbums() {
+    const response = await this.requestGallery('/internal/gallery/albums')
+    const albums = response.albums || []
+    await this.mirrorOnlineAlbums(albums)
+    return { albumCount: albums.length }
+  }
+
+  async mirrorOnlineAlbums(albums) {
+    const folderPath = normalizePath('Blog/gallery/线上相册')
+    if (!this.app.vault.getAbstractFileByPath(folderPath)) {
+      await this.app.vault.createFolder(folderPath)
+    }
+
+    const folder = this.app.vault.getAbstractFileByPath(folderPath)
+    const existing = new Map()
+    for (const child of folder?.children || []) {
+      if (!child.path.endsWith('.md')) continue
+      const source = await this.app.vault.read(child)
+      const match = source.match(/^remoteAlbumId:\s*"([^"]+)"$/m)
+      if (match) existing.set(match[1], { file: child, source })
+    }
+
+    const wanted = new Set()
+    for (const album of albums) {
+      if (!album?.id) continue
+      const content = galleryMirrorContent(album)
+      const current = existing.get(album.id)
+      let file = current?.file
+      if (!file) {
+        const target = normalizePath(`${folderPath}/${mirrorFileName(album)}`)
+        file = await this.app.vault.create(target, content)
+      } else if (current.source !== content) {
+        await this.app.vault.modify(file, content)
+      }
+      wanted.add(file.path)
+    }
+
+    for (const current of existing.values()) {
+      if (!wanted.has(current.file.path)) await this.app.vault.delete(current.file)
+    }
   }
 
   async createNote(type, title) {

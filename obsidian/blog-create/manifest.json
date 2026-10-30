@@ -1,9 +1,9 @@
 {
   "id": "blog-create",
   "name": "Blog Create",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "minAppVersion": "1.4.0",
-  "description": "Quick access to Blog content creation and published photo album management.",
+  "description": "Blog content creation and automatic online gallery mirroring.",
   "author": "wesyzx",
   "isDesktopOnly": false
 }

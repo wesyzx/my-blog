@@ -176,6 +176,13 @@ async function listGalleryAlbumsForAdmin(request, env) {
       category: album.category || '日常',
       published: album.published === true,
       photoCount: album.images.length,
+      cover: album.images[0]?.src || '',
+      images: album.images.map((image, index) => ({
+        src: image.src,
+        width: image.width,
+        height: image.height,
+        order: image.order ?? index,
+      })),
       createdAt: album.createdAt,
       updatedAt: album.updatedAt,
     })),

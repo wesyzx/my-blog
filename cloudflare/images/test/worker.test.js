@@ -530,8 +530,22 @@ test('gallery admin page exposes the visual shell while album data stays authent
   const { albums } = await listed.json()
   assert.equal(albums.length, 1)
   assert.deepEqual(
-    { title: albums[0].title, date: albums[0].date, published: albums[0].published, photoCount: albums[0].photoCount },
-    { title: '管理测试', date: '2026-10-30', published: false, photoCount: 0 },
+    {
+      title: albums[0].title,
+      date: albums[0].date,
+      published: albums[0].published,
+      photoCount: albums[0].photoCount,
+      cover: albums[0].cover,
+      images: albums[0].images,
+    },
+    {
+      title: '管理测试',
+      date: '2026-10-30',
+      published: false,
+      photoCount: 0,
+      cover: '',
+      images: [],
+    },
   )
 })
 

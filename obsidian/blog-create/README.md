@@ -13,6 +13,13 @@ The published-album manager opens in a wide modal so album titles, links and
 actions remain visible. It also includes links for the website and public
 gallery.
 
+When album data loads, the plugin mirrors every online album into
+`Blog/gallery/线上相册/`. Each mirror note shows the publication state, date,
+photo count, public link when available, cover and photos. The generated
+subfolder is intentionally outside the publisher's top-level gallery scan, so
+it does not create duplicate albums on the website. Mirror files are refreshed
+automatically and removed when their online album is deleted.
+
 The upload token is entered once in the album manager and stored in this
 plugin's local `data.json` settings file. It is not committed to the blog source
 repository. Use **更换令牌** to clear the stored value.

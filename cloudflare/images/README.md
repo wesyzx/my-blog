@@ -76,8 +76,9 @@ Quality is part of the preset contract: 75 for tiles and cards, 82 for `full`.
 - `/health` is a small, uncached health check.
 - `/internal/gallery/albums` creates a private album record. The Shortcut then
   uploads each converted JPEG to `/internal/gallery/albums/{id}/photos`.
-- `GET /internal/gallery/albums` lists album records for the protected manager,
-  and `DELETE /internal/gallery/albums/{id}` removes its source photos and record.
+- `GET /internal/gallery/albums` lists album records, publication state and
+  image metadata for the protected manager and Obsidian mirror notes, and
+  `DELETE /internal/gallery/albums/{id}` removes its source photos and record.
   Deleting a published album first hides it, triggers EdgeOne, and restores the
   album if the deployment request fails.
 - `/internal/gallery/albums/{id}/publish` marks the album public before calling

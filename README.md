@@ -148,3 +148,6 @@ LiveSync 在服务器上保存的是端到端加密块，不能直接作为图�
 相册，以及查看和删除 iPhone 快捷指令相册的入口。相册上传令牌首次验证后会保存在插件
 本地的 `data.json` 配置中，便于后续直接使用；令牌不会进入博客源码仓库。安装与更新方法见
 [`obsidian/blog-create/README.md`](obsidian/blog-create/README.md)。
+
+线上相册会同步到 `Blog/gallery/线上相册/`，每个相册对应一篇带封面和照片的只读镜像笔记。
+该子目录不会被发布脚本当作 Obsidian 相册发布，因此不会在网站中产生重复相册。

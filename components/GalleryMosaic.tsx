@@ -40,6 +40,7 @@ export default function GalleryMosaic({ images, title }: { images: Photo[]; titl
               fill
               sizes="(max-width: 560px) 50vw, (max-width: 860px) 25vw, 360px"
               data-lightbox-src={blogImageUrl(image.src, { preset: 'full' })}
+              data-lightbox-caption={`${index + 1}/${images.length}`}
               data-pswp-width={image.width}
               data-pswp-height={image.height}
             />

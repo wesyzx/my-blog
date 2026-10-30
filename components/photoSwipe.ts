@@ -33,7 +33,8 @@ function slideData(image: HTMLImageElement): SlideData {
     height,
     element: image,
     alt: image.alt,
-    caption: image.closest('figure')?.querySelector('figcaption')?.textContent?.trim()
+    caption: image.dataset.lightboxCaption
+      || image.closest('figure')?.querySelector('figcaption')?.textContent?.trim()
       || image.title || image.alt,
     thumbCropped: getComputedStyle(image).objectFit === 'cover',
   }

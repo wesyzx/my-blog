@@ -22,7 +22,7 @@ Markdown 中现有 `*.guanyan.me` 的 HTTPS 图片复用 Next.js 的图片优化
 - `data-pswp-width`、`data-pswp-height`：已知原图尺寸；缺失时可正常打开并在加载后校正。
 - `data-lightbox="off"`：图片或祖先元素退出灯箱。
 
-说明文字优先使用 `figcaption`，其次为图片 `title`、`alt`，通过 `textContent` 输出。普通页面导航图片保持链接行为；图片链接仍保留修改键点击和无 JavaScript 时的原生行为。裸图片支持 Tab 聚焦、Enter/空格打开；查看器支持方向键、Esc 和关闭后恢复焦点，并响应减少动画偏好。
+说明文字优先使用 `data-lightbox-caption`，然后为 `figcaption`、图片 `title`、`alt`，通过 `textContent` 输出。相册照片的底部说明使用 `5/8` 这样的序号格式，切换时随当前照片更新；缩略图的替代文字仍保留相册名称和照片序号。普通页面导航图片保持链接行为；图片链接仍保留修改键点击和无 JavaScript 时的原生行为。裸图片支持 Tab 聚焦、Enter/空格打开；查看器支持方向键、Esc 和关闭后恢复焦点，并响应减少动画偏好。
 
 ## 本地验证记录
 

@@ -133,13 +133,8 @@ export default function GalleryVideo({
     if (!nearViewportRef.current || !video || media.poster || previewRequestedRef.current
       || video.readyState < HTMLMediaElement.HAVE_METADATA) return
     previewRequestedRef.current = true
-    const previewTime = Math.min(0.2, Math.max(0, video.duration / 20))
-    if (previewTime > 0) {
-      video.currentTime = previewTime
-    } else {
-      video.preload = 'auto'
-      video.load()
-    }
+    video.preload = 'auto'
+    video.load()
   }, [media.poster])
 
   useEffect(() => {

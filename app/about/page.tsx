@@ -20,7 +20,7 @@ export default function AboutPage() {
           <h2>Can Chou</h2>
           <p className="about-handle">@wesyzx</p>
           <div className="social-links">
-            <Link href="mailto:wesyzx@gmail.com" aria-label="发送邮件"><Icon name="mail" /></Link>
+            <Link href="mailto:hello@guanyan.me" aria-label="发送邮件"><Icon name="mail" /></Link>
             <Link href="https://github.com/wesyzx" target="_blank" aria-label="GitHub"><Icon name="github" /></Link>
             <Link href="https://x.com/wesyzx" target="_blank" aria-label="X"><Icon name="x" /></Link>
             <Link href="/rss.xml" aria-label="RSS"><Icon name="rss" /></Link>

@@ -66,8 +66,10 @@ function noteMedia(source) {
       .map((match) => ({ index: match.index, embed: match[0], src: match[1].replace(/^<|>$/g, '') })),
     ...[...body.matchAll(/<video\b[^>]*\bsrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/video>/gi)]
       .map((match) => ({ index: match.index, embed: match[0], src: match[1], kind: 'video' })),
+    ...[...body.matchAll(/!\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]/g)]
+      .map((match) => ({ index: match.index, embed: match[0], src: match[1] })),
   ].sort((a, b) => a.index - b.index)
-  return matches.map((item) => ({ ...item, kind: item.kind || (/\.(mp4|mov|m4v|webm)(?:[?#]|$)/i.test(item.src) ? 'video' : 'image') }))
+  return matches.map((item) => ({ ...item, kind: item.kind || (/\.(mp4|mov|m4v|webm|ogv)(?:[?#]|$)/i.test(item.src) ? 'video' : 'image') }))
 }
 
 function fillFrontmatter(source, title) {
@@ -248,10 +250,11 @@ class GalleryMediaModal extends Modal {
     const list = contentEl.createDiv({ cls: 'blog-media-list' })
     for (const [index, item] of media.entries()) {
       const row = list.createDiv({ cls: 'blog-media-row' })
+      const preview = this.plugin.mediaPreviewSource(item.src, file.path)
       if (item.kind === 'video') {
-        row.createEl('video', { attr: { src: item.src, controls: '', preload: 'metadata', playsinline: '' } })
+        row.createEl('video', { attr: { src: preview, controls: '', preload: 'metadata', playsinline: '' } })
       } else {
-        row.createEl('img', { attr: { src: item.src, loading: 'lazy', alt: `照片 ${index + 1}` } })
+        row.createEl('img', { attr: { src: preview, loading: 'lazy', alt: `照片 ${index + 1}` } })
       }
       const actions = row.createDiv()
       actions.createEl('span', { text: `${index + 1} · ${item.kind === 'video' ? '视频' : '照片'}` })
@@ -588,6 +591,14 @@ module.exports = class BlogCreatePlugin extends Plugin {
       })
     }
     return result.sort((a, b) => String(b.date).localeCompare(String(a.date)))
+  }
+
+  mediaPreviewSource(src, notePath) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(src)) return src
+    let target = src
+    try { target = decodeURIComponent(src) } catch {}
+    const file = this.app.metadataCache.getFirstLinkpathDest(target, notePath)
+    return file ? this.app.vault.getResourcePath(file) : src
   }
 
   async importNewAlbums(albums) {

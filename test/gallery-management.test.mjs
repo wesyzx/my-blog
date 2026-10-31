@@ -67,6 +67,7 @@ test('native local video embeds resolve and export only the referenced video att
   await fs.writeFile(path.join(root, 'gallery/local.md'), [
     '---', 'published: true', 'title: Local video', 'date: 2026-10-31', '---',
     '<video controls src="../attachments/片段%20one.mp4"></video>',
+    '![[../attachments/片段 one.mp4]]',
   ].join('\n'))
   const { gallery } = await loadObsidianContent({ blogRoot: root, sections: ['gallery'] })
   assert.equal(gallery[0].images[0].kind, 'video')
@@ -120,6 +121,12 @@ test('Obsidian imports each album once, preserves local edits/deletions and refu
   await Promise.all([f.plugin.mirrorOnlineAlbums([album]), f.plugin.mirrorOnlineAlbums([album])])
   assert.equal(note.source, edited)
   assert.equal((await f.plugin.managedAlbums())[0].images.length, 2)
+  note.source += '\n![[../attachments/本地片段.mp4]]\n'
+  assert.equal((await f.plugin.managedAlbums())[0].images.at(-1).kind, 'video')
+  const localFile = { path: 'Blog/attachments/本地片段.mp4' }
+  f.plugin.app.metadataCache = { getFirstLinkpathDest: () => localFile }
+  f.plugin.app.vault.getResourcePath = (file) => `app://local/${file.path}`
+  assert.equal(f.plugin.mediaPreviewSource('../attachments/本地片段.mp4', note.path), 'app://local/Blog/attachments/本地片段.mp4')
   f.remove(note)
   await f.plugin.mirrorOnlineAlbums([album])
   assert.equal((await f.plugin.managedAlbums()).length, 0)

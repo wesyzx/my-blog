@@ -153,7 +153,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
     action('conditional', GroupingIdentifier=no_selection_group, WFControlFlowMode=1)
     action(
         'showresult',
-        WFInput=text(f'没有选择任何{noun}。请返回照片选择器，选择至少一个{noun}后再运行。'),
+        Text=text(f'没有选择任何{noun}。请返回照片选择器，选择至少一个{noun}后再运行。'),
     )
     action('exit')
     action('conditional', GroupingIdentifier=no_selection_group, WFControlFlowMode=2)
@@ -234,8 +234,8 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(album_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=1)
-    action('showresult', WFInput=text('相册创建失败。服务端原始响应：'))
-    action('showresult', WFInput=content_input(output(create_id, 'Contents of URL')))
+    action('showresult', Text=text('相册创建失败。服务端原始响应：'))
+    action('showresult', Text=content_input(output(create_id, 'Contents of URL')))
     action('exit')
     action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=2)
 
@@ -281,7 +281,10 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
         ('Content-Type', text(config['content_type']), 0),
     ])
-    upload_body = content_input(output(converted_id, config['converted_output_name']))
+    # File is a native variable picker, not a text field. A token string or
+    # a bare ActionOutput imports as "Choose Variable" and sends an empty body.
+    # Match the WFTextTokenAttachment emitted by Shortcuts' own editor.
+    upload_body = attachment(output(converted_id, config['converted_output_name']))
     upload_id = action(
         'downloadurl',
         WFURL=composed_text(
@@ -318,8 +321,8 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(upload_ok_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=1)
-    action('showresult', WFInput=text(f'{noun}上传失败。服务端原始响应：'))
-    action('showresult', WFInput=content_input(output(upload_id, 'Contents of URL')))
+    action('showresult', Text=text(f'{noun}上传失败。服务端原始响应：'))
+    action('showresult', Text=content_input(output(upload_id, 'Contents of URL')))
     action('exit')
     action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=2)
     action('repeat.each', GroupingIdentifier=group, WFControlFlowMode=2)
@@ -365,8 +368,8 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(gallery_url_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=publish_guard_group, WFControlFlowMode=1)
-    action('showresult', WFInput=text('相册发布失败。服务端原始响应：'))
-    action('showresult', WFInput=content_input(output(publish_id, 'Contents of URL')))
+    action('showresult', Text=text('相册发布失败。服务端原始响应：'))
+    action('showresult', Text=content_input(output(publish_id, 'Contents of URL')))
     action('exit')
     action('conditional', GroupingIdentifier=publish_guard_group, WFControlFlowMode=2)
     action('openurl', WFInput=attachment(output(gallery_url_id, 'Dictionary Value')))

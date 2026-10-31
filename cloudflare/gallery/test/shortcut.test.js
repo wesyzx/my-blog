@@ -90,12 +90,14 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   const upload = requests[1].WFWorkflowActionParameters
   assert.match(upload.WFURL.Value.string, /^https:\/\/img\.215320\.xyz\/internal\/gallery\/albums\/.*\/photos$/)
   assert.equal(upload.WFHTTPBodyType, 'File')
-  assert.equal(upload.WFRequestVariable.WFSerializationType, 'WFTextTokenString')
-  assert.equal(upload.WFRequestVariable.Value.string, '\ufffc')
-  assert.equal(
-    upload.WFRequestVariable.Value.attachmentsByRange['{0, 1}'].OutputName,
-    'Converted Image',
-  )
+  assert.deepEqual(upload.WFRequestVariable, {
+    WFSerializationType: 'WFTextTokenAttachment',
+    Value: {
+      Type: 'ActionOutput',
+      OutputUUID: convert.WFWorkflowActionParameters.UUID,
+      OutputName: 'Converted Image',
+    },
+  })
   assert.deepEqual(upload.WFFormValues.Value.WFDictionaryFieldValueItems, [])
   const uploadHeaders = upload.WFHTTPHeaders.Value.WFDictionaryFieldValueItems
     .map((item) => [item.WFKey.Value.string, item.WFValue.Value.string])
@@ -133,6 +135,12 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   assert.ok(ids.includes('is.workflow.actions.openurl'))
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.exit').length, 4)
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 7)
+  for (const result of actions.filter((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.showresult')) {
+    // Show Result's native parameter is Text; WFInput imports as an empty,
+    // interactive parameter prompt and hides the actual failure response.
+    assert.equal(result.WFWorkflowActionParameters.Text.WFSerializationType, 'WFTextTokenString')
+    assert.equal('WFInput' in result.WFWorkflowActionParameters, false)
+  }
 
   const conditionalStarts = actions.filter((entry) =>
     entry.WFWorkflowActionIdentifier === 'is.workflow.actions.conditional'
@@ -256,10 +264,9 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
   const upload = requests[1].WFWorkflowActionParameters
   assert.match(upload.WFURL.Value.string, /^https:\/\/img\.215320\.xyz\/internal\/gallery\/albums\/.*\/videos$/)
   assert.equal(upload.WFHTTPBodyType, 'File')
-  assert.equal(upload.WFRequestVariable.WFSerializationType, 'WFTextTokenString')
-  assert.equal(upload.WFRequestVariable.Value.string, '\ufffc')
+  assert.equal(upload.WFRequestVariable.WFSerializationType, 'WFTextTokenAttachment')
   assert.deepEqual(
-    upload.WFRequestVariable.Value.attachmentsByRange['{0, 1}'],
+    upload.WFRequestVariable.Value,
     {
       Type: 'ActionOutput',
       OutputUUID: encodeVideo.WFWorkflowActionParameters.UUID,
@@ -302,6 +309,10 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
   assert.ok(ids.includes('is.workflow.actions.openurl'))
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.exit').length, 4)
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 7)
+  for (const result of actions.filter((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.showresult')) {
+    assert.equal(result.WFWorkflowActionParameters.Text.WFSerializationType, 'WFTextTokenString')
+    assert.equal('WFInput' in result.WFWorkflowActionParameters, false)
+  }
 
   const conditionalStarts = actions.filter((entry) =>
     entry.WFWorkflowActionIdentifier === 'is.workflow.actions.conditional'

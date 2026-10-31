@@ -76,10 +76,12 @@ test('native local video embeds resolve and export only the referenced video att
 })
 
 async function fakePlugin() {
-  const source = await fs.readFile(new URL('../obsidian/blog-create/main.js', import.meta.url), 'utf8')
-  const context = { module: { exports: {} }, console, window: {}, require: (id) => id === 'obsidian'
-    ? { Modal: class {}, Plugin: class {}, parseYaml: YAML.parse, normalizePath: (value) => value }
-    : model }
+  const source = await fs.readFile(process.env.BLOG_CREATE_TEST_BUNDLE || new URL('../obsidian/blog-create/main.js', import.meta.url), 'utf8')
+  const context = { module: { exports: {} }, console, window: {}, require: (id) => {
+    if (id === 'obsidian') return { Modal: class {}, Plugin: class {}, parseYaml: YAML.parse, normalizePath: (value) => value }
+    if (id === './gallery-model' && !process.env.BLOG_CREATE_TEST_BUNDLE) return model
+    throw new Error(`Obsidian cannot load external module ${id}`)
+  } }
   vm.runInNewContext(source, context)
   const plugin = new context.module.exports()
   const files = new Map([['Blog/gallery', { path: 'Blog/gallery', children: [] }]])

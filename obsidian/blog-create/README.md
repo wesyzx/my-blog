@@ -47,8 +47,10 @@ GitHub 一起保存，但不会作为页面发布。**保留此记录**；
 
 ## 安装
 
-复制 `main.js`、`gallery-model.js`、`manifest.json` 和 `styles.css` 到
-`<Vault>/.obsidian/plugins/blog-create/`，然后重新加载此插件。
+先运行 `node obsidian/blog-create/build.mjs`（开发依赖 esbuild），
+再复制 `artifacts/blog-create/` 中打包后的 `main.js`、`manifest.json`
+和 `styles.css` 到 `<Vault>/.obsidian/plugins/blog-create/`，然后重新加载此插件。
+Obsidian 不解析源码中的相对模块，因此不能直接安装源码目录的 main.js。
 必须同时部署支持同步记录的阿里云 reader/publisher 与博客构建程序；
 旧版本只支持单向只读副本。
 

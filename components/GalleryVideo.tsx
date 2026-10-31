@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent, SyntheticEvent } from 'react'
 import type { GalleryVideo as GalleryVideoMedia } from '@/lib/gallery'
 import { detectVisibleCrop, FULL_FRAME, sameCrop } from '@/lib/video-crop.mjs'
-import { videoPreviewTime } from '@/lib/video-preview.mjs'
 
 type CropRect = {
   left: number
@@ -137,13 +136,6 @@ export default function GalleryVideo({
     const canvas = previewCanvasRef.current
     if (!nearViewportRef.current || !video || !canvas || media.poster
       || video.readyState < HTMLMediaElement.HAVE_METADATA) return
-    const duration = Number.isFinite(video.duration) ? video.duration : media.duration || 0
-    const target = videoPreviewTime(duration)
-    if (target > 0 && Math.abs(video.currentTime - target) > 0.1) {
-      video.preload = 'auto'
-      video.currentTime = target
-      return
-    }
     if (video.seeking || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
     try {
       canvas.width = video.videoWidth
@@ -157,7 +149,7 @@ export default function GalleryVideo({
     } catch {
       // The play button remains usable if a host blocks canvas frame capture.
     }
-  }, [drawBackdrop, inspectFrame, media.duration, media.poster])
+  }, [drawBackdrop, inspectFrame, media.poster])
 
   const primePreview = useCallback(() => {
     const video = previewVideoRef.current

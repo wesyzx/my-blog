@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent, SyntheticEvent } from 'react'
 import type { GalleryVideo as GalleryVideoMedia } from '@/lib/gallery'
+import { detectVisibleCrop, FULL_FRAME, sameCrop } from '@/lib/video-crop.mjs'
 
 type CropRect = {
   left: number
@@ -15,71 +16,6 @@ type VideoWithLegacyFullscreen = HTMLVideoElement & {
   webkitEnterFullscreen?: () => void
   requestVideoFrameCallback?: (callback: (now: number) => void) => number
   cancelVideoFrameCallback?: (handle: number) => void
-}
-
-const FULL_FRAME: CropRect = { left: 0, top: 0, width: 1, height: 1 }
-const CROP_EPSILON = 0.002
-
-function sameCrop(left: CropRect, right: CropRect) {
-  return Math.abs(left.left - right.left) < CROP_EPSILON
-    && Math.abs(left.top - right.top) < CROP_EPSILON
-    && Math.abs(left.width - right.width) < CROP_EPSILON
-    && Math.abs(left.height - right.height) < CROP_EPSILON
-}
-
-/**
- * Finds the content rectangle inside an intentionally letterboxed video.
- * Reading a tiny frame is enough: every fully black edge row or column is
- * trimmed, while dark artwork inside the frame stays untouched.
- */
-function detectVisibleCrop(video: HTMLVideoElement, canvas: HTMLCanvasElement): CropRect | null {
-  if (video.videoWidth <= 0 || video.videoHeight <= 0) return null
-
-  const width = 128
-  const height = Math.max(96, Math.round(width * video.videoHeight / video.videoWidth))
-  canvas.width = width
-  canvas.height = height
-  const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (!context) return null
-
-  context.drawImage(video, 0, 0, width, height)
-  const pixels = context.getImageData(0, 0, width, height).data
-  const rowBlack = new Uint16Array(height)
-  const columnBlack = new Uint16Array(width)
-
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const offset = (y * width + x) * 4
-      const black = pixels[offset] <= 40 && pixels[offset + 1] <= 40 && pixels[offset + 2] <= 40
-      if (!black) continue
-      rowBlack[y] += 1
-      columnBlack[x] += 1
-    }
-  }
-
-  const rowIsPadding = (y: number) => rowBlack[y] >= width * 0.96
-  const columnIsPadding = (x: number) => columnBlack[x] >= height * 0.96
-  let top = 0
-  let bottom = height
-  let left = 0
-  let right = width
-
-  while (top < bottom && top < height * 0.46 && rowIsPadding(top)) top += 1
-  while (bottom > top && bottom > height * 0.54 && rowIsPadding(bottom - 1)) bottom -= 1
-  while (left < right && left < width * 0.46 && columnIsPadding(left)) left += 1
-  while (right > left && right > width * 0.54 && columnIsPadding(right - 1)) right -= 1
-
-  // Very small light subjects on a black background are content, not padding.
-  if (right - left < width * 0.22 || bottom - top < height * 0.22) return null
-
-  const crop = {
-    left: left / width,
-    top: top / height,
-    width: (right - left) / width,
-    height: (bottom - top) / height,
-  }
-  const changed = crop.left + (1 - crop.width) + crop.top + (1 - crop.height)
-  return changed > 0.012 ? crop : null
 }
 
 function formatTime(value: number) {
@@ -170,7 +106,14 @@ export default function GalleryVideo({
     const canvas = canvasRef.current
     if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
     try {
-      const nextCrop = detectVisibleCrop(video, canvas) || FULL_FRAME
+      const width = 128
+      const height = Math.max(96, Math.round(width * video.videoHeight / video.videoWidth))
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      if (!context) return
+      context.drawImage(video, 0, 0, width, height)
+      const nextCrop = detectVisibleCrop(context.getImageData(0, 0, width, height).data, width, height) || FULL_FRAME
       if (!sameCrop(cropRef.current, nextCrop)) {
         cropRef.current = nextCrop
         setCrop(nextCrop)

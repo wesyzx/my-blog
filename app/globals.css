@@ -619,8 +619,9 @@ button { font: inherit; }
 }
 .gallery-video-backdrop {
   position: absolute; inset: -5%; z-index: 0; width: 110%; height: 110%;
-  opacity: .82; filter: blur(22px) saturate(.72); pointer-events: none;
+  opacity: 0; filter: blur(22px) saturate(.72); pointer-events: none; transition: opacity .2s ease;
 }
+.gallery-video-player.is-preview-ready .gallery-video-backdrop { opacity: .82; }
 .gallery-video-media {
   position: absolute; z-index: 1; display: block; max-width: none; max-height: none; object-fit: fill;
   background: transparent; cursor: pointer; opacity: 0; transition: opacity .2s ease;

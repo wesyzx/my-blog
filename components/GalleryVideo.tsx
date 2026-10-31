@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent, SyntheticEvent } from 'react'
 import type { GalleryVideo as GalleryVideoMedia } from '@/lib/gallery'
 import { detectVisibleCrop, FULL_FRAME, sameCrop } from '@/lib/video-crop.mjs'
+import { videoPreviewTime } from '@/lib/video-preview.mjs'
 
 type CropRect = {
   left: number
@@ -47,6 +48,7 @@ export default function GalleryVideo({
   const lastProgressRef = useRef(0)
   const nearViewportRef = useRef(false)
   const previewRequestedRef = useRef(false)
+  const previewTimeRef = useRef(0)
   const playbackStartedRef = useRef(false)
   const [crop, setCrop] = useState<CropRect>(FULL_FRAME)
   const [playing, setPlaying] = useState(false)
@@ -130,12 +132,27 @@ export default function GalleryVideo({
 
   const primePreview = useCallback(() => {
     const video = videoRef.current
-    if (!nearViewportRef.current || !video || media.poster || previewRequestedRef.current
-      || video.readyState < HTMLMediaElement.HAVE_METADATA) return
-    previewRequestedRef.current = true
-    video.preload = 'auto'
-    video.load()
-  }, [media.poster])
+    if (!nearViewportRef.current || !video || media.poster) return
+
+    if (!previewRequestedRef.current) {
+      previewRequestedRef.current = true
+      video.preload = 'auto'
+      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+        video.load()
+        return
+      }
+    }
+
+    if (video.readyState < HTMLMediaElement.HAVE_METADATA) return
+    const duration = Number.isFinite(video.duration) ? video.duration : media.duration || 0
+    const target = videoPreviewTime(duration)
+    previewTimeRef.current = target
+    if (target > 0 && Math.abs(video.currentTime - target) > 0.1) {
+      video.currentTime = target
+    } else if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      setPreviewReady(true)
+    }
+  }, [media.duration, media.poster])
 
   useEffect(() => {
     const shell = shellRef.current
@@ -162,22 +179,25 @@ export default function GalleryVideo({
       if (video.videoWidth > 0 && video.videoHeight > 0) reportNaturalRatio()
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) inspectFrame()
       if (video.readyState >= HTMLMediaElement.HAVE_METADATA) primePreview()
-      if (nearViewportRef.current && !playbackStartedRef.current && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      if (media.poster || (nearViewportRef.current && !playbackStartedRef.current
+        && !video.seeking
+        && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+        && Math.abs(video.currentTime - previewTimeRef.current) <= 0.35)) {
         setPreviewReady(true)
       }
     }
 
-    // Cached media can reach readyState 4 before React attaches its events.
-    syncLoadedVideo()
     video.addEventListener('loadedmetadata', syncLoadedVideo)
     video.addEventListener('loadeddata', syncLoadedVideo)
     video.addEventListener('seeked', syncLoadedVideo)
+    // Cached media can reach readyState 4 before React attaches its events.
+    syncLoadedVideo()
     return () => {
       video.removeEventListener('loadedmetadata', syncLoadedVideo)
       video.removeEventListener('loadeddata', syncLoadedVideo)
       video.removeEventListener('seeked', syncLoadedVideo)
     }
-  }, [inspectFrame, media.duration, primePreview, reportNaturalRatio])
+  }, [inspectFrame, media.duration, media.poster, primePreview, reportNaturalRatio])
 
   useEffect(() => {
     const video = videoRef.current

@@ -10,7 +10,7 @@ export const metadata = createPageMetadata({ title: '关于', description: '关�
 
 export default function AboutPage() {
   return (
-    <div className="page-shell animate-fade-up">
+    <div className="page-shell narrow about-page animate-fade-up">
       <PageHeader title="关于" />
       <section className="about-profile">
         <div className="about-avatar-wrap">

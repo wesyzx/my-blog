@@ -638,7 +638,7 @@ button { font: inherit; }
 .gallery-video-player { position: absolute; inset: 0; overflow: hidden; background: #111; color: #fff; isolation: isolate; }
 .gallery-video-media {
   position: absolute; display: block; max-width: none; max-height: none; object-fit: fill;
-  background: #111; cursor: pointer; transition: left .22s ease, top .22s ease, width .22s ease, height .22s ease;
+  background: #111; cursor: pointer;
 }
 .gallery-video-sample { display: none; }
 .gallery-video-center {

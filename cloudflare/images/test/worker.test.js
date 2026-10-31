@@ -621,6 +621,7 @@ test('uploads, deduplicates, publishes and range-serves gallery videos', async (
   const full = await worker.fetch(new Request(videoUrl), gallery.env)
   assert.equal(full.status, 200)
   assert.equal(full.headers.get('content-type'), 'video/mp4')
+  assert.equal(full.headers.get('access-control-allow-origin'), '*')
   assert.equal(full.headers.get('accept-ranges'), 'bytes')
   assert.equal(full.headers.get('content-length'), String(MP4.byteLength))
   assert.deepEqual(new Uint8Array(await full.arrayBuffer()), MP4)
@@ -631,6 +632,11 @@ test('uploads, deduplicates, publishes and range-serves gallery videos', async (
   assert.equal(range.status, 206)
   assert.equal(range.headers.get('content-range'), `bytes 2-5/${MP4.byteLength}`)
   assert.deepEqual(new Uint8Array(await range.arrayBuffer()), MP4.slice(2, 6))
+
+  const options = await worker.fetch(new Request(videoUrl, { method: 'OPTIONS' }), gallery.env)
+  assert.equal(options.status, 204)
+  assert.equal(options.headers.get('access-control-allow-origin'), '*')
+  assert.match(options.headers.get('access-control-allow-methods'), /GET/)
 
   const head = await worker.fetch(new Request(videoUrl, { method: 'HEAD' }), gallery.env)
   assert.equal(head.status, 200)
@@ -649,6 +655,10 @@ test('reads portrait dimensions from iPhone video track metadata', async (t) => 
   const uploaded = await worker.fetch(galleryRequest(`/internal/gallery/albums/${albumId}/videos`, {
     body: portraitMov(1080, 1920),
     contentType: 'video/quicktime',
+    headers: {
+      'x-video-width': '1920',
+      'x-video-height': '1080',
+    },
   }), gallery.env)
   assert.equal(uploaded.status, 200)
   const result = await uploaded.json()

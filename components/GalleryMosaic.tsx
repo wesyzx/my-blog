@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import BlogImage from './BlogImage'
+import GalleryVideo from './GalleryVideo'
 import ImageLightbox from './ImageLightbox'
 import { blogImageUrl } from '@/lib/blog-images.mjs'
 import type { GalleryMedia } from '@/lib/gallery'
@@ -15,9 +16,8 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
   const mediaRatio = (media: GalleryMedia, index: number) => (
     videoRatios[mediaKey(media, index)] || media.width / media.height
   )
-  const syncVideoRatio = (video: HTMLVideoElement, media: GalleryMedia, index: number) => {
-    if (video.videoWidth <= 0 || video.videoHeight <= 0) return
-    const ratio = video.videoWidth / video.videoHeight
+  const syncVideoRatio = (media: GalleryMedia, index: number, ratio: number) => {
+    if (!Number.isFinite(ratio) || ratio <= 0) return
     const key = mediaKey(media, index)
     setVideoRatios((current) => (
       Math.abs((current[key] || media.width / media.height) - ratio) < 0.001
@@ -51,20 +51,11 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
               className={`gallery-mosaic-photo gallery-mosaic-video${ratio < 1 ? ' gallery-mosaic-portrait-video' : ''}`}
               style={style}
             >
-              <video
-                ref={(video) => {
-                  // Metadata may finish loading before React hydrates the page.
-                  if (video && video.readyState >= 1) syncVideoRatio(video, media, index)
-                }}
-                src={media.src}
-                poster={media.poster}
-                controls
-                playsInline
-                preload="metadata"
-                aria-label={`${title}，第 ${index + 1} 个视频`}
-                onLoadedMetadata={(event) => {
-                  syncVideoRatio(event.currentTarget, media, index)
-                }}
+              <GalleryVideo
+                media={media}
+                title={title}
+                ordinal={index + 1}
+                onAspectRatio={(nextRatio) => syncVideoRatio(media, index, nextRatio)}
               />
             </div>
           )

@@ -423,17 +423,17 @@ function videoTrackDimensions(buffer) {
 }
 
 function videoDimensions(request, buffer) {
-  const width = Number(request.headers.get('x-video-width'))
-  const height = Number(request.headers.get('x-video-height'))
-  if (Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0) {
-    return { width: Math.min(width, 16384), height: Math.min(height, 16384) }
-  }
   const storedDimensions = videoTrackDimensions(new Uint8Array(buffer))
   if (storedDimensions) {
     return {
       width: Math.min(storedDimensions.width, 16384),
       height: Math.min(storedDimensions.height, 16384),
     }
+  }
+  const width = Number(request.headers.get('x-video-width'))
+  const height = Number(request.headers.get('x-video-height'))
+  if (Number.isInteger(width) && width > 0 && Number.isInteger(height) && height > 0) {
+    return { width: Math.min(width, 16384), height: Math.min(height, 16384) }
   }
   return request.headers.get('x-video-orientation') === 'portrait'
     ? { width: 1080, height: 1920 }
@@ -1106,6 +1106,17 @@ function parseVideoRange(value, size) {
  * the Worker isolate, and return 206 responses with stable validators.
  */
 async function serveGalleryVideo(request, env, key) {
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'access-control-allow-headers': 'range',
+        'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+        'access-control-allow-origin': '*',
+        'access-control-max-age': '86400',
+      },
+    })
+  }
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
   }
@@ -1120,6 +1131,8 @@ async function serveGalleryVideo(request, env, key) {
   const range = parseVideoRange(requestedRange, size)
   const headers = new Headers({
     'accept-ranges': 'bytes',
+    'access-control-expose-headers': 'accept-ranges, content-length, content-range, etag',
+    'access-control-allow-origin': '*',
     'cache-control': 'public, max-age=31536000, immutable',
     'content-type': videoContentType(metadata, key),
     'x-content-type-options': 'nosniff',
@@ -1243,14 +1256,13 @@ async function serveLegacy(request, env, url) {
 }
 
 async function serveImage(request, env, url) {
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
-  }
-
   const video = GALLERY_VIDEO_ROUTE.exec(url.pathname)
   if (video) {
     const key = safeVideoKey(video[1])
     return key ? serveGalleryVideo(request, env, key) : errorResponse(404, 'Video not found')
+  }
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    return errorResponse(405, 'Method not allowed', { allow: 'GET, HEAD' })
   }
 
   const info = INFO_ROUTE.exec(url.pathname)

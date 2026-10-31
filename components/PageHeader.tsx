@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
+import { formatItemDate } from '@/lib/format'
 
 /**
- * 所有一级栏目共用同一个页头。
- * 标题与底部细线组成简洁的栏目标题区。
+ * 栏目与详情页共用标题区：日期、主标题、简介、辅助信息。
+ * 详情页不重复栏目名称，避免与主题争夺层级。
  */
 export default function PageHeader({
   title,
@@ -10,21 +11,28 @@ export default function PageHeader({
   description,
   className = '',
   actions,
+  date,
+  children,
 }: {
   title: string
   eyebrow?: string
   description?: string
   className?: string
   actions?: ReactNode
+  date?: string
+  children?: ReactNode
 }) {
   return (
     <header className={`page-header${className ? ` ${className}` : ''}`}>
-      {eyebrow && <p className="page-kicker">{eyebrow}</p>}
+      {date ? (
+        <time className="page-kicker" dateTime={date}>{formatItemDate(date)}</time>
+      ) : eyebrow ? <p className="page-kicker">{eyebrow}</p> : null}
       <div className="page-header-heading">
         <h1 className="page-title">{title}</h1>
         {actions}
       </div>
       {description && <p className="page-lead">{description}</p>}
+      {children && <div className="page-header-details">{children}</div>}
     </header>
   )
 }

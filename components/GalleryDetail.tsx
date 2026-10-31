@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import type { GalleryItem } from '@/lib/gallery'
-import { formatItemDate } from '@/lib/format'
 import Icon from './Icon'
 import PageHeader from './PageHeader'
 import ArtalkComments from './ArtalkComments'
@@ -11,7 +10,7 @@ import GalleryMosaic from './GalleryMosaic'
 export default function GalleryDetail({ album }: { album: GalleryItem }) {
   return (
     <div className="page-shell gallery-page animate-fade-up" data-gallery-revision={album.publicationRevision}>
-      <PageHeader title={album.title} eyebrow={formatItemDate(album.date)} description={album.excerpt} />
+      <PageHeader title={album.title} date={album.date} description={album.excerpt} />
       {album.images.length > 0 ? (
         <GalleryMosaic images={album.images} title={album.title} />
       ) : (

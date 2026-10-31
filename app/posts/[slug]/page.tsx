@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { getAllPosts, getPostBySlug } from '@/lib/posts'
-import { formatItemDate } from '@/lib/format'
+import PageHeader from '@/components/PageHeader'
 import { createPageMetadata } from '@/lib/metadata'
 import ArtalkComments from '@/components/ArtalkComments'
 import BlogImage from '@/components/BlogImage'
@@ -38,25 +38,14 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     /* 内页移除作者侧栏，正文保留居中的阅读宽度。 */
     <div className="page-shell narrow article-shell animate-fade-up">
       <article className="article-detail">
-        <header className="article-header">
-          <div className="entry-meta">
-            <time dateTime={post.date}>{formatItemDate(post.date)}</time>
-            <span aria-hidden="true">/</span>
-            <Link href={categoryHref}>{post.category}</Link>
-          </div>
-
-          <h1 className="article-title">{post.title}</h1>
-
-          {post.excerpt && <p className="article-lead">{post.excerpt}</p>}
-
-          {post.tags.length > 0 && (
-            <div className="article-tags" aria-label="文章标签">
-              {post.tags.map((tag) => (
-                <span key={tag} className="article-tag">#{tag}</span>
-              ))}
+        <PageHeader title={post.title} date={post.date} description={post.excerpt}>
+          {(post.category || post.tags.length > 0) && (
+            <div className="article-taxonomy" aria-label="文章分类与标签">
+              {post.category && <Link href={categoryHref}>{post.category}</Link>}
+              {post.tags.map((tag) => <span key={tag}>#{tag}</span>)}
             </div>
           )}
-        </header>
+        </PageHeader>
 
         {post.cover && (
           <figure className="article-cover">

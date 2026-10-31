@@ -9,7 +9,7 @@ import BlogImage from '@/components/BlogImage'
 import ImageLightbox from '@/components/ImageLightbox'
 import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
-import { formatItemDate } from '@/lib/format'
+import PageHeader from '@/components/PageHeader'
 
 export async function generateStaticParams() { return (await getAllFoodPosts()).map((post) => ({ slug: post.slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -28,24 +28,14 @@ export default async function FoodPostPage({ params }: { params: Promise<{ slug:
   return (
     <div className="page-shell narrow animate-fade-up">
       <article className="article-detail food-detail">
-        <header className="article-header">
-          <div className="article-meta-top">
-            <Link href="/food" className="article-category">美食地图</Link>
-            <span className="editorial-meta-sep" aria-hidden="true">/</span>
-            <time className="article-date" dateTime={post.date}>
-              {formatItemDate(post.date)}
-            </time>
-          </div>
-
-          <h1 className="article-title">{post.title}</h1>
-
-          {post.excerpt && <p className="article-lead">{post.excerpt}</p>}
-
-          <div className="food-meta-location">
-            <Icon name="location" />
-            <span>{post.address || post.location}</span>
-          </div>
-        </header>
+        <PageHeader title={post.title} date={post.date} description={post.excerpt}>
+          {(post.address || post.location) && (
+            <div className="food-meta-location">
+              <Icon name="location" />
+              <span>{post.address || post.location}</span>
+            </div>
+          )}
+        </PageHeader>
 
         {post.cover && (
           <div className="article-cover">

@@ -192,12 +192,13 @@ button { font: inherit; }
 .food-map { width: 100%; height: 440px; background: var(--color-bg-surface); }
 .food-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .food-cover { aspect-ratio: 4 / 3; }
-.food-card h3 { margin: 10px 0 3px; color: var(--color-text-primary); transition: color .15s ease; }
+.food-card-date { display: block; margin-top: 12px; color: var(--color-text-muted); font-size: 12px; font-weight: 600; line-height: 1.5; letter-spacing: .04em; text-transform: uppercase; }
+.food-card h3 { margin: 4px 0 3px; color: var(--color-text-primary); transition: color .15s ease; }
 .food-card:hover h3 { color: var(--color-accent); }
 .food-card > p { margin: 0; display: flex; align-items: center; gap: 5px; color: var(--color-text-hint); font-size: 12px; }
 .food-card > p svg { width: 13px; height: 13px; }
-.food-meta-location { display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; color: var(--color-text-muted); font-size: 13px; }
-.food-meta-location svg { width: 14px; height: 14px; }
+.food-meta-location { display: inline-flex; align-items: baseline; gap: 5px; color: var(--color-text-muted); font-size: 13px; line-height: 1.6; }
+.food-meta-location svg { width: 14px; height: 14px; flex-shrink: 0; align-self: center; }
 .food-popup-content { min-width: 180px; padding: 2px; font-family: var(--font-sans); }
 .food-popup-content h4 { margin: 0 0 4px; color: var(--color-text-primary); font-size: 15px; font-weight: 600; }
 .food-popup-content p { margin: 2px 0; color: var(--color-text-secondary); font-size: 12px; }
@@ -207,16 +208,8 @@ button { font: inherit; }
 .map-key-notice strong { color: var(--color-text-primary); font-size: 15px; }
 .map-key-notice code { padding: 1px 5px; border-radius: 4px; background: var(--color-accent-light); color: var(--color-accent-hover); font-size: 12px; }
 
-/* 文章页标题区 —— 对齐 ueno 的 h1.p-name（38px/700 无衬线）+ h2.p-summary（22px/300 灰） */
-.article-header { padding-bottom: 1em; border-bottom: 1px solid var(--gray-a4); }
-.article-meta-top { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-.article-category { color: var(--color-accent); font-weight: 500; }
-.editorial-meta-sep { color: var(--color-text-hint); opacity: .5; font-size: 11px; }
-.article-date { color: var(--color-text-hint); }
-.article-title { margin: 0 0 10px; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 38px; line-height: 1.25; letter-spacing: -.01em; font-weight: 700; text-wrap: balance; }
-.article-lead { max-width: 660px; margin: 10px 0 0; color: var(--color-text-muted); font-size: 22px; line-height: 1.45; font-weight: 300; }
-.article-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; color: var(--color-text-hint); font-size: 11px; letter-spacing: .04em; }
-.article-tag { font-family: var(--font-sans); }
+.article-taxonomy { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; line-height: 1.6; }
+.article-taxonomy a:hover { color: var(--color-accent); }
 .article-cover { position: relative; width: 100%; aspect-ratio: 2 / 1; margin: 2em 0; overflow: hidden; background: var(--color-bg-surface); }
 .article-cover img { object-fit: cover; }
 .comments-section { margin: var(--space-6) 0 var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--color-border-hairline); }
@@ -227,8 +220,9 @@ button { font: inherit; }
 /* 页面标题区：标题 32px/600，底部保留一条细线。 */
 .page-header { position: relative; margin-bottom: 2em; padding: 0 0 1em; border-bottom: 1px solid var(--gray-a4); }
 .page-header-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 16px 32px; }
-.page-kicker { margin: 0 0 5px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.page-kicker { display: block; margin: 0 0 10px; color: var(--color-text-muted); font-size: 13px; line-height: 1.5; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .page-title { margin: 0; color: var(--color-text-primary); font-family: var(--font-sans); font-size: 32px; font-weight: 600; line-height: 1.25; letter-spacing: -.01em; }
+.page-header-details { margin-top: 12px; color: var(--color-text-muted); }
 .section-title { margin: 0 0 20px; display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); }
 .section-title svg { width: 18px; height: 18px; }
 .flat-panel { overflow: hidden; background: var(--color-bg-card); }
@@ -521,35 +515,15 @@ button { font: inherit; }
   text-emphasis-position: under;
   -webkit-text-emphasis-position: under;
 }
-.prose p, .prose li, .safe-markdown p, .page-lead, .article-lead {
+.prose p, .prose li, .safe-markdown p, .page-lead {
   text-autospace: ideograph-alpha ideograph-numeric;
 }
 
 /* 文章页与列表页共用同一条 680px 阅读轴，不再因有无封面切换壳层。 */
 .article-shell { padding-bottom: var(--space-6); }
-.article-header { margin-bottom: 0; }
-
-/* 日期条下方用 48×3px 短线作为唯一的强调符号。 */
-.entry-meta {
-  position: relative;
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 2em;
-  padding-bottom: 8px;
-  color: var(--color-text-primary);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: .04em;
-}
-.entry-meta::after { content: ""; position: absolute; bottom: 0; left: 0; width: 48px; border-bottom: 3px solid var(--color-accent); }
-.entry-meta span { color: var(--color-text-hint); font-weight: 400; }
-.entry-meta a { color: var(--color-text-muted); }
-.entry-meta a:hover { color: var(--color-accent); }
 
 @media (max-width: 860px) {
-  .article-title { font-size: 30px; }
-  .article-lead { font-size: 19px; }
+  .page-title { font-size: 28px; }
   .article-cover { aspect-ratio: 4 / 3; margin: 1.5em 0; }
 }
 

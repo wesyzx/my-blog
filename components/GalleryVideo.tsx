@@ -150,6 +150,28 @@ export default function GalleryVideo({
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
+    const syncLoadedVideo = () => {
+      setDuration(Number.isFinite(video.duration) ? video.duration : media.duration || 0)
+      setCurrentTime(video.currentTime)
+      if (video.videoWidth > 0 && video.videoHeight > 0) reportCrop(cropRef.current)
+      if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) inspectFrame()
+    }
+
+    // Cached media can reach readyState 4 before React attaches its events.
+    syncLoadedVideo()
+    video.addEventListener('loadedmetadata', syncLoadedVideo)
+    video.addEventListener('loadeddata', syncLoadedVideo)
+    video.addEventListener('seeked', syncLoadedVideo)
+    return () => {
+      video.removeEventListener('loadedmetadata', syncLoadedVideo)
+      video.removeEventListener('loadeddata', syncLoadedVideo)
+      video.removeEventListener('seeked', syncLoadedVideo)
+    }
+  }, [inspectFrame, media.duration, reportCrop])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
     let cancelled = false
     let frameCallback = 0
     let fallbackTimer = 0
@@ -270,8 +292,6 @@ export default function GalleryVideo({
         aria-label={`${title}，第 ${ordinal} 个视频`}
         onClick={togglePlayback}
         onLoadedMetadata={syncVideoState}
-        onLoadedData={() => inspectFrame()}
-        onSeeked={() => inspectFrame()}
         onPlay={(event) => syncVideoState(event)}
         onPause={(event) => syncVideoState(event)}
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}

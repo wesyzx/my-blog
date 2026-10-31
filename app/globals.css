@@ -635,7 +635,7 @@ button { font: inherit; }
 }
 .gallery-mosaic-photo img { object-fit: cover; transition: transform .35s ease; }
 .gallery-mosaic-video.gallery-mosaic-portrait-video { max-width: min(100%, 560px); margin-inline: auto; }
-.gallery-video-player { position: absolute; inset: 0; overflow: hidden; background: #111; color: #fff; isolation: isolate; }
+.gallery-video-player { position: absolute; inset: 0; overflow: hidden; overflow: clip; background: #111; color: #fff; isolation: isolate; }
 .gallery-video-media {
   position: absolute; display: block; max-width: none; max-height: none; object-fit: fill;
   background: #111; cursor: pointer;

@@ -626,7 +626,14 @@ button { font: inherit; }
   position: absolute; z-index: 1; display: block; max-width: none; max-height: none; object-fit: fill;
   background: transparent; cursor: pointer; opacity: 0; transition: opacity .2s ease;
 }
-.gallery-video-player.is-preview-ready .gallery-video-media { opacity: 1; }
+.gallery-video-player.is-playback-started .gallery-video-media { opacity: 1; }
+.gallery-video-preview {
+  position: absolute; z-index: 1; display: block; max-width: none; max-height: none; object-fit: fill;
+  opacity: 0; pointer-events: none; transition: opacity .2s ease;
+}
+.gallery-video-player.is-preview-ready .gallery-video-preview { opacity: 1; }
+.gallery-video-player.is-playback-started .gallery-video-preview { opacity: 0; }
+.gallery-video-preview-source { display: none; }
 .gallery-video-sample { display: none; }
 .gallery-video-center {
   position: absolute; z-index: 2; left: 50%; top: 50%; width: 56px; height: 56px; padding: 0;

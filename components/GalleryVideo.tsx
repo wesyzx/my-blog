@@ -41,6 +41,8 @@ export default function GalleryVideo({
 }) {
   const shellRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<VideoWithLegacyFullscreen>(null)
+  const previewVideoRef = useRef<HTMLVideoElement>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const backdropCanvasRef = useRef<HTMLCanvasElement>(null)
   const cropRef = useRef<CropRect>(FULL_FRAME)
@@ -48,10 +50,10 @@ export default function GalleryVideo({
   const lastProgressRef = useRef(0)
   const nearViewportRef = useRef(false)
   const previewRequestedRef = useRef(false)
-  const previewTimeRef = useRef(0)
   const playbackStartedRef = useRef(false)
   const [crop, setCrop] = useState<CropRect>(FULL_FRAME)
   const [playing, setPlaying] = useState(false)
+  const [playbackStarted, setPlaybackStarted] = useState(false)
   const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
   const [previewReady, setPreviewReady] = useState(Boolean(media.poster))
@@ -69,8 +71,8 @@ export default function GalleryVideo({
     onAspectRatioRef.current(video.videoWidth / video.videoHeight)
   }, [])
 
-  const drawBackdrop = useCallback(() => {
-    const video = videoRef.current
+  const drawBackdrop = useCallback((source: HTMLVideoElement | null = videoRef.current) => {
+    const video = source
     const canvas = backdropCanvasRef.current
     if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
     try {
@@ -107,8 +109,8 @@ export default function GalleryVideo({
     }
   }, [])
 
-  const inspectFrame = useCallback(() => {
-    const video = videoRef.current
+  const inspectFrame = useCallback((source: HTMLVideoElement | null = videoRef.current) => {
+    const video = source
     const canvas = canvasRef.current
     if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
     try {
@@ -124,35 +126,50 @@ export default function GalleryVideo({
         cropRef.current = nextCrop
         setCrop(nextCrop)
       }
-      drawBackdrop()
+      drawBackdrop(video)
     } catch {
       // A host without CORS keeps the normal fixed-frame player as a fallback.
     }
   }, [drawBackdrop])
 
+  const capturePreview = useCallback(() => {
+    const video = previewVideoRef.current
+    const canvas = previewCanvasRef.current
+    if (!nearViewportRef.current || !video || !canvas || media.poster
+      || video.readyState < HTMLMediaElement.HAVE_METADATA) return
+    const duration = Number.isFinite(video.duration) ? video.duration : media.duration || 0
+    const target = videoPreviewTime(duration)
+    if (target > 0 && Math.abs(video.currentTime - target) > 0.1) {
+      video.preload = 'auto'
+      video.currentTime = target
+      return
+    }
+    if (video.seeking || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+    try {
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const context = canvas.getContext('2d')
+      if (!context) return
+      context.drawImage(video, 0, 0, canvas.width, canvas.height)
+      inspectFrame(video)
+      drawBackdrop(video)
+      setPreviewReady(true)
+    } catch {
+      // The play button remains usable if a host blocks canvas frame capture.
+    }
+  }, [drawBackdrop, inspectFrame, media.duration, media.poster])
+
   const primePreview = useCallback(() => {
-    const video = videoRef.current
+    const video = previewVideoRef.current
     if (!nearViewportRef.current || !video || media.poster) return
 
     if (!previewRequestedRef.current) {
       previewRequestedRef.current = true
       video.preload = 'auto'
-      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
-        video.load()
-        return
-      }
+      video.load()
     }
-
-    if (video.readyState < HTMLMediaElement.HAVE_METADATA) return
-    const duration = Number.isFinite(video.duration) ? video.duration : media.duration || 0
-    const target = videoPreviewTime(duration)
-    previewTimeRef.current = target
-    if (target > 0 && Math.abs(video.currentTime - target) > 0.1) {
-      video.currentTime = target
-    } else if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-      setPreviewReady(true)
-    }
-  }, [media.duration, media.poster])
+    capturePreview()
+  }, [capturePreview, media.poster])
 
   useEffect(() => {
     const shell = shellRef.current
@@ -171,6 +188,21 @@ export default function GalleryVideo({
   }, [primePreview])
 
   useEffect(() => {
+    const video = previewVideoRef.current
+    if (!video || media.poster) return
+    const syncPreview = () => capturePreview()
+    video.addEventListener('loadedmetadata', syncPreview)
+    video.addEventListener('loadeddata', syncPreview)
+    video.addEventListener('seeked', syncPreview)
+    syncPreview()
+    return () => {
+      video.removeEventListener('loadedmetadata', syncPreview)
+      video.removeEventListener('loadeddata', syncPreview)
+      video.removeEventListener('seeked', syncPreview)
+    }
+  }, [capturePreview, media.poster])
+
+  useEffect(() => {
     const video = videoRef.current
     if (!video) return
     const syncLoadedVideo = () => {
@@ -179,12 +211,6 @@ export default function GalleryVideo({
       if (video.videoWidth > 0 && video.videoHeight > 0) reportNaturalRatio()
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) inspectFrame()
       if (video.readyState >= HTMLMediaElement.HAVE_METADATA) primePreview()
-      if (media.poster || (nearViewportRef.current && !playbackStartedRef.current
-        && !video.seeking
-        && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-        && Math.abs(video.currentTime - previewTimeRef.current) <= 0.35)) {
-        setPreviewReady(true)
-      }
     }
 
     video.addEventListener('loadedmetadata', syncLoadedVideo)
@@ -197,7 +223,7 @@ export default function GalleryVideo({
       video.removeEventListener('loadeddata', syncLoadedVideo)
       video.removeEventListener('seeked', syncLoadedVideo)
     }
-  }, [inspectFrame, media.duration, media.poster, primePreview, reportNaturalRatio])
+  }, [inspectFrame, media.duration, primePreview, reportNaturalRatio])
 
   useEffect(() => {
     const video = videoRef.current
@@ -268,6 +294,7 @@ export default function GalleryVideo({
     if (video.paused) {
       if (!playbackStartedRef.current) {
         playbackStartedRef.current = true
+        setPlaybackStarted(true)
         video.currentTime = 0
       }
       try {
@@ -323,14 +350,13 @@ export default function GalleryVideo({
   return (
     <div
       ref={shellRef}
-      className={`gallery-video-player${previewReady ? ' is-preview-ready' : ''}`}
+      className={`gallery-video-player${previewReady ? ' is-preview-ready' : ''}${playbackStarted ? ' is-playback-started' : ''}`}
     >
       <canvas ref={backdropCanvasRef} className="gallery-video-backdrop" aria-hidden="true" />
       <video
         ref={videoRef}
         className="gallery-video-media"
         src={source}
-        poster={media.poster}
         crossOrigin="anonymous"
         playsInline
         preload="metadata"
@@ -342,6 +368,33 @@ export default function GalleryVideo({
         onPause={(event) => syncVideoState(event)}
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
         onVolumeChange={(event) => setMuted(event.currentTarget.muted)}
+      />
+      {media.poster ? (
+        // A poster is already a fixed-size R2 asset and must share the video crop transform.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="gallery-video-preview"
+          src={media.poster}
+          alt=""
+          style={videoStyle}
+        />
+      ) : (
+        <canvas
+          ref={previewCanvasRef}
+          className="gallery-video-preview"
+          style={videoStyle}
+          aria-hidden="true"
+        />
+      )}
+      <video
+        ref={previewVideoRef}
+        className="gallery-video-preview-source"
+        src={source}
+        crossOrigin="anonymous"
+        playsInline
+        muted
+        preload="none"
+        aria-hidden="true"
       />
       <canvas ref={canvasRef} className="gallery-video-sample" aria-hidden="true" />
       {!playing && (

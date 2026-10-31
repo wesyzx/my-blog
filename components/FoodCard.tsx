@@ -5,6 +5,7 @@ import Icon from './Icon'
 import { formatItemDate } from '@/lib/format'
 
 export default function FoodCard({ post }: { post: FoodMeta }) {
+  const locationLabel = (post.address || post.location).trim()
   return (
     <Link href={`/food/${encodeURIComponent(post.slug)}`} className="food-card">
       <div className="food-cover">
@@ -19,7 +20,7 @@ export default function FoodCard({ post }: { post: FoodMeta }) {
       </div>
       <time className="food-card-date" dateTime={post.date}>{formatItemDate(post.date)}</time>
       <h3>{post.title}</h3>
-      {(post.address || post.location) && <p><Icon name="location" /><span>{post.address || post.location}</span></p>}
+      {locationLabel && locationLabel !== post.title.trim() && <p><Icon name="location" /><span>{locationLabel}</span></p>}
     </Link>
   )
 }

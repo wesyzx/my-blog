@@ -25,14 +25,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function FoodPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const post = await getFoodPostBySlug((await params).slug)
   if (!post) notFound()
+  const locationLabel = (post.address || post.location).trim()
   return (
     <div className="page-shell narrow animate-fade-up">
       <article className="article-detail food-detail">
         <PageHeader title={post.title} date={post.date} description={post.excerpt}>
-          {(post.address || post.location) && (
+          {locationLabel && locationLabel !== post.title.trim() && (
             <div className="food-meta-location">
               <Icon name="location" />
-              <span>{post.address || post.location}</span>
+              <span>{locationLabel}</span>
             </div>
           )}
         </PageHeader>

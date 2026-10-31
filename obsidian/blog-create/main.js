@@ -619,6 +619,8 @@ module.exports = class BlogCreatePlugin extends Plugin {
     for (const album of albums) {
       if (!album?.id) continue
       if (known.has(album.id)) continue
+      // A Shortcut creates a private record before uploading; do not freeze a partial upload.
+      if (album.published !== true) continue
       const base = normalizePath(`${folderPath}/${mirrorFileName(album).replace(/\.md$/, '')}`)
       let target = `${base}.md`
       let suffix = 2

@@ -108,6 +108,9 @@ async function fakePlugin() {
 
 test('Obsidian imports each album once, preserves local edits/deletions and refuses to recreate a lost registry', async () => {
   const f = await fakePlugin()
+  await f.plugin.mirrorOnlineAlbums([{ ...album, published: false, images: [] }])
+  assert.equal((await f.plugin.managedAlbums()).length, 0)
+  assert.deepEqual(parseGalleryControl(f.files.get(model.CONTROL_PATH).source).albumIds, [])
   await f.plugin.mirrorOnlineAlbums([album])
   const [note] = [...f.files.values()].filter((file) => file.path.endsWith('.md') && file.path !== model.CONTROL_PATH)
   assert.ok(note.source.includes('<video controls'))

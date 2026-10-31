@@ -72,12 +72,6 @@ function detectVisibleCrop(video: HTMLVideoElement, canvas: HTMLCanvasElement): 
   // Very small light subjects on a black background are content, not padding.
   if (right - left < width * 0.22 || bottom - top < height * 0.22) return null
 
-  // Keep one sampled pixel inside the content so compression fringes disappear.
-  left = Math.max(0, left - 1)
-  top = Math.max(0, top - 1)
-  right = Math.min(width, right + 1)
-  bottom = Math.min(height, bottom + 1)
-
   const crop = {
     left: left / width,
     top: top / height,

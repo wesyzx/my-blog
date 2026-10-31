@@ -635,7 +635,7 @@ button { font: inherit; }
 }
 .gallery-mosaic-photo img { object-fit: cover; transition: transform .35s ease; }
 .gallery-mosaic-photo video {
-  display: block; width: 100%; height: 100%; object-fit: contain;
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: center;
   background: #111; color-scheme: dark;
 }
 .gallery-mosaic-video.gallery-mosaic-portrait-video { max-width: min(100%, 560px); margin-inline: auto; }

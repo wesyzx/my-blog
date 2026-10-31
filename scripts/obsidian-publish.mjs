@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { loadObsidianContent, copyPublishedAttachments } from '../lib/obsidian-content.mjs'
 import { obsidianRevision } from '../lib/obsidian-revision.mjs'
 import { recordPublicationIssue } from '../lib/publish-failure.mjs'
+import { GALLERY_CONTROL_FILE, readGalleryControl } from '../lib/gallery-control.mjs'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = path.resolve(process.env.OBSIDIAN_PUBLISH_REPO || path.join(path.dirname(fileURLToPath(import.meta.url)), '..'))
@@ -112,16 +113,21 @@ function assertOnlyPublishPathsChanged(lines) {
 }
 
 async function stagePublish(source) {
+  const control = await readGalleryControl(source)
+  const previousControl = await readGalleryControl(DESTINATION_ROOT)
+  if (previousControl?.albumIds.some((id) => !control?.albumIds.includes(id))) {
+    throw new Error('相册同步记录缺失或丢失已接管相册，请恢复记录后再发布')
+  }
   const content = await loadObsidianContent({
     blogRoot: source,
     attachmentBaseUrl: '/obsidian',
     attachmentRoots: ['attachments'],
   })
-  if (!Object.values(content).some((entries) => entries.length)) {
+  if (!control && !Object.values(content).some((entries) => entries.length)) {
     throw new Error('The Vault Blog directory has no published content; refusing to erase the published copy')
   }
   const heldSections = []
-  const canClearGallery = await galleryCanBecomeEmpty()
+  const canClearGallery = !!control || await galleryCanBecomeEmpty()
   for (const section of ['posts', 'food', 'gallery']) {
     const previous = await fs.readdir(path.join(DESTINATION_ROOT, section)).catch((error) => {
       if (error.code === 'ENOENT') return []
@@ -165,6 +171,10 @@ async function stagePublish(source) {
     }
     for (const section of ['posts', 'food', 'gallery']) await fs.mkdir(path.join(staging, section), { recursive: true })
     const files = [...attachments]
+    if (control) {
+      await fs.writeFile(path.join(staging, GALLERY_CONTROL_FILE), control.source)
+      files.push(GALLERY_CONTROL_FILE)
+    }
     for (const [section, entries] of Object.entries(content)) {
       for (const post of entries) {
         if (!post.sourceFile) throw new Error(`Missing source file metadata for ${post.slug}`)

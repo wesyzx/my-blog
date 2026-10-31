@@ -5,6 +5,8 @@ import path from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import { createRequire } from 'node:module'
+const { controlContent } = createRequire(import.meta.url)('../obsidian/blog-create/gallery-model.js')
 
 const publisher = process.env.PUBLISHER_TEST_SCRIPT || fileURLToPath(new URL('../scripts/obsidian-publish.mjs', import.meta.url))
 
@@ -38,6 +40,23 @@ function fixture(t) {
   })
   return { root, repo, source, remote, git, publish }
 }
+
+test('publisher carries gallery ownership through note deletion and refuses lost registry history', (t) => {
+  const f = fixture(t)
+  const id = 'c14efe32-96e6-4fcd-8b55-bee98ab3da77'
+  mkdirSync(path.join(f.source, 'gallery'))
+  writeFileSync(path.join(f.source, 'gallery/相册同步记录.md'), controlContent([id]))
+  writeFileSync(path.join(f.source, 'gallery/film.md'),
+    `---\npublished: true\ntitle: Film\nslug: film\ndate: 2026-10-31\nremoteAlbumId: ${id}\nmanagedBy: blog-create-vault-gallery\n---\n<video controls src="https://cdn.example/film.mp4"></video>\n`)
+  f.publish()
+  rmSync(path.join(f.source, 'gallery/film.md'))
+  f.publish()
+  assert.equal(f.git(['ls-tree', '-r', '--name-only', 'HEAD', 'content/obsidian/gallery']).includes('film.md'), false)
+  assert.match(readFileSync(path.join(f.repo, 'content/obsidian/gallery/相册同步记录.md'), 'utf8'), new RegExp(id))
+  assert.deepEqual(JSON.parse(readFileSync(path.join(f.repo, '.tmp/publication-result.json'))).held_sections, [])
+  rmSync(path.join(f.source, 'gallery/相册同步记录.md'))
+  assert.throws(() => f.publish(), /同步记录缺失/)
+})
 
 test('publisher commits and pushes only approved Unicode articles and referenced attachments', async (t) => {
   const f = fixture(t)

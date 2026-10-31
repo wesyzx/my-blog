@@ -6,6 +6,7 @@ import path from 'path'
 import { execFileSync } from 'node:child_process'
 import { obsidianRevision } from '../lib/obsidian-revision.mjs'
 import { albumRevision } from '../lib/publication-revision.mjs'
+import { GALLERY_CONTROL_FILE, mergeManagedGallery, readGalleryControl } from '../lib/gallery-control.mjs'
 import { gcj02ToWgs84 } from '../lib/geo.mjs'
 import { readImageSize } from '../lib/image-size.mjs'
 import { blogImageInfoUrl, isBlogImage } from '../lib/blog-images.mjs'
@@ -388,6 +389,7 @@ async function buildBundle() {
   )
 
   const selected = { posts: [], food: [], gallery: [] }
+  let galleryControl = null
   const notionSections = Object.keys(selected).filter((section) => CONTENT_SOURCES[section] === 'notion')
   if (notionSections.length) {
     let remote
@@ -409,6 +411,12 @@ async function buildBundle() {
     || (section === 'gallery' && CONTENT_SOURCES[section] === 'hybrid'))
   if (obsidianSections.length) {
     const blogDirectory = path.resolve(OBSIDIAN_BLOG_DIR)
+    if (obsidianSections.includes('gallery')) {
+      galleryControl = await readGalleryControl(blogDirectory)
+      if (!galleryControl && existing.gallery?.some((album) => album.source === 'obsidian' && album.albumId)) {
+        throw new Error('相册同步记录缺失，已停止构建以免恢复已删除内容')
+      }
+    }
     const local = await loadObsidianContent({
       blogRoot: blogDirectory,
       sections: obsidianSections,
@@ -445,14 +453,20 @@ async function buildBundle() {
     })
     sourceRevision = await obsidianRevision(blogDirectory, [
       ...attachments, ...localPosts.map((post) => path.relative(blogDirectory, post.sourceFile)),
+      ...(galleryControl ? [GALLERY_CONTROL_FILE] : []),
     ])
+    if (obsidianSections.includes('gallery')) {
+      selected.gallery = selected.gallery.filter((album) => album.images.length)
+      for (const album of selected.gallery) {
+        if (album.albumId) album.publicationRevision = await albumRevision({ ...album, id: album.albumId })
+      }
+    }
   }
   if (CONTENT_SOURCES.gallery === 'r2' || CONTENT_SOURCES.gallery === 'hybrid') {
     const obsidianSlugs = new Set(selected.gallery.map((album) => album.slug).filter(Boolean))
     const remoteGallery = await fetchR2Gallery(existing, obsidianSlugs)
     selected.gallery = CONTENT_SOURCES.gallery === 'hybrid'
-      ? [...selected.gallery, ...remoteGallery]
-        .sort((left, right) => right.date.localeCompare(left.date) || left.slug.localeCompare(right.slug))
+      ? mergeManagedGallery(selected.gallery, remoteGallery, galleryControl)
       : remoteGallery
   }
   const { posts, food, gallery } = selected
@@ -472,7 +486,7 @@ async function buildBundle() {
     version: 1, built_at: bundle.updatedAt, commit,
     obsidian_revision: sourceRevision,
     gallery_fresh: galleryManifestFresh,
-    albums: gallery.filter((album) => album.source === 'r2').map((album) => ({
+    albums: gallery.filter((album) => album.source === 'r2' || album.albumId).map((album) => ({
       id: album.albumId, slug: album.slug, revision: galleryManifestFresh ? album.publicationRevision : null,
     })),
   }))

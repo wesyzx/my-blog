@@ -7,6 +7,7 @@ import { DirectFileManipulator } from '@livesync/direct'
 import { readContent } from '@livesync/content'
 import { setGlobalLogFunction } from 'octagonal-wheels/common/logger'
 import { localAttachmentTargets, publishSection, readOnlyFetch, resolveAttachment, safeBlogPath } from './read-policy.mjs'
+import { GALLERY_CONTROL_FILE, parseGalleryControl } from '../../lib/gallery-control.mjs'
 
 setGlobalLogFunction(() => {})
 const counters = { reads: 0, blocked: 0 }
@@ -83,6 +84,11 @@ async function main() {
       if (!match) continue
       let data
       try { data = YAML.parse(match[1]) || {} } catch { throw new Error('A Blog article has invalid frontmatter') }
+      if (filePath === `Blog/${GALLERY_CONTROL_FILE}`) {
+        parseGalleryControl(source)
+        await save(filePath, buffer)
+        continue
+      }
       if (data.published !== true) continue
       for (const target of localAttachmentTargets(source.slice(match[0].length), data)) {
         attachments.add(resolveAttachment(target, filePath, metadata))
@@ -90,7 +96,9 @@ async function main() {
       await save(filePath, buffer)
       counts[section] += 1
     }
-    if (!Object.values(counts).some(Boolean)) throw new Error('No published content found; preserving the current site')
+    if (!Object.values(counts).some(Boolean) && !files.some((file) => file.path === `Blog/${GALLERY_CONTROL_FILE}`)) {
+      throw new Error('No published content found; preserving the current site')
+    }
     for (const attachment of [...attachments].sort()) {
       const meta = metadata.get(attachment)
       if (meta.size > MAX_ATTACHMENT_SIZE) throw new Error('A referenced attachment exceeds the 50 MiB publishing limit')

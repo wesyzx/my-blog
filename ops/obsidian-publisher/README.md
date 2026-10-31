@@ -45,6 +45,18 @@ sections continue updating. The status records `held_sections` and
 with different bytes stop publication rather than overwriting retained content.
 Templates and nested directories are not exported.
 
+`Blog/gallery/相册同步记录.md` is the sole unpublished control-file exception.
+The reader validates its version/type/album IDs and exports it with the approved
+snapshot. The publisher includes it in the content revision and Git commit.
+IDs are monotonic: loss of a previously exported registry/ID stops publication.
+Once claimed, a phone album uses only its editable top-level Vault note.
+Removing a media embed, unpublishing a note, emptying its media list, or deleting
+the note removes the corresponding public content at the next build; the R2
+manifest cannot restore it. Keep this record when deleting an album.
+R2 objects remain available for recovery and are not garbage-collected here.
+Video embeds retain media metadata and use the same pipeline as photos.
+Reader/publisher/site/plugin must be upgraded together for this control contract.
+
 Only pending commits with the publisher's known commit subject, touching only
 `content/obsidian`, and containing no merge commits may be replayed. If remote
 history changed any publication path, automatic reconciliation stops. Independent
@@ -88,8 +100,9 @@ Held sections and a deployment unverified for over 15 minutes are deduplicated
 notices. Site verification detects missing content versions, not the provider's
 internal build job status. Existing LiveSync monitoring continues separately.
 
-Upgrade only the publisher bundle and its Python helpers together. Preserve the
-installed pinned reader unless rebuilding and validating that reader explicitly.
+Upgrade the publisher bundle and its Python helpers together. A gallery-control
+upgrade also requires explicitly rebuilding and validating the pinned reader;
+preserve its pinned LiveSync/Commonlib versions.
 The helpers include `failure_reasons.py` and `verify_site.py`. Keep a root-only
 backup, pause the timer, wait for the running service to finish, validate the new
 publisher with `--dry-run` as `obsidian-publisher`, then restore the timer.

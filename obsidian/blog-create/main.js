@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Obsidian loads plugins as CommonJS. */
 const {
   Modal,
   Notice,
@@ -5,7 +6,9 @@ const {
   Setting,
   normalizePath,
   requestUrl,
+  parseYaml,
 } = require('obsidian')
+const { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, mediaSummary, editableAlbumContent, controlContent } = require('./gallery-model')
 
 const GALLERY_API_ORIGIN = 'https://img.215320.xyz'
 const GALLERY_PUBLIC_ORIGIN = 'https://guanyan.me/gallery'
@@ -51,49 +54,20 @@ function mirrorFileName(album) {
   return `${title}-${album.id.slice(0, 8)}.md`
 }
 
-function yamlString(value) {
-  return JSON.stringify(String(value || ''))
+function noteData(source) {
+  const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  return match ? parseYaml(match[1]) || {} : {}
 }
 
-function galleryMirrorContent(album) {
-  const images = Array.isArray(album.images) ? album.images : []
-  const cover = album.cover || images[0]?.src || ''
-  const publicUrl = album.published
-    ? `${GALLERY_PUBLIC_ORIGIN}/${encodeURIComponent(album.slug)}`
-    : ''
-  const state = album.published ? '已发布' : '私密'
-  const lines = [
-    '---',
-    'published: false',
-    `title: ${yamlString(album.title)}`,
-    `date: ${yamlString(album.date)}`,
-    `category: ${yamlString(album.category || '日常')}`,
-    'managedBy: blog-create-online-gallery',
-    `remoteAlbumId: ${yamlString(album.id)}`,
-    `remoteSlug: ${yamlString(album.slug)}`,
-    `remoteState: ${yamlString(album.published ? 'published' : 'private')}`,
-    `cover: ${yamlString(cover)}`,
-    '---',
-    '',
-    `> [!info] 线上相册 · ${state}`,
-    `> ${album.date || '日期未知'} · ${album.photoCount} 张照片`,
-    ...(publicUrl ? [`> [在博客中打开](${publicUrl})`] : ['> 这个相册尚未发布到博客。']),
-    '',
-    `# ${album.title}`,
-    '',
-    '此笔记由 Blog Create 根据线上相册自动生成，手动修改会在下次同步时覆盖。',
-  ]
-
-  if (cover) {
-    lines.push('', `![${album.title} 封面](${cover})`)
-  }
-  if (images.length) {
-    lines.push('', '## 相册照片', '')
-    images.forEach((image, index) => {
-      if (image.src) lines.push(`![${album.title} ${index + 1}](${image.src})`, '')
-    })
-  }
-  return `${lines.join('\n').trimEnd()}\n`
+function noteMedia(source) {
+  const body = source.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, '')
+  const matches = [
+    ...[...body.matchAll(/!\[[^\]]*\]\((<[^>]+>|[^)"\n]+?)(?:\s+"[^"]*")?\)/g)]
+      .map((match) => ({ index: match.index, embed: match[0], src: match[1].replace(/^<|>$/g, '') })),
+    ...[...body.matchAll(/<video\b[^>]*\bsrc=["']([^"']+)["'][^>]*>[\s\S]*?<\/video>/gi)]
+      .map((match) => ({ index: match.index, embed: match[0], src: match[1], kind: 'video' })),
+  ].sort((a, b) => a.index - b.index)
+  return matches.map((item) => ({ ...item, kind: item.kind || (/\.(mp4|mov|m4v|webm)(?:[?#]|$)/i.test(item.src) ? 'video' : 'image') }))
 }
 
 function fillFrontmatter(source, title) {
@@ -216,16 +190,14 @@ class DeleteAlbumModal extends Modal {
   onOpen() {
     const { contentEl } = this
     contentEl.addClass('blog-delete-modal')
-    contentEl.createEl('h2', { text: '永久删除相册' })
+    contentEl.createEl('h2', { text: '下线相册' })
     const detail = contentEl.createDiv({ cls: 'blog-delete-summary' })
     detail.createEl('strong', { text: this.album.title })
     detail.createEl('span', {
-      text: `${this.album.date || '日期未知'} · ${this.album.photoCount} 张照片`,
+      text: `${this.album.date || '日期未知'} · ${mediaSummary(this.album)}`,
     })
     contentEl.createEl('p', {
-      text: this.album.published
-        ? '相册记录、原图和公开清单都会被删除，并自动触发网站更新。此操作无法撤销。'
-        : '相册记录和原图都会被删除。此操作无法撤销。',
+      text: '相册笔记将移到 Obsidian 回收站，阿里云同步构建后博客将下线此相册。R2 原文件保留；恢复笔记可重新发布。',
     })
 
     const actions = contentEl.createDiv({ cls: 'blog-delete-actions' })
@@ -233,7 +205,7 @@ class DeleteAlbumModal extends Modal {
     cancel.addEventListener('click', () => this.close())
     const remove = actions.createEl('button', {
       cls: 'mod-warning',
-      text: '确认永久删除',
+      text: '确认下线',
       attr: { type: 'button' },
     })
     remove.addEventListener('click', () => {
@@ -244,6 +216,62 @@ class DeleteAlbumModal extends Modal {
 
   onClose() {
     this.contentEl.empty()
+  }
+}
+
+class GalleryMediaModal extends Modal {
+  constructor(app, plugin, album) {
+    super(app)
+    this.plugin = plugin
+    this.album = album
+  }
+
+  async onOpen() {
+    this.modalEl.addClass('blog-gallery-modal')
+    await this.render()
+  }
+
+  async render() {
+    const { contentEl } = this
+    contentEl.empty()
+    const file = this.app.vault.getAbstractFileByPath(this.album.notePath)
+    if (!file) { contentEl.createEl('p', { text: '相册笔记已删除。' }); return }
+    const source = await this.app.vault.read(file)
+    const media = noteMedia(source)
+    contentEl.createEl('h2', { text: `${this.album.title} · 照片与视频` })
+    contentEl.createEl('p', { text: '移除后自动同步到博客，R2 原文件保留。也可以打开笔记编辑日期、顺序、标题和视频封面。' })
+    const edit = contentEl.createEl('button', { text: '打开相册笔记' })
+    edit.addEventListener('click', async () => {
+      await this.app.workspace.getLeaf(false).openFile(file)
+      this.close()
+    })
+    const list = contentEl.createDiv({ cls: 'blog-media-list' })
+    for (const [index, item] of media.entries()) {
+      const row = list.createDiv({ cls: 'blog-media-row' })
+      if (item.kind === 'video') {
+        row.createEl('video', { attr: { src: item.src, controls: '', preload: 'metadata', playsinline: '' } })
+      } else {
+        row.createEl('img', { attr: { src: item.src, loading: 'lazy', alt: `照片 ${index + 1}` } })
+      }
+      const actions = row.createDiv()
+      actions.createEl('span', { text: `${index + 1} · ${item.kind === 'video' ? '视频' : '照片'}` })
+      const remove = actions.createEl('button', { text: '从相册移除', cls: 'mod-warning' })
+      remove.addEventListener('click', async () => {
+        remove.disabled = true
+        try {
+          await this.app.vault.process(file, (current) => {
+            const header = current.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/)?.[0] || ''
+            return header + current.slice(header.length).replace(item.embed, '')
+          })
+          new Notice('已从相册移除，等待 LiveSync 同步及阿里云构建。')
+          await this.render()
+        } catch (error) {
+          remove.disabled = false
+          new Notice(`移除失败：${error.message}`)
+        }
+      })
+    }
+    if (!media.length) contentEl.createEl('p', { text: '相册已清空，构建后将从博客消失。' })
   }
 }
 
@@ -304,7 +332,8 @@ class GalleryManagerModal extends Modal {
       try {
         const response = await this.request('/internal/gallery/albums', token)
         await this.plugin.setGalleryToken(token)
-        this.renderAlbums(response.albums || [])
+        await this.plugin.mirrorOnlineAlbums(response.albums || [])
+        this.renderAlbums(await this.plugin.managedAlbums())
       } catch (error) {
         connect.disabled = false
         status.setText(error.message)
@@ -330,7 +359,7 @@ class GalleryManagerModal extends Modal {
         console.warn('Blog Create: unable to mirror online albums', error)
         new Notice(`线上相册已读取，但无法同步到 Blog/gallery：${error.message}`)
       }
-      this.renderAlbums(albums, message === '正在读取相册…' ? '' : message)
+      this.renderAlbums(await this.plugin.managedAlbums(), message === '正在读取相册…' ? '' : message)
     } catch (error) {
       if (!this.plugin.sessionToken) {
         this.renderAuth('令牌已失效，请重新输入。')
@@ -344,15 +373,13 @@ class GalleryManagerModal extends Modal {
 
   async deleteAlbum(album) {
     const status = this.contentEl.querySelector('.blog-gallery-status')
-    status?.setText(album.published ? '正在删除相册并触发网站更新…' : '正在删除相册…')
+    status?.setText('正在移除相册笔记…')
     try {
-      const result = await this.request(
-        `/internal/gallery/albums/${encodeURIComponent(album.id)}`,
-        this.plugin.sessionToken,
-        'DELETE',
-      )
-      new Notice(`${result.message} 已删除 ${result.deletedPhotos} 张照片。`)
-      await this.loadAlbums(result.message)
+      const file = this.app.vault.getAbstractFileByPath(album.notePath)
+      if (file) await this.app.fileManager.trashFile(file)
+      const message = '相册已下线，等待 LiveSync 同步及阿里云构建。'
+      new Notice(message)
+      this.renderAlbums(await this.plugin.managedAlbums(), message)
     } catch (error) {
       status?.setText(error.message)
       status?.addClass('is-error')
@@ -364,9 +391,9 @@ class GalleryManagerModal extends Modal {
     contentEl.empty()
     const header = contentEl.createDiv({ cls: 'blog-gallery-manager-header' })
     const heading = header.createDiv()
-    heading.createEl('h2', { text: '线上相册' })
+    heading.createEl('h2', { text: '相册与视频管理' })
     heading.createEl('p', {
-      text: '管理 iPhone 快捷指令上传的相册。删除已发布相册会自动更新网站。',
+      text: 'Obsidian 是管理入口。照片、视频及整篇相册的修改，由 LiveSync → 阿里云 → GitHub → 博客自动更新。',
       cls: 'setting-item-description',
     })
 
@@ -381,7 +408,7 @@ class GalleryManagerModal extends Modal {
       this.renderAuth()
     })
 
-    const status = contentEl.createDiv({
+    contentEl.createDiv({
       cls: `blog-gallery-status${message ? ' is-success' : ''}`,
       text: message || `共 ${albums.length} 个相册`,
     })
@@ -405,17 +432,19 @@ class GalleryManagerModal extends Modal {
       })
       summary.createDiv({
         cls: 'blog-gallery-meta',
-        text: `${album.date || '日期未知'} · ${album.photoCount} 张 · /${album.slug}`,
+        text: `${album.date || '日期未知'} · ${mediaSummary(album)} · /${album.slug}`,
       })
 
       const actions = row.createDiv({ cls: 'blog-gallery-row-actions' })
+      const edit = actions.createEl('button', { text: '管理照片和视频', attr: { type: 'button' } })
+      edit.addEventListener('click', () => new GalleryMediaModal(this.app, this.plugin, album).open())
       if (album.published) {
         const view = actions.createEl('button', { text: '查看', attr: { type: 'button' } })
         view.addEventListener('click', () => openExternal(`${GALLERY_PUBLIC_ORIGIN}/${encodeURIComponent(album.slug)}`))
       }
       const remove = actions.createEl('button', {
         cls: 'mod-warning',
-        text: '删除',
+        text: '下线',
         attr: { type: 'button' },
       })
       remove.addEventListener('click', () => {
@@ -443,13 +472,13 @@ module.exports = class BlogCreatePlugin extends Plugin {
     this.addRibbonIcon('image-plus', '新建相册', () => {
       this.openCreate('gallery')
     })
-    this.addRibbonIcon('images', '管理线上相册', () => {
+    this.addRibbonIcon('images', '管理相册与视频', () => {
       this.openGalleryManager()
     })
 
     this.addCommand({
       id: 'manage-gallery-albums',
-      name: '管理线上相册',
+      name: '管理相册与视频',
       callback: () => this.openGalleryManager(),
     })
     this.addCommand({
@@ -463,7 +492,7 @@ module.exports = class BlogCreatePlugin extends Plugin {
         }
         try {
           const result = await this.syncOnlineAlbums()
-          new Notice(`已同步 ${result.albumCount} 个线上相册到 Blog/gallery/线上相册`)
+          new Notice(`已读取 ${result.albumCount} 个线上相册，新增内容已导入 Blog/gallery；本地修改及删除保持优先。`)
         } catch (error) {
           new Notice(`同步线上相册失败：${error.message}`)
         }
@@ -485,6 +514,11 @@ module.exports = class BlogCreatePlugin extends Plugin {
         })
       }, 1000)
     }
+    this.registerInterval(window.setInterval(() => {
+      if (this.sessionToken) this.syncOnlineAlbums().catch((error) => {
+        console.warn('Blog Create: gallery import failed', error)
+      })
+    }, 60_000))
   }
 
   openCreate(type) {
@@ -523,14 +557,41 @@ module.exports = class BlogCreatePlugin extends Plugin {
   }
 
   async syncOnlineAlbums() {
-    const response = await this.requestGallery('/internal/gallery/albums')
-    const albums = response.albums || []
-    await this.mirrorOnlineAlbums(albums)
-    return { albumCount: albums.length }
+    if (this.syncingAlbums) return this.syncingAlbums
+    this.syncingAlbums = (async () => {
+      const response = await this.requestGallery('/internal/gallery/albums')
+      const albums = response.albums || []
+      await this.mirrorOnlineAlbums(albums)
+      return { albumCount: albums.length }
+    })()
+    try { return await this.syncingAlbums } finally { this.syncingAlbums = null }
   }
 
   async mirrorOnlineAlbums(albums) {
-    const folderPath = normalizePath('Blog/gallery/线上相册')
+    // Serialize manager refreshes with background imports too.
+    const previous = this.importQueue || Promise.resolve()
+    this.importQueue = previous.catch(() => {}).then(() => this.importNewAlbums(albums))
+    return this.importQueue
+  }
+
+  async managedAlbums() {
+    const result = []
+    const folder = this.app.vault.getAbstractFileByPath('Blog/gallery')
+    for (const file of folder?.children || []) {
+      if (!file.path.endsWith('.md') || file.path === CONTROL_PATH) continue
+      const source = await this.app.vault.read(file)
+      const data = noteData(source)
+      if (data.managedBy !== MANAGED_BY) continue
+      result.push({
+        ...data, id: data.remoteAlbumId, notePath: file.path,
+        images: noteMedia(source), published: data.published === true,
+      })
+    }
+    return result.sort((a, b) => String(b.date).localeCompare(String(a.date)))
+  }
+
+  async importNewAlbums(albums) {
+    const folderPath = normalizePath('Blog/gallery')
     if (!this.app.vault.getAbstractFileByPath(folderPath)) {
       await this.app.vault.createFolder(folderPath)
     }
@@ -540,27 +601,52 @@ module.exports = class BlogCreatePlugin extends Plugin {
     for (const child of folder?.children || []) {
       if (!child.path.endsWith('.md')) continue
       const source = await this.app.vault.read(child)
-      const match = source.match(/^remoteAlbumId:\s*"([^"]+)"$/m)
-      if (match) existing.set(match[1], { file: child, source })
+      const data = noteData(source)
+      if (data.managedBy === MANAGED_BY && data.remoteAlbumId) existing.set(data.remoteAlbumId, child)
     }
 
-    const wanted = new Set()
+    let controlFile = this.app.vault.getAbstractFileByPath(CONTROL_PATH)
+    const control = controlFile ? noteData(await this.app.vault.read(controlFile)) : null
+    if (controlFile && (control.type !== CONTROL_TYPE || control.version !== 1 || !Array.isArray(control.albumIds))) {
+      throw new Error('相册同步记录无效，请恢复记录后再同步。')
+    }
+    const settings = (await this.loadData()) || {}
+    if (!controlFile && settings.galleryControlInitialized) {
+      throw new Error('相册同步记录已丢失，请从回收站恢复，防止重新导入已删除相册。')
+    }
+    const known = new Set(control?.albumIds || [])
+    for (const id of existing.keys()) known.add(id)
     for (const album of albums) {
       if (!album?.id) continue
-      const content = galleryMirrorContent(album)
-      const current = existing.get(album.id)
-      let file = current?.file
-      if (!file) {
-        const target = normalizePath(`${folderPath}/${mirrorFileName(album)}`)
-        file = await this.app.vault.create(target, content)
-      } else if (current.source !== content) {
-        await this.app.vault.modify(file, content)
-      }
-      wanted.add(file.path)
+      if (known.has(album.id)) continue
+      const base = normalizePath(`${folderPath}/${mirrorFileName(album).replace(/\.md$/, '')}`)
+      let target = `${base}.md`
+      let suffix = 2
+      while (this.app.vault.getAbstractFileByPath(target)) target = `${base} ${suffix++}.md`
+      await this.app.vault.create(target, editableAlbumContent(album))
+      known.add(album.id)
     }
-
-    for (const current of existing.values()) {
-      if (!wanted.has(current.file.path)) await this.app.vault.delete(current.file)
+    const source = controlContent([...known])
+    if (!controlFile) {
+      controlFile = await this.app.vault.create(CONTROL_PATH, source)
+    } else {
+      if (await this.app.vault.read(controlFile) !== source) await this.app.vault.process(controlFile, (current) => {
+        const latest = noteData(current)
+        if (latest.type !== CONTROL_TYPE || !Array.isArray(latest.albumIds)) throw new Error('相册同步记录无效')
+        return controlContent([...latest.albumIds, ...known])
+      })
+    }
+    if (!settings.galleryControlInitialized) {
+      await this.saveData({ ...settings, galleryControlInitialized: true })
+    }
+    // Retire the old generated mirrors so only editable notes remain in use.
+    const legacy = this.app.vault.getAbstractFileByPath('Blog/gallery/线上相册')
+    for (const file of [...(legacy?.children || [])]) {
+      if (!file.path.endsWith('.md')) continue
+      const data = noteData(await this.app.vault.read(file))
+      if (data.managedBy === 'blog-create-online-gallery' && known.has(data.remoteAlbumId)) {
+        await this.app.fileManager.trashFile(file)
+      }
     }
   }
 
@@ -571,7 +657,8 @@ module.exports = class BlogCreatePlugin extends Plugin {
 
     const templatePath = normalizePath(`Blog/templates/${config.template}`)
     const template = await this.app.vault.adapter.read(templatePath)
-    const content = fillFrontmatter(template, title)
+    let content = fillFrontmatter(template, title)
+    if (type === 'gallery') content = content.replace(/^---\r?\n/, `---\nmanagedBy: ${MANAGED_BY}\n`)
 
     const folder = normalizePath(`Blog/${config.folder}`)
     if (!this.app.vault.getAbstractFileByPath(folder)) {

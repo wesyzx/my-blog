@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import { createRequire } from 'node:module'
+const { controlContent, editableAlbumContent } = createRequire(import.meta.url)('../obsidian/blog-create/gallery-model.js')
 
 test('the content builder preserves snapshots on source failure and reads the local about page', (t) => {
   const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-test-'))
@@ -305,6 +307,44 @@ test('a hybrid gallery can remove its local albums while R2 remains the publishe
   }] })`, { CONTENT_ALLOW_EMPTY: '' })
   assert.deepEqual(bundle.gallery.map((album) => album.slug), ['remote-only'])
   assert.equal(bundle.gallery[0].source, 'r2')
+})
+
+test('hybrid publication honors Obsidian video edits, drafts, empty notes and whole-album deletion without R2 resurrection', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-managed-gallery-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  prepareGalleryBundle(cwd, 'hybrid')
+  const album = {
+    id: 'c14efe32-96e6-4fcd-8b55-bee98ab3da77', slug: 'film', title: 'Film',
+    date: '2026-10-31', published: true,
+    images: [{ kind: 'video', src: 'https://img.guanyan.me/webp/video/blog/obsidian/2026/10/film.mov',
+      width: 1080, height: 1920, duration: 84 }],
+  }
+  const directory = path.join(cwd, 'content/obsidian/gallery')
+  const control = path.join(directory, '相册同步记录.md')
+  const note = path.join(directory, 'film.md')
+  writeFileSync(control, controlContent([album.id]))
+  writeFileSync(note, editableAlbumContent(album))
+  const fetchBody = `return Response.json({ albums: [${JSON.stringify(album)}] })`
+  const bundle = runGalleryBundle(cwd, fetchBody)
+  assert.equal(bundle.gallery.length, 1)
+  assert.equal(bundle.gallery[0].source, 'obsidian')
+  assert.equal(bundle.gallery[0].slug, 'film')
+  assert.equal(bundle.gallery[0].images[0].duration, 84)
+  const marker = JSON.parse(readFileSync(path.join(cwd, 'public/publish-status.json')))
+  assert.equal(marker.albums[0].id, album.id)
+  assert.ok(marker.albums[0].revision)
+  rmSync(control)
+  assert.throws(() => runGalleryBundle(cwd, fetchBody), /同步记录缺失/)
+  writeFileSync(control, controlContent([album.id]))
+  for (const source of [
+    editableAlbumContent(album).replace('published: true', 'published: false'),
+    editableAlbumContent(album).replace(/<video.*<\/video>/, ''),
+    null,
+  ]) {
+    if (source === null) rmSync(note)
+    else writeFileSync(note, source)
+    assert.deepEqual(runGalleryBundle(cwd, fetchBody).gallery, [])
+  }
 })
 
 test('invalid gallery manifests stop publication; explicitly allowed previews may use a stale snapshot', (t) => {

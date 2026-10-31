@@ -1,9 +1,9 @@
 {
   "id": "blog-create",
   "name": "Blog Create",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "minAppVersion": "1.4.0",
-  "description": "Blog content creation and automatic online gallery mirroring.",
+  "description": "Blog creation and Obsidian-first photo/video gallery management.",
   "author": "wesyzx",
   "isDesktopOnly": false
 }

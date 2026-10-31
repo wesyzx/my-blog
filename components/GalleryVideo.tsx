@@ -45,10 +45,14 @@ export default function GalleryVideo({
   const cropRef = useRef<CropRect>(FULL_FRAME)
   const onAspectRatioRef = useRef(onAspectRatio)
   const lastProgressRef = useRef(0)
+  const nearViewportRef = useRef(false)
+  const previewRequestedRef = useRef(false)
+  const playbackStartedRef = useRef(false)
   const [crop, setCrop] = useState<CropRect>(FULL_FRAME)
   const [playing, setPlaying] = useState(false)
   const [muted, setMuted] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
+  const [previewReady, setPreviewReady] = useState(Boolean(media.poster))
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(media.duration || 0)
   const source = `${media.src}${media.src.includes('?') ? '&' : '?'}auto-crop=1`
@@ -124,6 +128,36 @@ export default function GalleryVideo({
     }
   }, [drawBackdrop])
 
+  const primePreview = useCallback(() => {
+    const video = videoRef.current
+    if (!nearViewportRef.current || !video || media.poster || previewRequestedRef.current
+      || video.readyState < HTMLMediaElement.HAVE_METADATA) return
+    previewRequestedRef.current = true
+    const previewTime = Math.min(0.2, Math.max(0, video.duration / 20))
+    if (previewTime > 0) {
+      video.currentTime = previewTime
+    } else {
+      video.preload = 'auto'
+      video.load()
+    }
+  }, [media.poster])
+
+  useEffect(() => {
+    const shell = shellRef.current
+    if (!shell) return
+    if (typeof IntersectionObserver === 'undefined') {
+      nearViewportRef.current = true
+      primePreview()
+      return
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      nearViewportRef.current = entry.isIntersecting
+      if (entry.isIntersecting) primePreview()
+    }, { rootMargin: '240px 0px' })
+    observer.observe(shell)
+    return () => observer.disconnect()
+  }, [primePreview])
+
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
@@ -132,6 +166,10 @@ export default function GalleryVideo({
       setCurrentTime(video.currentTime)
       if (video.videoWidth > 0 && video.videoHeight > 0) reportNaturalRatio()
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) inspectFrame()
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) primePreview()
+      if (nearViewportRef.current && !playbackStartedRef.current && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+        setPreviewReady(true)
+      }
     }
 
     // Cached media can reach readyState 4 before React attaches its events.
@@ -144,7 +182,7 @@ export default function GalleryVideo({
       video.removeEventListener('loadeddata', syncLoadedVideo)
       video.removeEventListener('seeked', syncLoadedVideo)
     }
-  }, [inspectFrame, media.duration, reportNaturalRatio])
+  }, [inspectFrame, media.duration, primePreview, reportNaturalRatio])
 
   useEffect(() => {
     const video = videoRef.current
@@ -201,6 +239,7 @@ export default function GalleryVideo({
   const syncVideoState = (event: SyntheticEvent<HTMLVideoElement>) => {
     const video = event.currentTarget
     setPlaying(!video.paused)
+    if (!video.paused) setPreviewReady(true)
     setMuted(video.muted)
     setDuration(Number.isFinite(video.duration) ? video.duration : media.duration || 0)
     setCurrentTime(video.currentTime)
@@ -212,6 +251,10 @@ export default function GalleryVideo({
     const video = videoRef.current
     if (!video) return
     if (video.paused) {
+      if (!playbackStartedRef.current) {
+        playbackStartedRef.current = true
+        video.currentTime = 0
+      }
       try {
         await video.play()
       } catch {
@@ -263,7 +306,10 @@ export default function GalleryVideo({
   const progress = duration > 0 ? Math.min(currentTime, duration) : 0
 
   return (
-    <div ref={shellRef} className="gallery-video-player">
+    <div
+      ref={shellRef}
+      className={`gallery-video-player${previewReady ? ' is-preview-ready' : ''}`}
+    >
       <canvas ref={backdropCanvasRef} className="gallery-video-backdrop" aria-hidden="true" />
       <video
         ref={videoRef}

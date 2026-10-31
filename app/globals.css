@@ -635,15 +635,19 @@ button { font: inherit; }
 }
 .gallery-mosaic-photo img { object-fit: cover; transition: transform .35s ease; }
 .gallery-mosaic-video.gallery-mosaic-portrait-video { max-width: min(100%, 560px); margin-inline: auto; }
-.gallery-video-player { position: absolute; inset: 0; overflow: hidden; overflow: clip; background: #111; color: #fff; isolation: isolate; }
+.gallery-video-player {
+  position: absolute; inset: 0; overflow: hidden; overflow: clip;
+  background: linear-gradient(145deg, #171714, #2c2a25 55%, #151513); color: #fff; isolation: isolate;
+}
 .gallery-video-backdrop {
   position: absolute; inset: -5%; z-index: 0; width: 110%; height: 110%;
   opacity: .82; filter: blur(22px) saturate(.72); pointer-events: none;
 }
 .gallery-video-media {
   position: absolute; z-index: 1; display: block; max-width: none; max-height: none; object-fit: fill;
-  background: #111; cursor: pointer;
+  background: transparent; cursor: pointer; opacity: 0; transition: opacity .2s ease;
 }
+.gallery-video-player.is-preview-ready .gallery-video-media { opacity: 1; }
 .gallery-video-sample { display: none; }
 .gallery-video-center {
   position: absolute; z-index: 2; left: 50%; top: 50%; width: 56px; height: 56px; padding: 0;

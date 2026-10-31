@@ -15,6 +15,16 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
   const mediaRatio = (media: GalleryMedia, index: number) => (
     videoRatios[mediaKey(media, index)] || media.width / media.height
   )
+  const syncVideoRatio = (video: HTMLVideoElement, media: GalleryMedia, index: number) => {
+    if (video.videoWidth <= 0 || video.videoHeight <= 0) return
+    const ratio = video.videoWidth / video.videoHeight
+    const key = mediaKey(media, index)
+    setVideoRatios((current) => (
+      Math.abs((current[key] || media.width / media.height) - ratio) < 0.001
+        ? current
+        : { ...current, [key]: ratio }
+    ))
+  }
 
   return (
     <ImageLightbox className="gallery-mosaic">
@@ -42,6 +52,10 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
               style={style}
             >
               <video
+                ref={(video) => {
+                  // Metadata may finish loading before React hydrates the page.
+                  if (video && video.readyState >= 1) syncVideoRatio(video, media, index)
+                }}
                 src={media.src}
                 poster={media.poster}
                 controls
@@ -49,15 +63,7 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
                 preload="metadata"
                 aria-label={`${title}，第 ${index + 1} 个视频`}
                 onLoadedMetadata={(event) => {
-                  const video = event.currentTarget
-                  if (video.videoWidth <= 0 || video.videoHeight <= 0) return
-                  const ratio = video.videoWidth / video.videoHeight
-                  const key = mediaKey(media, index)
-                  setVideoRatios((current) => (
-                    Math.abs((current[key] || media.width / media.height) - ratio) < 0.001
-                      ? current
-                      : { ...current, [key]: ratio }
-                  ))
+                  syncVideoRatio(event.currentTarget, media, index)
                 }}
               />
             </div>

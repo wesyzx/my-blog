@@ -8,6 +8,7 @@ import test from 'node:test'
 import YAML from 'yaml'
 import { loadObsidianContent, copyPublishedAttachments } from '../lib/obsidian-content.mjs'
 import { mergeManagedGallery, parseGalleryControl } from '../lib/gallery-control.mjs'
+import { r2Sources } from '../lib/r2-media.mjs'
 
 const require = createRequire(import.meta.url)
 const model = require('../obsidian/blog-create/gallery-model.js')
@@ -81,6 +82,7 @@ async function fakePlugin() {
   const context = { module: { exports: {} }, console, window: {}, require: (id) => {
     if (id === 'obsidian') return { Modal: class {}, Plugin: class {}, parseYaml: YAML.parse, normalizePath: (value) => value }
     if (id === './gallery-model' && !process.env.BLOG_CREATE_TEST_BUNDLE) return model
+    if (id === '../../lib/r2-media.mjs') return { r2Sources }
     throw new Error(`Obsidian cannot load external module ${id}`)
   } }
   vm.runInNewContext(source, context)

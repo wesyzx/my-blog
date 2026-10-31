@@ -7,12 +7,16 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from cleanup_r2 import CleanupFailure, cleanup_r2
 from failure_reasons import safe_issue
 from verify_site import check_site
 
 ROOT = Path(os.environ.get("PUBLISHER_STATE_DIR", "/var/lib/obsidian-blog-publisher"))
 BIN = Path("/opt/obsidian-blog-publisher")
 STATE = ROOT / "status.json"
+R2_CLEANUP_GRACE_DAYS = 30
+R2_CLEANUP_INTERVAL_SECONDS = 24 * 3600
+R2_CLEANUP_RETRY_SECONDS = 3600
 
 
 class StepFailure(RuntimeError):
@@ -44,6 +48,69 @@ def run(args, environment, timeout):
             issue = {}
         raise StepFailure(issue)
     return result
+
+
+def cleanup_input(state, manifest):
+    revision = state.get("content_revision")
+    if manifest.get("fingerprint") != state.get("published"):
+        return None
+    protected_sources = manifest.get("r2ProtectedSources")
+    managed_album_ids = manifest.get("managedAlbumIds")
+    return {
+        "revision": revision,
+        "protectedSources": protected_sources if isinstance(protected_sources, list) else [],
+        "managedAlbumIds": managed_album_ids if isinstance(managed_album_ids, list) else [],
+        "safe": (manifest.get("r2CleanupSafe") is True
+                 and isinstance(protected_sources, list)
+                 and isinstance(managed_album_ids, list)),
+    }
+
+
+def maybe_cleanup_r2(state, manifest, environment):
+    previous = state.get("r2_cleanup")
+    previous = previous if isinstance(previous, dict) else {}
+    revision = state.get("content_revision")
+    if state.get("site", {}).get("status") != "verified":
+        return {"status": "waiting", "revision": revision}
+    if previous.get("revision") == revision and previous.get("status") == "completed":
+        completed_at = previous.get("attempted_at")
+        if completed_at and time.time() - completed_at < R2_CLEANUP_INTERVAL_SECONDS:
+            return previous
+
+    source = cleanup_input(state, manifest)
+    if not source:
+        return {"status": "waiting", "revision": revision,
+                "reason": "published_reference_snapshot_unavailable"}
+    if source.get("safe") is not True:
+        return {"status": "skipped", "revision": revision,
+                "reason": "unsafe_reference_scan"}
+
+    attempted_at = previous.get("attempted_at")
+    if (previous.get("status") == "failed" and previous.get("revision") == revision
+            and attempted_at and time.time() - attempted_at < R2_CLEANUP_RETRY_SECONDS):
+        return previous
+
+    token = environment.get("GALLERY_UPLOAD_TOKEN", "").strip()
+    if not token:
+        return {"status": "disabled", "revision": revision, "reason": "token_missing"}
+
+    try:
+        result = cleanup_r2(
+            source.get("protectedSources", []),
+            source.get("managedAlbumIds", []),
+            token,
+            grace_days=R2_CLEANUP_GRACE_DAYS,
+        )
+        result.update({
+            "status": "completed",
+            "revision": revision,
+            "attempted_at": time.time(),
+            "graceDays": R2_CLEANUP_GRACE_DAYS,
+        })
+        return result
+    except CleanupFailure as error:
+        return {"status": "failed", "revision": revision,
+                "attempted_at": time.time(), "error": safe_issue(error.issue)}
 
 
 def main():
@@ -98,11 +165,15 @@ def main():
             state["site"] = check_site(state["content_revision"], state.get("published_at"))
         else:
             state["site"] = {"status": "waiting", "reason": "no_content_revision"}
+        state["r2_cleanup"] = maybe_cleanup_r2(state, manifest, environment)
         state["warnings"] = [{"code": "empty_section", "section": section}
                              for section in state.get("held_sections", [])]
         state.pop("error", None)
         write_state(state)
-        print(json.dumps({key: state[key] for key in ["phase", "posts", "food", "gallery", "attachments", "remote_writes", "git_status", "site", "warnings"]}))
+        print(json.dumps({key: state[key] for key in [
+            "phase", "posts", "food", "gallery", "attachments", "remote_writes",
+            "git_status", "site", "r2_cleanup", "warnings",
+        ]}))
         return 0
     except Exception as error:
         state.update({"healthy": False, "phase": stage,

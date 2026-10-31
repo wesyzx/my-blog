@@ -12,6 +12,7 @@ Group=obsidian-publisher
 WorkingDirectory=/var/lib/obsidian-blog-publisher
 Environment=HOME=/var/lib/obsidian-blog-publisher
 Environment=PATH=/opt/obsidian-blog-publisher/bin:/usr/bin:/bin
+EnvironmentFile=-/etc/obsidian-blog-publisher/gallery.env
 ExecStart=/usr/bin/python3 /opt/obsidian-blog-publisher/run-cycle.py
 TimeoutStartSec=400
 UMask=0077

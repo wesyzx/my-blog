@@ -42,7 +42,7 @@ export const bundleData = {
       "cover": "https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-736bcfe2-c9c9-4a9a-b313-fa9662fb6533-001.webp",
       "excerpt": "",
       "published": true,
-      "content": "> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。\n> 删除整篇笔记会下线整个相册；R2 原文件保留。恢复笔记并设 published: true 可重新上线。\n> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。\n\n![照片 1](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-736bcfe2-c9c9-4a9a-b313-fa9662fb6533-001.webp>)",
+      "content": "> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。\n> 删除整篇笔记会下线整个相册；R2 原文件不会立即删除。上传超过 30 天且无人引用的文件，会在发布核对成功后自动清理。\n> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。\n\n![照片 1](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-736bcfe2-c9c9-4a9a-b313-fa9662fb6533-001.webp>)",
       "category": "日常",
       "images": [
         {
@@ -63,7 +63,7 @@ export const bundleData = {
       "cover": "https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-001.webp",
       "excerpt": "",
       "published": true,
-      "content": "> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。\n> 删除整篇笔记会下线整个相册；R2 原文件保留。恢复笔记并设 published: true 可重新上线。\n> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。\n\n![照片 1](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-001.webp>)\n\n![照片 2](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-002.webp>)\n\n![照片 3](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-003.webp>)\n\n![照片 4](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-004.webp>)\n\n![照片 5](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-005.webp>)\n\n![照片 6](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-006.webp>)\n\n![照片 7](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-007.webp>)\n\n![照片 8](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-008.webp>)",
+      "content": "> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。\n> 删除整篇笔记会下线整个相册；R2 原文件不会立即删除。上传超过 30 天且无人引用的文件，会在发布核对成功后自动清理。\n> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。\n\n![照片 1](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-001.webp>)\n\n![照片 2](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-002.webp>)\n\n![照片 3](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-003.webp>)\n\n![照片 4](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-004.webp>)\n\n![照片 5](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-005.webp>)\n\n![照片 6](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-006.webp>)\n\n![照片 7](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-007.webp>)\n\n![照片 8](<https://img.guanyan.me/webp/blog/obsidian/2026/10/2026-10-30-f7ade739-bef1-4b6e-9b97-b0294985ba47-008.webp>)",
       "category": "日常",
       "images": [
         {

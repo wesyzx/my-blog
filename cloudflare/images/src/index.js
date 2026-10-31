@@ -1,4 +1,5 @@
 import { albumRevision } from '../../../lib/publication-revision.mjs'
+import { r2ObjectStem } from '../../../lib/r2-media.mjs'
 
 const IMAGE_EXTENSION = /\.(?:gif|heic|heif|jpe?g|png|svg|webp)$/i
 const VIDEO_EXTENSION = /\.(?:m4v|mov|mp4|webm)$/i
@@ -28,6 +29,8 @@ const GALLERY_ALBUM_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/(pho
 const GALLERY_ADMIN_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})$/
 const GALLERY_ADMIN_PATH = '/internal/gallery/admin'
 const GALLERY_MANIFEST_PATH = '/webp/gallery-manifest'
+const GALLERY_R2_CLEANUP_PATH = '/internal/gallery/r2-cleanup'
+const R2_CLEANUP_MIN_GRACE_DAYS = 30
 const PRESETS = {
   fit: { ratio: null },
   full: { ratio: null },
@@ -602,6 +605,118 @@ async function deleteGalleryAlbum(request, env, id) {
     message: wasPublished
       ? '相册已删除，网站更新已触发。'
       : '私密相册已删除。',
+  })
+}
+
+function protectedR2Stems(values) {
+  const stems = new Set()
+  if (!Array.isArray(values)) return stems
+  for (const value of values.slice(0, 100_000)) {
+    const stem = r2ObjectStem(value)
+    if (stem) stems.add(stem)
+  }
+  return stems
+}
+
+async function protectUnclaimedAlbums(env, managedAlbumIds, protectedStems) {
+  for (const entry of await listGalleryAlbums(env)) {
+    const id = entry.key.slice(GALLERY_ALBUM_PREFIX.length, -'.json'.length)
+    const album = await readAlbum(env, id)
+    if (!album?.id || !Array.isArray(album.images)) {
+      throw new Error('Gallery metadata cannot be verified safely')
+    }
+    if (managedAlbumIds.has(album.id)) continue
+    for (const media of album.images) {
+      const stem = r2ObjectStem(media?.src)
+      if (stem) protectedStems.add(stem)
+    }
+  }
+}
+
+async function cleanupR2Objects(request, env) {
+  if (request.method !== 'POST') return errorResponse(405, 'Method not allowed', { allow: 'POST' })
+  let body
+  try {
+    body = await request.json()
+  } catch {
+    return errorResponse(400, 'Invalid cleanup request')
+  }
+  if (!body || typeof body !== 'object') return errorResponse(400, 'Invalid cleanup request')
+
+  const graceDays = body.graceDays === undefined ? R2_CLEANUP_MIN_GRACE_DAYS : Number(body.graceDays)
+  if (!Number.isInteger(graceDays) || graceDays < R2_CLEANUP_MIN_GRACE_DAYS || graceDays > 3650) {
+    return errorResponse(400, `Grace period must be between ${R2_CLEANUP_MIN_GRACE_DAYS} and 3650 days`)
+  }
+  const dryRun = body.dryRun !== false
+  if (!dryRun && body.confirm !== 'delete-unreferenced-r2') {
+    return errorResponse(400, 'Cleanup confirmation is required')
+  }
+
+  const protectedSources = body.protectedSources || body.protectedKeys || []
+  if (!Array.isArray(protectedSources)) return errorResponse(400, 'Invalid protected media list')
+  const managedAlbumIds = new Set(
+    (Array.isArray(body.managedAlbumIds) ? body.managedAlbumIds : [])
+      .filter((id) => typeof id === 'string' && /^[a-f0-9-]{36}$/.test(id)),
+  )
+  const protectedStems = protectedR2Stems(protectedSources)
+
+  // Albums that have not been claimed by an Obsidian note remain managed by
+  // their R2 record, including private albums that are still uploading.
+  await protectUnclaimedAlbums(env, managedAlbumIds, protectedStems)
+
+  const objects = []
+  let cursor
+  do {
+    const page = await env.IMAGES_BUCKET.list({
+      prefix: 'blog/obsidian/',
+      ...(cursor ? { cursor } : {}),
+    })
+    objects.push(...(page.objects || []))
+    cursor = page.truncated ? page.cursor : undefined
+  } while (cursor)
+
+  const cutoff = new Date(Date.now() - graceDays * 86_400_000)
+  const candidates = []
+  let protectedCount = 0
+  let recentCount = 0
+  for (const object of objects) {
+    const stem = r2ObjectStem(object.key)
+    if (!stem) continue
+    if (protectedStems.has(stem)) {
+      protectedCount += 1
+      continue
+    }
+    const uploaded = object.uploaded instanceof Date ? object.uploaded : new Date(object.uploaded)
+    if (!Number.isFinite(uploaded.valueOf()) || uploaded >= cutoff) {
+      recentCount += 1
+      continue
+    }
+    candidates.push({
+      key: object.key,
+      uploaded: uploaded.toISOString(),
+      size: Number(object.size) || 0,
+    })
+  }
+
+  let deleted = 0
+  if (!dryRun) {
+    for (let index = 0; index < candidates.length; index += 500) {
+      await env.IMAGES_BUCKET.delete(candidates.slice(index, index + 500).map((item) => item.key))
+      deleted += Math.min(500, candidates.length - index)
+    }
+  }
+
+  return jsonResponse({
+    ok: true,
+    dryRun,
+    graceDays,
+    cutoff: cutoff.toISOString(),
+    scanned: objects.length,
+    protectedCount,
+    recentCount,
+    candidateCount: candidates.length,
+    deleted,
+    candidates: candidates.slice(0, 50),
   })
 }
 
@@ -1307,6 +1422,10 @@ const worker = {
     try {
       if (url.pathname === GALLERY_MANIFEST_PATH) {
         return await serveGalleryManifest(request, env)
+      }
+      if (url.pathname === GALLERY_R2_CLEANUP_PATH) {
+        if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
+        return await cleanupR2Objects(request, env)
       }
       const publicationRoute = /^\/webp\/gallery-status\/([a-f0-9-]{36})$/.exec(url.pathname)
       if (publicationRoute) return await galleryPublicationStatus(request, env, publicationRoute[1])

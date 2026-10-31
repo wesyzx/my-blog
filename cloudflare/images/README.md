@@ -158,6 +158,18 @@ pnpm dlx wrangler@latest deploy --config cloudflare/images/wrangler.jsonc
 No credentials belong in this directory. Authentication stays in the local
 Wrangler profile or the Cloudflare dashboard.
 
+## Orphan cleanup
+
+`POST /internal/gallery/r2-cleanup` uses the same bearer token as gallery ingest.
+It scans `blog/obsidian/`, protects the supplied `protectedSources`, and protects
+media belonging to albums whose IDs are not in `managedAlbumIds`. Only
+unreferenced objects uploaded at least 30 days ago are eligible.
+
+Requests default to `dryRun: true`. A real deletion must set
+`dryRun: false` and `confirm: "delete-unreferenced-r2"`. The ECS publisher calls
+the preview first, then the confirmed request only after the deployed site
+revision is verified.
+
 ## Rollout and verification
 
 See [the deployment assessment](../../docs/image-pipeline.md) for observed live

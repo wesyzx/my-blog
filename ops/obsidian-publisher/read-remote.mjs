@@ -8,6 +8,7 @@ import { readContent } from '@livesync/content'
 import { setGlobalLogFunction } from 'octagonal-wheels/common/logger'
 import { localAttachmentTargets, publishSection, readOnlyFetch, resolveAttachment, safeBlogPath } from './read-policy.mjs'
 import { GALLERY_CONTROL_FILE, parseGalleryControl } from '../../lib/gallery-control.mjs'
+import { r2Sources } from '../../lib/r2-media.mjs'
 
 setGlobalLogFunction(() => {})
 const counters = { reads: 0, blocked: 0 }
@@ -59,6 +60,7 @@ async function main() {
     for (const section of Object.keys(counts)) await fs.mkdir(path.join(staging, 'Blog', section), { recursive: true })
     const files = []
     const attachments = new Set()
+    const markdownCache = new Map()
     const read = async (meta) => {
       if (meta._conflicts?.length) throw new Error('An article or attachment has unresolved revisions')
       const raw = await database.get(meta._id, { conflicts: true })
@@ -69,16 +71,51 @@ async function main() {
       if (Number.isFinite(meta.size) && buffer.length !== meta.size) throw new Error('File size differs from synchronized metadata')
       return buffer
     }
+    const readMarkdown = async (filePath, meta) => {
+      if (!markdownCache.has(filePath)) markdownCache.set(filePath, await read(meta))
+      return markdownCache.get(filePath)
+    }
     const save = async (filePath, buffer) => {
       const destination = path.join(staging, filePath)
       await fs.mkdir(path.dirname(destination), { recursive: true })
       await fs.writeFile(destination, buffer, { mode: 0o600 })
       files.push({ path: filePath, sha256: createHash('sha256').update(buffer).digest('hex'), bytes: buffer.length })
     }
+
+    const protectedR2Sources = new Set()
+    let r2CleanupSafe = true
+    let managedAlbumIds = []
+    for (const [filePath, meta] of metadata) {
+      if (!filePath.endsWith('.md') || filePath.startsWith('Blog/templates/')) continue
+      try {
+        const source = (await readMarkdown(filePath, meta)).toString('utf8')
+        const match = source.match(FRONTMATTER)
+        let data = {}
+        let body = source
+        if (match) {
+          body = source.slice(match[0].length)
+          try {
+            data = YAML.parse(match[1]) || {}
+          } catch {
+            // Conservatively keep every URL in a malformed draft alive.
+            body = source
+          }
+          if (filePath === `Blog/${GALLERY_CONTROL_FILE}`) {
+            managedAlbumIds = parseGalleryControl(source).albumIds
+          }
+        }
+        for (const value of r2Sources(body, data)) protectedR2Sources.add(value)
+      } catch {
+        // A conflicted draft must not fail publication, but cleanup cannot run
+        // safely without a complete reference scan.
+        r2CleanupSafe = false
+      }
+    }
+
     for (const [filePath, meta] of [...metadata].sort(([left], [right]) => left.localeCompare(right))) {
       const section = publishSection(filePath)
       if (!section) continue
-      const buffer = await read(meta)
+      const buffer = await readMarkdown(filePath, meta)
       const source = buffer.toString('utf8')
       const match = source.match(FRONTMATTER)
       if (!match) continue
@@ -112,6 +149,9 @@ async function main() {
     const fingerprint = createHash('sha256').update(JSON.stringify(files)).digest('hex')
     await fs.writeFile(path.join(staging, 'manifest.json'), JSON.stringify({
       ...counts, attachments: attachments.size, fingerprint, files, counters,
+      r2ProtectedSources: [...protectedR2Sources].sort(),
+      r2CleanupSafe,
+      managedAlbumIds,
       observedAt: new Date().toISOString(),
     }, null, 2), { mode: 0o600 })
     const current = path.join(root, 'current')

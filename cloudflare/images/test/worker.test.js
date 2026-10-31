@@ -508,6 +508,140 @@ function galleryRequest(path, {
   return new Request(`https://images.example${path}`, { method, headers, body })
 }
 
+function cleanupEnvironment() {
+  const old = new Date(Date.now() - 40 * 86_400_000)
+  const recent = new Date(Date.now() - 5 * 86_400_000)
+  const managedId = '11111111-1111-4111-8111-111111111111'
+  const unmanagedId = '22222222-2222-4222-8222-222222222222'
+  const objects = new Map([
+    ['blog/obsidian/2026/10/old.jpg', { body: ORIGINAL, uploaded: old, size: 4 }],
+    ['blog/obsidian/2026/10/protected.jpg', { body: ORIGINAL, uploaded: old, size: 4 }],
+    ['blog/obsidian/2026/10/recent.jpg', { body: ORIGINAL, uploaded: recent, size: 4 }],
+    ['blog/obsidian/2026/10/album.jpg', { body: ORIGINAL, uploaded: old, size: 4 }],
+    ['blog/obsidian/2026/10/managed.jpg', { body: ORIGINAL, uploaded: old, size: 4 }],
+  ])
+  const album = (id, slug, src) => ({
+    body: JSON.stringify({ id, slug, title: slug, date: '2026-10-01', published: true,
+      images: [{ kind: 'image', src, width: 100, height: 100, order: 0 }] }),
+  })
+  objects.set(`internal/gallery/albums/${unmanagedId}.json`,
+    album(unmanagedId, 'unmanaged', 'https://img.guanyan.me/webp/blog/obsidian/2026/10/album.webp'))
+  objects.set(`internal/gallery/albums/${managedId}.json`,
+    album(managedId, 'managed', 'https://img.guanyan.me/webp/blog/obsidian/2026/10/managed.webp'))
+
+  const deleted = []
+  const env = {
+    GALLERY_UPLOAD_TOKEN: 'cleanup-secret',
+    IMAGES_BUCKET: {
+      async list({ prefix }) {
+        return {
+          objects: [...objects.entries()]
+            .filter(([key]) => key.startsWith(prefix))
+            .map(([key, value]) => ({ key, uploaded: value.uploaded, size: value.size })),
+        }
+      },
+      async delete(keys) {
+        for (const key of Array.isArray(keys) ? keys : [keys]) {
+          deleted.push(key)
+          objects.delete(key)
+        }
+      },
+    },
+    METADATA_BUCKET: {
+      async list({ prefix }) {
+        return {
+          objects: [...objects.keys()]
+            .filter((key) => key.startsWith(prefix))
+            .map((key) => ({ key })),
+        }
+      },
+      async get(key) {
+        return objects.get(key) || null
+      },
+    },
+  }
+  return { env, objects, deleted, managedId }
+}
+
+function cleanupRequest(body, token = 'cleanup-secret') {
+  return new Request('https://images.example/internal/gallery/r2-cleanup', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+}
+
+test('R2 cleanup previews and deletes only old unreferenced media', async () => {
+  const cleanup = cleanupEnvironment()
+  const unauthorized = await worker.fetch(cleanupRequest({}, 'wrong'), cleanup.env)
+  assert.equal(unauthorized.status, 401)
+  const shortGrace = await worker.fetch(cleanupRequest({ graceDays: 29 }), cleanup.env)
+  assert.equal(shortGrace.status, 400)
+
+  const protectedSources = [
+    'https://img.guanyan.me/webp/blog/obsidian/2026/10/protected.webp',
+  ]
+  const previewResponse = await worker.fetch(cleanupRequest({
+    protectedSources,
+    managedAlbumIds: [cleanup.managedId],
+    graceDays: 30,
+    dryRun: true,
+  }), cleanup.env)
+  assert.equal(previewResponse.status, 200)
+  const preview = await previewResponse.json()
+  assert.equal(preview.dryRun, true)
+  assert.equal(preview.graceDays, 30)
+  assert.equal(preview.candidateCount, 2)
+  assert.deepEqual(preview.candidates.map((item) => item.key).sort(), [
+    'blog/obsidian/2026/10/managed.jpg',
+    'blog/obsidian/2026/10/old.jpg',
+  ])
+  assert.equal(cleanup.deleted.length, 0)
+
+  const missingConfirmation = await worker.fetch(cleanupRequest({
+    protectedSources,
+    managedAlbumIds: [cleanup.managedId],
+    graceDays: 30,
+    dryRun: false,
+  }), cleanup.env)
+  assert.equal(missingConfirmation.status, 400)
+
+  const deleteResponse = await worker.fetch(cleanupRequest({
+    protectedSources,
+    managedAlbumIds: [cleanup.managedId],
+    graceDays: 30,
+    dryRun: false,
+    confirm: 'delete-unreferenced-r2',
+  }), cleanup.env)
+  assert.equal(deleteResponse.status, 200)
+  assert.equal((await deleteResponse.json()).deleted, 2)
+  assert.deepEqual(cleanup.deleted.sort(), [
+    'blog/obsidian/2026/10/managed.jpg',
+    'blog/obsidian/2026/10/old.jpg',
+  ])
+  assert.equal(cleanup.objects.has('blog/obsidian/2026/10/protected.jpg'), true)
+  assert.equal(cleanup.objects.has('blog/obsidian/2026/10/recent.jpg'), true)
+  assert.equal(cleanup.objects.has('blog/obsidian/2026/10/album.jpg'), true)
+})
+
+test('R2 cleanup stops when unclaimed album metadata cannot be verified', async () => {
+  const cleanup = cleanupEnvironment()
+  const brokenId = '33333333-3333-4333-8333-333333333333'
+  cleanup.objects.set(`internal/gallery/albums/${brokenId}.json`, { body: '{broken' })
+  const response = await worker.fetch(cleanupRequest({
+    protectedSources: [],
+    managedAlbumIds: [cleanup.managedId],
+    graceDays: 30,
+    dryRun: false,
+    confirm: 'delete-unreferenced-r2',
+  }), cleanup.env)
+  assert.equal(response.status, 502)
+  assert.equal(cleanup.deleted.length, 0)
+})
+
 test('creates, uploads, deduplicates and publishes a gallery album', async (t) => {
   const gallery = galleryEnvironment()
   t.after(gallery.restoreFetch)

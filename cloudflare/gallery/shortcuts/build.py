@@ -122,7 +122,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         '相册在发布前保持私密；只有最后发布成功，网站才会读取它。'
         + ('图片会在手机上转换为 JPEG，兼容 Cloudflare Images 普通方案。'
            if media == 'photo'
-           else '视频保留 iPhone 原生 QuickTime 格式，并由博客直接内嵌播放。')
+           else '视频会先在手机上转为 H.264，再由博客直接内嵌播放。')
         +
         '上传令牌只用于本次操作；公开版每次运行时输入，个人版保存在本机私有快捷指令中。'))
 
@@ -250,7 +250,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             else
             '逐个转换并上传刚选择并确认的视频；单个失败时整个快捷指令停止。\n'
             '- “重复”读取“选择照片”的结果。\n'
-            '- “编码媒体”读取“重复项目”，生成可上传的视频文件。\n'
+            '- “编码媒体”读取“重复项目”，输出 H.264 视频文件。\n'
             '- “获取 URL 内容”以“编码后的媒体”作为文件正文。'
         )))
     group = uid()
@@ -274,7 +274,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             'encodemedia',
             WFMedia=attachment({'Type': 'Variable', 'VariableName': 'Repeat Item'}),
             WFMediaAudioOnly=False,
-            WFMediaSize='Passthrough',
+            WFMediaSize='1920x1080',
             WFMediaSpeed='Normal',
         )
     upload_headers = dictionary([

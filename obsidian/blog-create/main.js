@@ -9,9 +9,11 @@ const {
   parseYaml,
 } = require('obsidian')
 const { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, mediaSummary, editableAlbumContent, controlContent } = require('./gallery-model')
+const { r2Sources } = require('../../lib/r2-media.mjs')
 
 const GALLERY_API_ORIGIN = 'https://img.215320.xyz'
 const GALLERY_PUBLIC_ORIGIN = 'https://guanyan.me/gallery'
+const R2_CLEANUP_PATH = '/internal/gallery/r2-cleanup'
 
 const CONTENT_TYPES = {
   posts: {
@@ -199,7 +201,7 @@ class DeleteAlbumModal extends Modal {
       text: `${this.album.date || '日期未知'} · ${mediaSummary(this.album)}`,
     })
     contentEl.createEl('p', {
-      text: '相册笔记将移到 Obsidian 回收站，阿里云同步构建后博客将下线此相册。R2 原文件保留；恢复笔记可重新发布。',
+      text: '相册笔记将移到 Obsidian 回收站，阿里云同步构建后博客将下线此相册。R2 原文件不会立即删除；上传超过 30 天且无人引用时，会在发布核对成功后自动清理。',
     })
 
     const actions = contentEl.createDiv({ cls: 'blog-delete-actions' })
@@ -213,6 +215,68 @@ class DeleteAlbumModal extends Modal {
     remove.addEventListener('click', () => {
       this.close()
       this.onConfirm()
+    })
+  }
+
+  onClose() {
+    this.contentEl.empty()
+  }
+}
+
+class R2CleanupModal extends Modal {
+  constructor(app, plugin, preview, onConfirm) {
+    super(app)
+    this.plugin = plugin
+    this.preview = preview
+    this.onConfirm = onConfirm
+  }
+
+  onOpen() {
+    const { contentEl } = this
+    contentEl.addClass('blog-delete-modal')
+    contentEl.createEl('h2', { text: 'R2 孤立文件检查' })
+    contentEl.createEl('p', {
+      text: `只处理超过 ${this.preview.graceDays || 30} 天、当前没有任何笔记引用的文件。仍被引用或未满宽限期的文件会保留。`,
+    })
+    const summary = contentEl.createDiv({ cls: 'blog-delete-summary' })
+    summary.createEl('strong', { text: `${this.preview.candidateCount || 0} 个可删除文件` })
+    summary.createEl('span', {
+      text: `已保护 ${this.preview.protectedCount || 0} 个引用文件，跳过 ${this.preview.recentCount || 0} 个近期文件`,
+    })
+    if (this.preview.candidates?.length) {
+      const list = contentEl.createEl('ul', { cls: 'blog-r2-cleanup-list' })
+      for (const item of this.preview.candidates.slice(0, 20)) {
+        list.createEl('li', { text: `${item.key} · ${new Date(item.uploaded).toLocaleDateString()}` })
+      }
+    }
+    contentEl.createEl('p', {
+      text: '删除后无法从 R2 恢复。若仍需保留旧文章或外部链接，请先取消。',
+      cls: 'setting-item-description',
+    })
+
+    const actions = contentEl.createDiv({ cls: 'blog-delete-actions' })
+    const cancel = actions.createEl('button', { text: '取消', attr: { type: 'button' } })
+    cancel.addEventListener('click', () => this.close())
+    const remove = actions.createEl('button', {
+      cls: 'mod-warning',
+      text: this.preview.candidateCount ? '确认永久删除' : '关闭',
+      attr: { type: 'button' },
+    })
+    remove.addEventListener('click', async () => {
+      if (!this.preview.candidateCount) {
+        this.close()
+        return
+      }
+      remove.disabled = true
+      remove.setText('正在删除…')
+      try {
+        await this.onConfirm()
+        this.close()
+      } catch (error) {
+        remove.disabled = false
+        remove.setText('确认永久删除')
+        new Notice(`R2 清理失败：${error.message}`)
+      }
     })
   }
 
@@ -241,7 +305,7 @@ class GalleryMediaModal extends Modal {
     const source = await this.app.vault.read(file)
     const media = noteMedia(source)
     contentEl.createEl('h2', { text: `${this.album.title} · 照片与视频` })
-    contentEl.createEl('p', { text: '移除后自动同步到博客，R2 原文件保留。也可以打开笔记编辑日期、顺序、标题和视频封面。' })
+    contentEl.createEl('p', { text: '移除后自动同步到博客。R2 原文件不会立即删除；上传超过 30 天且无人引用时自动清理。也可以打开笔记编辑日期、顺序、标题和视频封面。' })
     const edit = contentEl.createEl('button', { text: '打开相册笔记' })
     edit.addEventListener('click', async () => {
       await this.app.workspace.getLeaf(false).openFile(file)
@@ -346,8 +410,53 @@ class GalleryManagerModal extends Modal {
     window.setTimeout(() => this.tokenInput?.focus(), 0)
   }
 
-  async request(path, token = this.plugin.sessionToken, method = 'GET') {
-    return this.plugin.requestGallery(path, token, method)
+  async request(path, token = this.plugin.sessionToken, method = 'GET', body) {
+    return this.plugin.requestGallery(path, token, method, body)
+  }
+
+  async cleanupPayload() {
+    const protectedSources = new Set()
+    for (const file of this.app.vault.getMarkdownFiles()) {
+      if (!file.path.startsWith('Blog/') || file.path.startsWith('Blog/templates/')) continue
+      const source = await this.app.vault.read(file)
+      const header = source.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/)?.[0] || ''
+      const data = noteData(source)
+      for (const value of r2Sources(source.slice(header.length), data)) protectedSources.add(value)
+    }
+    const control = this.app.vault.getAbstractFileByPath(CONTROL_PATH)
+    const managedAlbumIds = control
+      ? (noteData(await this.app.vault.read(control)).albumIds || [])
+      : []
+    return {
+      protectedSources: [...protectedSources].sort(),
+      managedAlbumIds: managedAlbumIds.filter((id) => /^[a-f0-9-]{36}$/.test(id)),
+      graceDays: 30,
+    }
+  }
+
+  async previewR2Cleanup() {
+    const status = this.contentEl.querySelector('.blog-gallery-status')
+    status?.setText('正在检查 R2 孤立文件…')
+    try {
+      const payload = await this.cleanupPayload()
+      const preview = await this.request(R2_CLEANUP_PATH, this.plugin.sessionToken, 'POST', {
+        ...payload,
+        dryRun: true,
+      })
+      status?.setText('检查完成。')
+      new R2CleanupModal(this.app, this.plugin, preview, async () => {
+        const fresh = await this.cleanupPayload()
+        const result = await this.request(R2_CLEANUP_PATH, this.plugin.sessionToken, 'POST', {
+          ...fresh,
+          dryRun: false,
+          confirm: 'delete-unreferenced-r2',
+        })
+        new Notice(`R2 清理完成：删除 ${result.deleted || 0} 个文件。`)
+      }).open()
+    } catch (error) {
+      status?.setText(error.message)
+      status?.addClass('is-error')
+    }
   }
 
   async loadAlbums(message = '正在读取相册…') {
@@ -405,6 +514,8 @@ class GalleryManagerModal extends Modal {
     website.addEventListener('click', () => openExternal(GALLERY_PUBLIC_ORIGIN))
     const refresh = headerActions.createEl('button', { text: '刷新', attr: { type: 'button' } })
     refresh.addEventListener('click', () => this.loadAlbums())
+    const cleanup = headerActions.createEl('button', { text: '检查 R2 孤立文件', attr: { type: 'button' } })
+    cleanup.addEventListener('click', () => this.previewR2Cleanup())
     const logout = headerActions.createEl('button', { text: '更换令牌', attr: { type: 'button' } })
     logout.addEventListener('click', async () => {
       await this.plugin.clearGalleryToken()
@@ -545,13 +656,18 @@ module.exports = class BlogCreatePlugin extends Plugin {
     await this.saveData(data)
   }
 
-  async requestGallery(path, token = this.sessionToken, method = 'GET') {
-    const response = await requestUrl({
+  async requestGallery(path, token = this.sessionToken, method = 'GET', body) {
+    const options = {
       url: `${GALLERY_API_ORIGIN}${path}`,
       method,
       headers: { Authorization: `Bearer ${token}` },
       throw: false,
-    })
+    }
+    if (body !== undefined) {
+      options.body = JSON.stringify(body)
+      options.contentType = 'application/json'
+    }
+    const response = await requestUrl(options)
     if (response.status < 200 || response.status >= 300) {
       if (response.status === 401) await this.clearGalleryToken()
       throw new Error(responseError(response, `请求失败（HTTP ${response.status}）`))

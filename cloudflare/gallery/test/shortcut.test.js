@@ -199,7 +199,7 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   )
 })
 
-test('the public video shortcut selects videos, preserves QuickTime and publishes them', (t) => {
+test('the public video shortcut selects videos, transcodes them to H.264 and publishes them', (t) => {
   const directory = mkdtempSync(join(tmpdir(), 'gallery-video-shortcut-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
   const result = spawnSync('python3', [
@@ -223,6 +223,7 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
   assert.equal(workflow.WFWorkflowName, '视频同步到博客')
   assert.equal(statSync(path).mode & 0o777, 0o600)
   assert.ok(actions[0].WFWorkflowActionParameters.WFCommentActionText.includes('视频'))
+  assert.ok(actions[1].WFWorkflowActionParameters.WFCommentActionText.includes('H.264'))
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.ask').length, 4)
 
   const selectVideos = actions.find((entry) =>
@@ -245,7 +246,7 @@ test('the public video shortcut selects videos, preserves QuickTime and publishe
     VariableName: 'Repeat Item',
   })
   assert.equal(encodeVideo.WFWorkflowActionParameters.WFMediaAudioOnly, false)
-  assert.equal(encodeVideo.WFWorkflowActionParameters.WFMediaSize, 'Passthrough')
+  assert.equal(encodeVideo.WFWorkflowActionParameters.WFMediaSize, '1920x1080')
   assert.equal(encodeVideo.WFWorkflowActionParameters.WFMediaSpeed, 'Normal')
 
   const datePrompt = actions.find((entry) =>

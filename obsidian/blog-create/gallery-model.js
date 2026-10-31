@@ -26,7 +26,7 @@ function editableAlbumContent(album) {
     `mediaMetadata: ${json(media)}`,
     '---', '',
     '> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。',
-    '> 删除整篇笔记会下线整个相册；R2 原文件保留。恢复笔记并设 published: true 可重新上线。',
+    '> 删除整篇笔记会下线整个相册；R2 原文件不会立即删除。上传超过 30 天且无人引用的文件，会在发布核对成功后自动清理。',
     '> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。', '',
     ...media.flatMap((item, index) => [
       item.kind === 'video'

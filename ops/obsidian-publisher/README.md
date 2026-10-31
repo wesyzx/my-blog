@@ -53,7 +53,13 @@ Once claimed, a phone album uses only its editable top-level Vault note.
 Removing a media embed, unpublishing a note, emptying its media list, or deleting
 the note removes the corresponding public content at the next build; the R2
 manifest cannot restore it. Keep this record when deleting an album.
-R2 objects remain available for recovery and are not garbage-collected here.
+R2 objects are not deleted at the same time as the page. After a new site version
+is verified, the publisher scans every Markdown note under `Blog/` (including
+drafts), protects all still-referenced media and all unclaimed phone albums, then
+asks the Worker to remove only unreferenced objects uploaded more than 30 days
+ago. The request is dry-run first and requires an explicit deletion confirmation.
+The check runs at most once per day for the same published revision, so media
+that crosses the 30-day boundary later is still collected without a new commit.
 Video embeds retain media metadata and use the same pipeline as photos.
 Reader/publisher/site/plugin must be upgraded together for this control contract.
 
@@ -71,6 +77,23 @@ EdgeOne must use this repository's `main` branch and must not force
 delivery. The checked-in configuration selects Obsidian for posts and food, and
 hybrid Obsidian/R2 for gallery. Keep the server as the only automatic Obsidian Git
 writer; the iPhone uploader writes album records to R2, not this checkout.
+
+### R2 cleanup configuration
+
+The cleanup endpoint reuses the existing `GALLERY_UPLOAD_TOKEN`. Put the same
+token in a root-only environment file on the ECS:
+
+```sh
+install -d -m 700 /etc/obsidian-blog-publisher
+printf 'GALLERY_UPLOAD_TOKEN=%s\n' '实际令牌' \
+  > /etc/obsidian-blog-publisher/gallery.env
+chmod 600 /etc/obsidian-blog-publisher/gallery.env
+```
+
+The systemd unit loads this file if it exists. Without the token, publishing
+continues and cleanup reports `disabled`; it does not fail the publication.
+Cleanup failures are also non-destructive to the published site and are retried
+after one hour.
 
 ## Publication verification
 
@@ -99,6 +122,9 @@ failures without note titles, content, secrets or file paths.
 Held sections and a deployment unverified for over 15 minutes are deduplicated
 notices. Site verification detects missing content versions, not the provider's
 internal build job status. Existing LiveSync monitoring continues separately.
+R2 cleanup completion, failure, disabled configuration, and unsafe reference-scan
+pauses use the same Bark helper. A cleanup success notice is sent only when at
+least one file was deleted.
 
 Upgrade the publisher bundle and its Python helpers together. A gallery-control
 upgrade also requires explicitly rebuilding and validating the pinned reader;

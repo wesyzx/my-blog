@@ -4,7 +4,7 @@ import datetime
 import json
 from pathlib import Path
 import subprocess
-from failure_reasons import describe_issue, issue_key
+from failure_reasons import describe_issue, issue_key, safe_issue
 
 SOURCE = Path("/var/lib/obsidian-blog-publisher/status.json")
 STATE = Path("/var/lib/obsidian-blog-alerts/state.json")
@@ -35,21 +35,66 @@ def notification(current, previous):
 
 
 def additional_notice(current, previous):
+    if not current.get("healthy"):
+        return None, None, None
+
+    candidates = []
     held = sorted(current.get("held_sections", []))
-    key = {"held": held}
-    if current.get("site", {}).get("status") == "delayed":
-        key["delayed_revision"] = current.get("content_revision")
-    if key == previous.get("notice_key") or not current.get("healthy"):
-        return None, None, key
     if held:
-        return ("博客部分栏目保留旧版",
-                "源发布区有栏目变为空，已保留该栏目的旧公开副本及附件，其他栏目继续同步。请检查发布区；保护不会自动撤下最后一条内容。",
-                key)
-    if "delayed_revision" in key:
-        return ("博客页面更新待确认",
-                "GitHub 内容已提交超过 15 分钟，但仍未核实线上页面使用新版本。请检查网站构建；笔记与已提交内容均保留。",
-                key)
-    return None, None, key
+        candidates.append((
+            "博客部分栏目保留旧版",
+            "源发布区有栏目变为空，已保留该栏目的旧公开副本及附件，其他栏目继续同步。请检查发布区；保护不会自动撤下最后一条内容。",
+            {"held": held},
+        ))
+    if current.get("site", {}).get("status") == "delayed":
+        candidates.append((
+            "博客页面更新待确认",
+            "GitHub 内容已提交超过 15 分钟，但仍未核实线上页面使用新版本。请检查网站构建；笔记与已提交内容均保留。",
+            {"delayed_revision": current.get("content_revision")},
+        ))
+
+    cleanup = current.get("r2_cleanup") if isinstance(current.get("r2_cleanup"), dict) else {}
+    cleanup_revision = cleanup.get("revision")
+    if cleanup.get("status") == "completed" and cleanup.get("deleted", 0) > 0:
+        candidates.append((
+            "R2 图片清理完成",
+            (f"已删除 {cleanup['deleted']} 个超过 30 天且无引用的文件。"
+             f"\n保留 {cleanup.get('protectedCount', 0)} 个仍被引用、"
+             f"{cleanup.get('recentCount', 0)} 个未满 30 天的文件。"),
+            {"r2_cleanup": cleanup_revision, "deleted": cleanup["deleted"],
+             "attempted_at": cleanup.get("attempted_at")},
+        ))
+    elif cleanup.get("status") == "failed":
+        candidates.append((
+            "R2 图片清理失败",
+            "自动清理未完成，博客发布不受影响。"
+            f"\n原因：{describe_issue(cleanup.get('error'))}",
+            {"r2_cleanup_failed": cleanup_revision,
+             "code": safe_issue(cleanup.get("error"))["code"]},
+        ))
+    elif cleanup.get("status") == "skipped" and cleanup.get("reason") == "unsafe_reference_scan":
+        candidates.append((
+            "R2 图片清理已暂停",
+            "检测到同步冲突或无法完整读取的笔记，为避免误删已暂停清理。处理冲突后会自动重试。",
+            {"r2_cleanup_skipped": cleanup_revision},
+        ))
+    elif cleanup.get("status") == "disabled" and cleanup.get("reason") == "token_missing":
+        candidates.append((
+            "R2 自动清理未启用",
+            "服务器缺少 GALLERY_UPLOAD_TOKEN，已跳过 R2 清理；博客发布和其他功能不受影响。",
+            {"r2_cleanup_disabled": cleanup_revision},
+        ))
+
+    seen = set(previous.get("notice_keys", []))
+    old_key = previous.get("notice_key")
+    if isinstance(old_key, dict):
+        seen.add(json.dumps(old_key, sort_keys=True))
+    elif isinstance(old_key, str):
+        seen.add(old_key)
+    for title, body, key in candidates:
+        if json.dumps(key, sort_keys=True) not in seen:
+            return title, body, key
+    return None, None, None
 
 
 def main():
@@ -86,14 +131,17 @@ def main():
         if delivered:
             if is_additional:
                 previous["notice_key"] = notice_key
+                keys = previous.get("notice_keys", [])
+                encoded = json.dumps(notice_key, sort_keys=True)
+                if encoded not in keys:
+                    keys.append(encoded)
+                previous["notice_keys"] = keys[-50:]
             else:
                 notified = not healthy
                 previous["notified_key"] = list(issue_key(current)) if not healthy else None
             print("Bark accepted publisher status notification.")
         else:
             print("Bark delivery failed; retry on next run.")
-    elif notice_title is None and healthy:
-        previous["notice_key"] = notice_key
     previous.update({"failures": failures, "notified": notified,
                      "failure_key": list(issue_key(current)) if not healthy else None,
                      "checked_at": datetime.datetime.now(datetime.timezone.utc).isoformat()})

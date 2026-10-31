@@ -105,6 +105,7 @@ export default function GalleryVideo({
   const shellRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<VideoWithLegacyFullscreen>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const backdropCanvasRef = useRef<HTMLCanvasElement>(null)
   const cropRef = useRef<CropRect>(FULL_FRAME)
   const onAspectRatioRef = useRef(onAspectRatio)
   const lastProgressRef = useRef(0)
@@ -120,10 +121,48 @@ export default function GalleryVideo({
     onAspectRatioRef.current = onAspectRatio
   }, [onAspectRatio])
 
-  const reportCrop = useCallback((nextCrop: CropRect) => {
+  const reportNaturalRatio = useCallback(() => {
     const video = videoRef.current
     if (!video || video.videoWidth <= 0 || video.videoHeight <= 0) return
-    onAspectRatioRef.current((video.videoWidth / video.videoHeight) * nextCrop.width / nextCrop.height)
+    onAspectRatioRef.current(video.videoWidth / video.videoHeight)
+  }, [])
+
+  const drawBackdrop = useCallback(() => {
+    const video = videoRef.current
+    const canvas = backdropCanvasRef.current
+    if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
+    try {
+      const width = 96
+      const height = Math.max(96, Math.round(width * video.videoHeight / video.videoWidth))
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+      }
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      if (!context) return
+      const crop = cropRef.current
+      const sourceX = crop.left * video.videoWidth
+      const sourceY = crop.top * video.videoHeight
+      const sourceWidth = crop.width * video.videoWidth
+      const sourceHeight = crop.height * video.videoHeight
+      const scale = Math.max(width / sourceWidth, height / sourceHeight)
+      const drawWidth = sourceWidth * scale
+      const drawHeight = sourceHeight * scale
+      context.clearRect(0, 0, width, height)
+      context.drawImage(
+        video,
+        sourceX,
+        sourceY,
+        sourceWidth,
+        sourceHeight,
+        (width - drawWidth) / 2,
+        (height - drawHeight) / 2,
+        drawWidth,
+        drawHeight,
+      )
+    } catch {
+      // The normal cropped foreground remains usable if canvas sampling fails.
+    }
   }, [])
 
   const inspectFrame = useCallback(() => {
@@ -132,14 +171,15 @@ export default function GalleryVideo({
     if (!video || !canvas || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return
     try {
       const nextCrop = detectVisibleCrop(video, canvas) || FULL_FRAME
-      if (sameCrop(cropRef.current, nextCrop)) return
-      cropRef.current = nextCrop
-      setCrop(nextCrop)
-      reportCrop(nextCrop)
+      if (!sameCrop(cropRef.current, nextCrop)) {
+        cropRef.current = nextCrop
+        setCrop(nextCrop)
+      }
+      drawBackdrop()
     } catch {
       // A host without CORS keeps the normal fixed-frame player as a fallback.
     }
-  }, [reportCrop])
+  }, [drawBackdrop])
 
   useEffect(() => {
     const video = videoRef.current
@@ -147,7 +187,7 @@ export default function GalleryVideo({
     const syncLoadedVideo = () => {
       setDuration(Number.isFinite(video.duration) ? video.duration : media.duration || 0)
       setCurrentTime(video.currentTime)
-      if (video.videoWidth > 0 && video.videoHeight > 0) reportCrop(cropRef.current)
+      if (video.videoWidth > 0 && video.videoHeight > 0) reportNaturalRatio()
       if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) inspectFrame()
     }
 
@@ -161,7 +201,7 @@ export default function GalleryVideo({
       video.removeEventListener('loadeddata', syncLoadedVideo)
       video.removeEventListener('seeked', syncLoadedVideo)
     }
-  }, [inspectFrame, media.duration, reportCrop])
+  }, [inspectFrame, media.duration, reportNaturalRatio])
 
   useEffect(() => {
     const video = videoRef.current
@@ -170,16 +210,21 @@ export default function GalleryVideo({
     let frameCallback = 0
     let fallbackTimer = 0
     let lastInspection = 0
+    let lastBackdrop = 0
 
-    const inspectIfNeeded = (time: number) => {
+    const updateFrameIfNeeded = (time: number) => {
       if (!video.paused && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && time - lastInspection >= 700) {
         lastInspection = time
         inspectFrame()
       }
+      if (!video.paused && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && time - lastBackdrop >= 160) {
+        lastBackdrop = time
+        drawBackdrop()
+      }
     }
     const tick = (time: number) => {
       if (cancelled) return
-      inspectIfNeeded(time)
+      updateFrameIfNeeded(time)
       if (time - lastProgressRef.current >= 180) {
         lastProgressRef.current = time
         setCurrentTime(video.currentTime)
@@ -192,7 +237,7 @@ export default function GalleryVideo({
     } else {
       fallbackTimer = window.setInterval(() => {
         if (cancelled) return
-        inspectIfNeeded(performance.now())
+        updateFrameIfNeeded(performance.now())
         setCurrentTime(video.currentTime)
       }, 400)
     }
@@ -202,7 +247,7 @@ export default function GalleryVideo({
       if (frameCallback && video.cancelVideoFrameCallback) video.cancelVideoFrameCallback(frameCallback)
       if (fallbackTimer) window.clearInterval(fallbackTimer)
     }
-  }, [inspectFrame])
+  }, [drawBackdrop, inspectFrame])
 
   useEffect(() => {
     const onFullscreenChange = () => setFullscreen(document.fullscreenElement === shellRef.current)
@@ -217,7 +262,7 @@ export default function GalleryVideo({
     setDuration(Number.isFinite(video.duration) ? video.duration : media.duration || 0)
     setCurrentTime(video.currentTime)
     if (video.videoWidth <= 0 || video.videoHeight <= 0) return
-    reportCrop(cropRef.current)
+    reportNaturalRatio()
   }
 
   const togglePlayback = async () => {
@@ -264,16 +309,19 @@ export default function GalleryVideo({
     }
   }
 
+  const scale = 100 / Math.max(crop.width, crop.height)
   const videoStyle = {
-    left: `${-100 * crop.left / crop.width}%`,
-    top: `${-100 * crop.top / crop.height}%`,
-    width: `${100 / crop.width}%`,
-    height: `${100 / crop.height}%`,
+    left: `${50 - (crop.left + crop.width / 2) * scale}%`,
+    top: `${50 - (crop.top + crop.height / 2) * scale}%`,
+    width: `${scale}%`,
+    height: `${scale}%`,
+    clipPath: `inset(${crop.top * 100}% ${(1 - crop.left - crop.width) * 100}% ${(1 - crop.top - crop.height) * 100}% ${crop.left * 100}%)`,
   } as CSSProperties
   const progress = duration > 0 ? Math.min(currentTime, duration) : 0
 
   return (
     <div ref={shellRef} className="gallery-video-player">
+      <canvas ref={backdropCanvasRef} className="gallery-video-backdrop" aria-hidden="true" />
       <video
         ref={videoRef}
         className="gallery-video-media"

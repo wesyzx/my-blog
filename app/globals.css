@@ -636,8 +636,12 @@ button { font: inherit; }
 .gallery-mosaic-photo img { object-fit: cover; transition: transform .35s ease; }
 .gallery-mosaic-video.gallery-mosaic-portrait-video { max-width: min(100%, 560px); margin-inline: auto; }
 .gallery-video-player { position: absolute; inset: 0; overflow: hidden; overflow: clip; background: #111; color: #fff; isolation: isolate; }
+.gallery-video-backdrop {
+  position: absolute; inset: -5%; z-index: 0; width: 110%; height: 110%;
+  opacity: .82; filter: blur(22px) saturate(.72); pointer-events: none;
+}
 .gallery-video-media {
-  position: absolute; display: block; max-width: none; max-height: none; object-fit: fill;
+  position: absolute; z-index: 1; display: block; max-width: none; max-height: none; object-fit: fill;
   background: #111; cursor: pointer;
 }
 .gallery-video-sample { display: none; }
@@ -666,7 +670,7 @@ button { font: inherit; }
 .gallery-video-player:fullscreen { width: 100vw; height: 100vh; background: #000; }
 .gallery-video-player:fullscreen .gallery-video-media {
   left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important;
-  object-fit: contain; transition: none;
+  object-fit: contain; clip-path: none !important;
 }
 .gallery-video-player:fullscreen .gallery-video-controls {
   left: min(8vw, 84px); right: min(8vw, 84px); bottom: 24px; padding: 42px 16px 12px; border-radius: 10px;

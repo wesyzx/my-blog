@@ -22,7 +22,7 @@ REASONS = {
     "git_merge": "无法快进更新 GitHub main 分支，需要人工检查仓库状态。",
     "publish_locked": "已有发布任务持有锁，本轮未能开始。请检查是否有任务长时间未退出。",
     "r2_cleanup_auth": "R2 清理接口拒绝了服务器凭据。请检查 ECS 与 Cloudflare Worker 的 GALLERY_UPLOAD_TOKEN 是否一致。",
-    "r2_cleanup_config": "R2 清理宽限期配置无效；系统要求至少 30 天。",
+    "r2_cleanup_config": "R2 清理宽限期配置无效；系统要求至少 15 天。",
     "r2_cleanup_network": "连接 Cloudflare R2 清理接口失败，可能是网络或域名解析问题。",
     "r2_cleanup_response": "R2 清理接口返回了无法识别的结果，请检查 Worker 日志。",
     "title_missing": "已发布文章缺少 title 标题属性。",

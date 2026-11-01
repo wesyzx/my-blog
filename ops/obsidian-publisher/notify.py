@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 from failure_reasons import describe_issue, issue_key, safe_issue
+from cleanup_r2 import MIN_GRACE_DAYS
 
 SOURCE = Path("/var/lib/obsidian-blog-publisher/status.json")
 STATE = Path("/var/lib/obsidian-blog-alerts/state.json")
@@ -55,12 +56,13 @@ def additional_notice(current, previous):
 
     cleanup = current.get("r2_cleanup") if isinstance(current.get("r2_cleanup"), dict) else {}
     cleanup_revision = cleanup.get("revision")
+    grace_days = cleanup.get("graceDays", MIN_GRACE_DAYS)
     if cleanup.get("status") == "completed" and cleanup.get("deleted", 0) > 0:
         candidates.append((
             "R2 图片清理完成",
-            (f"已删除 {cleanup['deleted']} 个超过 30 天且无引用的文件。"
+            (f"已删除 {cleanup['deleted']} 个超过 {grace_days} 天且无引用的文件。"
              f"\n保留 {cleanup.get('protectedCount', 0)} 个仍被引用、"
-             f"{cleanup.get('recentCount', 0)} 个未满 30 天的文件。"),
+             f"{cleanup.get('recentCount', 0)} 个未满 {grace_days} 天的文件。"),
             {"r2_cleanup": cleanup_revision, "deleted": cleanup["deleted"],
              "attempted_at": cleanup.get("attempted_at")},
         ))

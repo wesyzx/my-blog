@@ -163,7 +163,7 @@ Wrangler profile or the Cloudflare dashboard.
 `POST /internal/gallery/r2-cleanup` uses the same bearer token as gallery ingest.
 It scans `blog/obsidian/`, protects the supplied `protectedSources`, and protects
 media belonging to albums whose IDs are not in `managedAlbumIds`. Only
-unreferenced objects uploaded at least 30 days ago are eligible.
+unreferenced objects uploaded more than 15 days ago are eligible.
 
 Requests default to `dryRun: true`. A real deletion must set
 `dryRun: false` and `confirm: "delete-unreferenced-r2"`. The ECS publisher calls

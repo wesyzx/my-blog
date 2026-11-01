@@ -7,14 +7,14 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-from cleanup_r2 import CleanupFailure, cleanup_r2
+from cleanup_r2 import MIN_GRACE_DAYS, CleanupFailure, cleanup_r2
 from failure_reasons import safe_issue
 from verify_site import check_site
 
 ROOT = Path(os.environ.get("PUBLISHER_STATE_DIR", "/var/lib/obsidian-blog-publisher"))
 BIN = Path("/opt/obsidian-blog-publisher")
 STATE = ROOT / "status.json"
-R2_CLEANUP_GRACE_DAYS = 30
+R2_CLEANUP_GRACE_DAYS = MIN_GRACE_DAYS
 R2_CLEANUP_INTERVAL_SECONDS = 24 * 3600
 R2_CLEANUP_RETRY_SECONDS = 3600
 
@@ -72,7 +72,8 @@ def maybe_cleanup_r2(state, manifest, environment):
     revision = state.get("content_revision")
     if state.get("site", {}).get("status") != "verified":
         return {"status": "waiting", "revision": revision}
-    if previous.get("revision") == revision and previous.get("status") == "completed":
+    if (previous.get("revision") == revision and previous.get("status") == "completed"
+            and previous.get("graceDays") == R2_CLEANUP_GRACE_DAYS):
         completed_at = previous.get("attempted_at")
         if completed_at and time.time() - completed_at < R2_CLEANUP_INTERVAL_SECONDS:
             return previous

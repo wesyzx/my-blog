@@ -6,7 +6,7 @@ import urllib.request
 
 
 DEFAULT_URL = "https://img.215320.xyz/internal/gallery/r2-cleanup"
-MIN_GRACE_DAYS = 30
+MIN_GRACE_DAYS = 15
 
 
 class CleanupFailure(RuntimeError):

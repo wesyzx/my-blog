@@ -56,10 +56,10 @@ manifest cannot restore it. Keep this record when deleting an album.
 R2 objects are not deleted at the same time as the page. After a new site version
 is verified, the publisher scans every Markdown note under `Blog/` (including
 drafts), protects all still-referenced media and all unclaimed phone albums, then
-asks the Worker to remove only unreferenced objects uploaded more than 30 days
+asks the Worker to remove only unreferenced objects uploaded more than 15 days
 ago. The request is dry-run first and requires an explicit deletion confirmation.
 The check runs at most once per day for the same published revision, so media
-that crosses the 30-day boundary later is still collected without a new commit.
+that crosses the 15-day boundary later is still collected without a new commit.
 Video embeds retain media metadata and use the same pipeline as photos.
 Reader/publisher/site/plugin must be upgraded together for this control contract.
 

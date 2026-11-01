@@ -509,8 +509,8 @@ function galleryRequest(path, {
 }
 
 function cleanupEnvironment() {
-  const old = new Date(Date.now() - 40 * 86_400_000)
-  const recent = new Date(Date.now() - 5 * 86_400_000)
+  const old = new Date(Date.now() - 20 * 86_400_000)
+  const recent = new Date(Date.now() - 14 * 86_400_000)
   const managedId = '11111111-1111-4111-8111-111111111111'
   const unmanagedId = '22222222-2222-4222-8222-222222222222'
   const objects = new Map([
@@ -578,7 +578,7 @@ test('R2 cleanup previews and deletes only old unreferenced media', async () => 
   const cleanup = cleanupEnvironment()
   const unauthorized = await worker.fetch(cleanupRequest({}, 'wrong'), cleanup.env)
   assert.equal(unauthorized.status, 401)
-  const shortGrace = await worker.fetch(cleanupRequest({ graceDays: 29 }), cleanup.env)
+  const shortGrace = await worker.fetch(cleanupRequest({ graceDays: 14 }), cleanup.env)
   assert.equal(shortGrace.status, 400)
 
   const protectedSources = [
@@ -587,13 +587,12 @@ test('R2 cleanup previews and deletes only old unreferenced media', async () => 
   const previewResponse = await worker.fetch(cleanupRequest({
     protectedSources,
     managedAlbumIds: [cleanup.managedId],
-    graceDays: 30,
     dryRun: true,
   }), cleanup.env)
   assert.equal(previewResponse.status, 200)
   const preview = await previewResponse.json()
   assert.equal(preview.dryRun, true)
-  assert.equal(preview.graceDays, 30)
+  assert.equal(preview.graceDays, 15)
   assert.equal(preview.candidateCount, 2)
   assert.deepEqual(preview.candidates.map((item) => item.key).sort(), [
     'blog/obsidian/2026/10/managed.jpg',
@@ -604,7 +603,7 @@ test('R2 cleanup previews and deletes only old unreferenced media', async () => 
   const missingConfirmation = await worker.fetch(cleanupRequest({
     protectedSources,
     managedAlbumIds: [cleanup.managedId],
-    graceDays: 30,
+    graceDays: 15,
     dryRun: false,
   }), cleanup.env)
   assert.equal(missingConfirmation.status, 400)
@@ -612,7 +611,7 @@ test('R2 cleanup previews and deletes only old unreferenced media', async () => 
   const deleteResponse = await worker.fetch(cleanupRequest({
     protectedSources,
     managedAlbumIds: [cleanup.managedId],
-    graceDays: 30,
+    graceDays: 15,
     dryRun: false,
     confirm: 'delete-unreferenced-r2',
   }), cleanup.env)
@@ -627,6 +626,25 @@ test('R2 cleanup previews and deletes only old unreferenced media', async () => 
   assert.equal(cleanup.objects.has('blog/obsidian/2026/10/album.jpg'), true)
 })
 
+test('R2 cleanup retains files exactly 15 days old and expires only older files', async (t) => {
+  const now = Date.now()
+  t.mock.method(Date, 'now', () => now)
+  const cleanup = cleanupEnvironment()
+  const boundaryKey = 'blog/obsidian/2026/10/boundary.jpg'
+  const expiredKey = 'blog/obsidian/2026/10/expired.jpg'
+  const cutoff = now - 15 * 86_400_000
+  cleanup.objects.set(boundaryKey, { body: ORIGINAL, uploaded: new Date(cutoff), size: 4 })
+  cleanup.objects.set(expiredKey, { body: ORIGINAL, uploaded: new Date(cutoff - 1), size: 4 })
+
+  const response = await worker.fetch(cleanupRequest({ dryRun: true }), cleanup.env)
+  assert.equal(response.status, 200)
+  const preview = await response.json()
+  assert.equal(preview.graceDays, 15)
+  assert.equal(preview.candidates.some(({ key }) => key === boundaryKey), false)
+  assert.equal(preview.candidates.some(({ key }) => key === expiredKey), true)
+  assert.equal(cleanup.deleted.length, 0)
+})
+
 test('R2 cleanup stops when unclaimed album metadata cannot be verified', async () => {
   const cleanup = cleanupEnvironment()
   const brokenId = '33333333-3333-4333-8333-333333333333'
@@ -634,7 +652,7 @@ test('R2 cleanup stops when unclaimed album metadata cannot be verified', async 
   const response = await worker.fetch(cleanupRequest({
     protectedSources: [],
     managedAlbumIds: [cleanup.managedId],
-    graceDays: 30,
+    graceDays: 15,
     dryRun: false,
     confirm: 'delete-unreferenced-r2',
   }), cleanup.env)

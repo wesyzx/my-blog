@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
 
-test('R2 cleanup performs a 30-day dry run before confirmed deletion', () => {
+test('R2 cleanup performs a 15-day dry run before confirmed deletion', () => {
   const folder = fileURLToPath(new URL('../ops/obsidian-publisher/', import.meta.url))
   const result = execFileSync('python3', ['-c', `
 import importlib.util, json, sys
@@ -35,7 +35,7 @@ result = cleanup_r2(["https://img.guanyan.me/webp/blog/obsidian/a.webp"], ["id"]
 assert result["status"] == "completed" and result["deleted"] == 2
 assert [call["dryRun"] for call in calls] == [True, False]
 assert calls[1]["confirm"] == "delete-unreferenced-r2"
-assert calls[0]["graceDays"] == 30
+assert calls[0]["graceDays"] == 15
 
 empty_calls = []
 def empty_transport(request, timeout):
@@ -44,7 +44,7 @@ def empty_transport(request, timeout):
 empty = cleanup_r2([], [], "token", transport=empty_transport)
 assert empty["deleted"] == 0 and len(empty_calls) == 1
 try:
-    cleanup_r2([], [], "token", grace_days=29, transport=empty_transport)
+    cleanup_r2([], [], "token", grace_days=14, transport=empty_transport)
     raise AssertionError("short grace accepted")
 except CleanupFailure as error:
     assert error.issue["code"] == "r2_cleanup_config"
@@ -66,7 +66,7 @@ state = {"content_revision": "rev", "published": "fp", "site": {"status": "verif
                               "managedAlbumIds": ["id"], "safe": True}}
 result = run_cycle.maybe_cleanup_r2(state, manifest, {"GALLERY_UPLOAD_TOKEN": "token"})
 assert result["status"] == "completed" and result["deleted"] == 1
-assert called == [(["source"], ["id"], "token", 30)]
+assert called == [(["source"], ["id"], "token", 15)]
 
 recent = dict(result, attempted_at=__import__("time").time())
 assert run_cycle.maybe_cleanup_r2(
@@ -79,6 +79,12 @@ run_cycle.maybe_cleanup_r2(
      "r2_cleanup": dict(recent, attempted_at=0)}, manifest,
     {"GALLERY_UPLOAD_TOKEN": "token"})
 assert len(called) == 2
+
+run_cycle.maybe_cleanup_r2(
+    {"content_revision": "rev", "published": "fp", "site": {"status": "verified"},
+     "r2_cleanup": dict(recent, graceDays=30)}, manifest,
+    {"GALLERY_UPLOAD_TOKEN": "token"})
+assert len(called) == 3
 
 # A cleanup retry must wait for a newer draft to publish and verify; otherwise
 # it could delete media still used by the live revision.

@@ -30,7 +30,7 @@ const GALLERY_ADMIN_ROUTE = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})$/
 const GALLERY_ADMIN_PATH = '/internal/gallery/admin'
 const GALLERY_MANIFEST_PATH = '/webp/gallery-manifest'
 const GALLERY_R2_CLEANUP_PATH = '/internal/gallery/r2-cleanup'
-const R2_CLEANUP_MIN_GRACE_DAYS = 30
+const R2_CLEANUP_MIN_GRACE_DAYS = 15
 const PRESETS = {
   fit: { ratio: null },
   full: { ratio: null },

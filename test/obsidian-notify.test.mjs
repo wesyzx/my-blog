@@ -26,8 +26,11 @@ cleanup = {"healthy": True, "r2_cleanup": {
     "protectedCount": 5, "recentCount": 1}}
 title, body, key = additional_notice(cleanup, {})
 assert title == "R2 图片清理完成"
-assert "删除 2 个" in body and "30 天" in body
+assert "删除 2 个" in body and "15 天" in body
 assert additional_notice(cleanup, {"notice_key": key})[0] is None
+cleanup["r2_cleanup"]["graceDays"] = 30
+assert "30 天" in additional_notice(cleanup, {})[1]
+
 failed = {"healthy": True, "r2_cleanup": {
     "status": "failed", "revision": "rev-1", "error": {"code": "r2_cleanup_network"}}}
 title, body, key = additional_notice(failed, {})

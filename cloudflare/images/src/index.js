@@ -1,5 +1,6 @@
 import { albumRevision } from '../../../lib/publication-revision.mjs'
 import { r2ObjectStem } from '../../../lib/r2-media.mjs'
+import { handleDirectVideoUpload } from './gallery-video-direct.js'
 
 const IMAGE_EXTENSION = /\.(?:gif|heic|heif|jpe?g|png|svg|webp)$/i
 const VIDEO_EXTENSION = /\.(?:m4v|mov|mp4|webm)$/i
@@ -1436,6 +1437,14 @@ const worker = {
         return request.method === 'GET'
           ? await listGalleryAlbumsForAdmin(request, env)
           : await createGalleryAlbum(request, env)
+      }
+
+      const directVideoRoute = /^\/internal\/gallery\/albums\/([a-f0-9-]{36})\/video-uploads(?:\/([a-f0-9-]{36})\/complete)?$/.exec(url.pathname)
+      if (directVideoRoute) {
+        if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
+        return await handleDirectVideoUpload(request, env, directVideoRoute[1], directVideoRoute[2], {
+          readAlbum, writeAlbum, publicGalleryMedia, videoTrackDimensions,
+        })
       }
 
       const galleryRoute = GALLERY_ALBUM_ROUTE.exec(url.pathname)

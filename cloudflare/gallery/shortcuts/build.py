@@ -234,8 +234,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(album_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=1)
-    action('showresult', Text=text('相册创建失败。服务端原始响应：'))
-    action('showresult', Text=content_input(output(create_id, 'Contents of URL')))
+    action('showresult', Text=composed_text('相册创建失败。服务端原始响应：\n', output(create_id, 'Contents of URL')))
     action('exit')
     action('conditional', GroupingIdentifier=create_guard_group, WFControlFlowMode=2)
 
@@ -251,7 +250,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             '逐个转换并上传刚选择并确认的视频；单个失败时整个快捷指令停止。\n'
             '- “重复”读取“选择照片”的结果。\n'
             '- “编码媒体”读取“重复项目”，输出 H.264 视频文件。\n'
-            '- “获取 URL 内容”以“编码后的媒体”作为文件正文。'
+            '- 视频凭临时上传地址直传 R2，再校验登记；不经过代理的大文件入口。'
         )))
     group = uid()
     action(
@@ -277,27 +276,56 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
             WFMediaSize='1920x1080',
             WFMediaSpeed='Normal',
         )
-    upload_headers = dictionary([
-        ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
-        ('Content-Type', text(config['content_type']), 0),
-    ])
-    # File is a native variable picker, not a text field. A token string or
-    # a bare ActionOutput imports as "Choose Variable" and sends an empty body.
-    # Match the WFTextTokenAttachment emitted by Shortcuts' own editor.
+    # A native File token preserves the encoded bytes; text coercion sends an empty body.
     upload_body = attachment(output(converted_id, config['converted_output_name']))
-    upload_id = action(
-        'downloadurl',
-        WFURL=composed_text(
-            ALBUM_ENDPOINT + '/',
-            output(album_id, 'Dictionary Value'),
-            '/' + config['upload_path'],
-        ),
-        WFHTTPMethod='POST',
-        WFHTTPBodyType='File',
-        WFRequestVariable=upload_body,
-        WFFormValues=empty_dictionary(),
-        WFHTTPHeaders=upload_headers,
-    )
+    raw_upload_id = None
+    if media == 'video':
+        prepare_id = action(
+            'downloadurl',
+            WFURL=composed_text(ALBUM_ENDPOINT + '/', output(album_id, 'Dictionary Value'), '/video-uploads'),
+            WFHTTPMethod='POST', WFHTTPBodyType='JSON',
+            WFJSONValues=dictionary([('contentType', text(config['content_type']), 0)]),
+            WFHTTPHeaders=create_headers,
+        )
+        prepare_dictionary_id = action('detect.dictionary', WFInput=attachment(output(prepare_id, 'Contents of URL')))
+        upload_url_id = action(
+            'getvalueforkey', WFGetDictionaryValueType='Value', WFDictionaryKey=text('uploadUrl'),
+            WFInput=attachment(output(prepare_dictionary_id, 'Dictionary')),
+        )
+        complete_url_id = action(
+            'getvalueforkey', WFGetDictionaryValueType='Value', WFDictionaryKey=text('completeUrl'),
+            WFInput=attachment(output(prepare_dictionary_id, 'Dictionary')),
+        )
+        prepare_guard = uid()
+        action('conditional', GroupingIdentifier=prepare_guard, WFControlFlowMode=0,
+               WFCondition=100, WFInput=variable_input(output(upload_url_id, 'Dictionary Value')))
+        action('conditional', GroupingIdentifier=prepare_guard, WFControlFlowMode=1)
+        action('showresult', Text=composed_text('准备视频上传失败：\n', output(prepare_id, 'Contents of URL')))
+        action('exit')
+        action('conditional', GroupingIdentifier=prepare_guard, WFControlFlowMode=2)
+        # The signed URL authorizes exactly one object. Never send the album token to R2.
+        raw_upload_id = action(
+            'downloadurl', WFURL=content_input(output(upload_url_id, 'Dictionary Value')),
+            WFHTTPMethod='PUT', WFHTTPBodyType='File', WFRequestVariable=upload_body,
+            WFFormValues=empty_dictionary(),
+            WFHTTPHeaders=dictionary([('Content-Type', text(config['content_type']), 0)]),
+        )
+        upload_id = action(
+            'downloadurl', WFURL=content_input(output(complete_url_id, 'Dictionary Value')),
+            WFHTTPMethod='POST', WFHTTPBodyType='JSON', WFJSONValues=empty_dictionary(),
+            WFHTTPHeaders=create_headers,
+        )
+    else:
+        upload_id = action(
+            'downloadurl',
+            WFURL=composed_text(ALBUM_ENDPOINT + '/', output(album_id, 'Dictionary Value'), '/photos'),
+            WFHTTPMethod='POST', WFHTTPBodyType='File', WFRequestVariable=upload_body,
+            WFFormValues=empty_dictionary(),
+            WFHTTPHeaders=dictionary([
+                ('Authorization', text('Bearer ', output(token_id, 'Upload Token')), 0),
+                ('Content-Type', text(config['content_type']), 0),
+            ]),
+        )
     upload_dictionary_id = action(
         'detect.dictionary',
         WFInput=attachment(output(upload_id, 'Contents of URL')),
@@ -321,8 +349,10 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(upload_ok_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=1)
-    action('showresult', Text=text(f'{noun}上传失败。服务端原始响应：'))
-    action('showresult', Text=content_input(output(upload_id, 'Contents of URL')))
+    failure_parts = [f'{noun}上传失败。服务端响应：\n', output(upload_id, 'Contents of URL')]
+    if raw_upload_id:
+        failure_parts.extend(['\nR2 上传响应（成功时可能为空）：\n', output(raw_upload_id, 'Contents of URL')])
+    action('showresult', Text=composed_text(*failure_parts))
     action('exit')
     action('conditional', GroupingIdentifier=upload_guard_group, WFControlFlowMode=2)
     action('repeat.each', GroupingIdentifier=group, WFControlFlowMode=2)
@@ -368,8 +398,7 @@ def build(personal_token=None, workflow_name='相册同步到博客', media='pho
         WFInput=variable_input(output(gallery_url_id, 'Dictionary Value')),
     )
     action('conditional', GroupingIdentifier=publish_guard_group, WFControlFlowMode=1)
-    action('showresult', Text=text('相册发布失败。服务端原始响应：'))
-    action('showresult', Text=content_input(output(publish_id, 'Contents of URL')))
+    action('showresult', Text=composed_text('相册发布失败。服务端原始响应：\n', output(publish_id, 'Contents of URL')))
     action('exit')
     action('conditional', GroupingIdentifier=publish_guard_group, WFControlFlowMode=2)
     action('openurl', WFInput=attachment(output(gallery_url_id, 'Dictionary Value')))

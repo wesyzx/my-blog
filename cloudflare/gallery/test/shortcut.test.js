@@ -134,7 +134,7 @@ test('the public gallery shortcut selects photos, converts to JPEG and publishes
   assert.equal(ids.includes('is.workflow.actions.previewdocument'), false)
   assert.ok(ids.includes('is.workflow.actions.openurl'))
   assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.exit').length, 4)
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 7)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 4)
   for (const result of actions.filter((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.showresult')) {
     // Show Result's native parameter is Text; WFInput imports as an empty,
     // interactive parameter prompt and hides the actual failure response.
@@ -257,29 +257,37 @@ test('the public video shortcut selects videos, transcodes them to H.264 and pub
   assert.ok(actions.indexOf(datePrompt) > actions.indexOf(selectVideos))
 
   const requests = actions.filter((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.downloadurl')
-  assert.equal(requests.length, 3)
+  assert.equal(requests.length, 5)
   assert.equal(requests[0].WFWorkflowActionParameters.WFURL, 'https://img.215320.xyz/internal/gallery/albums')
   const albumId = actions.find((entry) =>
     entry.WFWorkflowActionIdentifier === 'is.workflow.actions.getvalueforkey'
     && entry.WFWorkflowActionParameters.WFDictionaryKey.Value.string === 'albumId')
-  const upload = requests[1].WFWorkflowActionParameters
-  assert.match(upload.WFURL.Value.string, /^https:\/\/img\.215320\.xyz\/internal\/gallery\/albums\/.*\/videos$/)
-  assert.equal(upload.WFHTTPBodyType, 'File')
-  assert.equal(upload.WFRequestVariable.WFSerializationType, 'WFTextTokenAttachment')
-  assert.deepEqual(
-    upload.WFRequestVariable.Value,
-    {
-      Type: 'ActionOutput',
-      OutputUUID: encodeVideo.WFWorkflowActionParameters.UUID,
-      OutputName: 'Encoded Media',
-    },
-  )
-  const uploadHeaders = upload.WFHTTPHeaders.Value.WFDictionaryFieldValueItems
+  const prepare = requests[1].WFWorkflowActionParameters
+  assert.match(prepare.WFURL.Value.string, /\/video-uploads$/)
+  assert.equal(prepare.WFHTTPMethod, 'POST')
+  assert.equal(prepare.WFHTTPBodyType, 'JSON')
+  const uploadUrl = actions.find((entry) =>
+    entry.WFWorkflowActionIdentifier === 'is.workflow.actions.getvalueforkey'
+    && entry.WFWorkflowActionParameters.WFDictionaryKey.Value.string === 'uploadUrl')
+  const completeUrl = actions.find((entry) =>
+    entry.WFWorkflowActionIdentifier === 'is.workflow.actions.getvalueforkey'
+    && entry.WFWorkflowActionParameters.WFDictionaryKey.Value.string === 'completeUrl')
+  const directPut = requests[2].WFWorkflowActionParameters
+  assert.equal(directPut.WFURL.Value.attachmentsByRange['{0, 1}'].OutputUUID, uploadUrl.WFWorkflowActionParameters.UUID)
+  assert.equal(directPut.WFHTTPMethod, 'PUT')
+  assert.equal(directPut.WFHTTPBodyType, 'File')
+  assert.deepEqual(directPut.WFRequestVariable, {
+    WFSerializationType: 'WFTextTokenAttachment',
+    Value: { Type: 'ActionOutput', OutputUUID: encodeVideo.WFWorkflowActionParameters.UUID, OutputName: 'Encoded Media' },
+  })
+  const uploadHeaders = directPut.WFHTTPHeaders.Value.WFDictionaryFieldValueItems
     .map((item) => [item.WFKey.Value.string, item.WFValue.Value.string])
-  assert.deepEqual(uploadHeaders, [
-    ['Authorization', 'Bearer \ufffc'],
-    ['Content-Type', 'video/quicktime'],
-  ])
+  assert.deepEqual(uploadHeaders, [['Content-Type', 'video/quicktime']])
+  const upload = requests[3].WFWorkflowActionParameters
+  assert.equal(upload.WFURL.Value.attachmentsByRange['{0, 1}'].OutputUUID, completeUrl.WFWorkflowActionParameters.UUID)
+  assert.equal(upload.WFHTTPMethod, 'POST')
+  assert.equal(upload.WFHTTPBodyType, 'JSON')
+  assert.ok(upload.WFHTTPHeaders.Value.WFDictionaryFieldValueItems.some((item) => item.WFKey.Value.string === 'Authorization'))
   const uploadDictionary = actions.find((entry) =>
     entry.WFWorkflowActionIdentifier === 'is.workflow.actions.detect.dictionary'
     && entry.WFWorkflowActionParameters.WFInput.Value.OutputUUID === upload.UUID)
@@ -287,12 +295,14 @@ test('the public video shortcut selects videos, transcodes them to H.264 and pub
     entry.WFWorkflowActionIdentifier === 'is.workflow.actions.getvalueforkey'
     && entry.WFWorkflowActionParameters.WFDictionaryKey.Value.string === 'ok')
   assert.deepEqual(uploadOk.WFWorkflowActionParameters.WFInput.Value, {
-    Type: 'ActionOutput',
-    OutputUUID: uploadDictionary.WFWorkflowActionParameters.UUID,
-    OutputName: 'Dictionary',
+    Type: 'ActionOutput', OutputUUID: uploadDictionary.WFWorkflowActionParameters.UUID, OutputName: 'Dictionary',
   })
+  const uploadError = actions.find((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.showresult'
+    && entry.WFWorkflowActionParameters.Text.Value.string.startsWith('视频上传失败'))
+  const errorReferences = Object.values(uploadError.WFWorkflowActionParameters.Text.Value.attachmentsByRange)
+  assert.deepEqual(errorReferences.map((ref) => ref.OutputUUID), [upload.UUID, directPut.UUID])
 
-  const publish = requests[2].WFWorkflowActionParameters
+  const publish = requests[4].WFWorkflowActionParameters
   assert.match(publish.WFURL.Value.string, /\/publish$/)
   assert.equal(publish.WFHTTPMethod, 'POST')
   assert.equal(publish.WFHTTPBodyType, 'JSON')
@@ -308,8 +318,8 @@ test('the public video shortcut selects videos, transcodes them to H.264 and pub
     && entry.WFWorkflowActionParameters.WFDictionaryKey.Value.string === 'url')
   assert.equal(ids.includes('is.workflow.actions.previewdocument'), false)
   assert.ok(ids.includes('is.workflow.actions.openurl'))
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.exit').length, 4)
-  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 7)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.exit').length, 5)
+  assert.equal(ids.filter((identifier) => identifier === 'is.workflow.actions.showresult').length, 5)
   for (const result of actions.filter((entry) => entry.WFWorkflowActionIdentifier === 'is.workflow.actions.showresult')) {
     assert.equal(result.WFWorkflowActionParameters.Text.WFSerializationType, 'WFTextTokenString')
     assert.equal('WFInput' in result.WFWorkflowActionParameters, false)
@@ -320,14 +330,14 @@ test('the public video shortcut selects videos, transcodes them to H.264 and pub
     && entry.WFWorkflowActionParameters.WFControlFlowMode === 0)
   assert.deepEqual(
     conditionalStarts.map((entry) => entry.WFWorkflowActionParameters.WFCondition),
-    [2, 100, 100, 100],
+    [2, 100, 100, 100, 100],
   )
   assert.equal(
     conditionalStarts[0].WFWorkflowActionParameters.WFNumberValue,
     '0',
   )
-  const guardSources = [selectedCount, albumId, uploadOk, galleryUrl]
-  const guardOutputNames = ['Count', 'Dictionary Value', 'Dictionary Value', 'Dictionary Value']
+  const guardSources = [selectedCount, albumId, uploadUrl, uploadOk, galleryUrl]
+  const guardOutputNames = ['Count', 'Dictionary Value', 'Dictionary Value', 'Dictionary Value', 'Dictionary Value']
   conditionalStarts.forEach((guard, index) => {
     assert.deepEqual(guard.WFWorkflowActionParameters.WFInput, {
       Type: 'Variable',

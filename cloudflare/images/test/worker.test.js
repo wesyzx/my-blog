@@ -1172,3 +1172,122 @@ test('migrated photo aliases serve the original bytes and archive metadata remai
   assert.equal((await worker.fetch(imageRequest('/cdn/.watermelon/months/2026-09.sqlite'), env)).status, 404)
   assert.equal((await worker.fetch(imageRequest('/internal/gallery/albums/private.json'), env)).status, 404)
 })
+
+function directVideoEnvironment(t) {
+  const gallery = galleryEnvironment()
+  t.after(() => gallery.restoreFetch())
+  Object.assign(gallery.env, {
+    R2_ACCOUNT_ID: 'test-account', R2_ACCESS_KEY_ID: 'test-key',
+    R2_SECRET_ACCESS_KEY: 'test-secret',
+  })
+  return gallery
+}
+
+async function prepareDirectVideo(gallery) {
+  const created = await worker.fetch(galleryRequest('/internal/gallery/albums', {
+    body: JSON.stringify({ title: 'Direct video', date: '2026-11-05' }),
+  }), gallery.env)
+  const { albumId } = await created.json()
+  const path = `/internal/gallery/albums/${albumId}/video-uploads`
+  const prepared = await worker.fetch(galleryRequest(path, {
+    body: JSON.stringify({ contentType: 'video/quicktime' }),
+  }), gallery.env)
+  assert.equal(prepared.status, 200)
+  const upload = await prepared.json()
+  return { albumId, path, ...upload }
+}
+
+test('direct upload issues a bounded PUT URL and registers only a verified R2 object', async (t) => {
+  const gallery = directVideoEnvironment(t)
+  const upload = await prepareDirectVideo(gallery)
+  const signed = new URL(upload.uploadUrl)
+  assert.equal(signed.hostname, 'test-account.r2.cloudflarestorage.com')
+  assert.equal(signed.searchParams.get('X-Amz-Expires'), '3600')
+  assert.equal(signed.searchParams.get('X-Amz-SignedHeaders'), 'content-type;host')
+  assert.equal(upload.uploadUrl.includes('test-secret'), false)
+  assert.equal(upload.maxBytes, 5 * 1024 ** 3)
+  const sessionKey = `internal/gallery/video-uploads/${upload.uploadId}.json`
+  const session = JSON.parse(gallery.objects.get(sessionKey).body)
+  assert.equal(signed.pathname, `/blog-images/${session.key}`)
+  assert.match(session.key, /^blog\/obsidian\/2026\/11\/2026-11-05-/)
+  const complete = () => worker.fetch(galleryRequest(new URL(upload.completeUrl).pathname), gallery.env)
+  assert.equal((await complete()).status, 409)
+  const albumKey = `internal/gallery/albums/${upload.albumId}.json`
+  assert.equal(JSON.parse(gallery.objects.get(albumKey).body).images.length, 0)
+  await gallery.env.IMAGES_BUCKET.put(session.key, portraitMov(1080, 1920), {
+    httpMetadata: { contentType: session.contentType },
+  })
+  const completed = await complete()
+  assert.equal(completed.status, 200)
+  const result = await completed.json()
+  assert.equal(result.video.width, 1080)
+  assert.equal(result.video.height, 1920)
+  assert.equal(result.video.kind, 'video')
+  assert.equal(JSON.parse(gallery.objects.get(albumKey).body).published, false)
+  assert.equal((await (await complete()).json()).duplicate, true)
+  assert.equal(JSON.parse(gallery.objects.get(albumKey).body).images.length, 1)
+  assert.equal(gallery.deployCalls.length, 0)
+})
+
+test('direct upload verifies videos larger than 100 MiB using only bounded ranges', async (t) => {
+  const gallery = directVideoEnvironment(t)
+  const upload = await prepareDirectVideo(gallery)
+  const session = JSON.parse(gallery.objects.get(`internal/gallery/video-uploads/${upload.uploadId}.json`).body)
+  const size = 150 * 1024 ** 2
+  const moov = isoBox('moov', isoBox('trak', isoBox('tkhd', (() => {
+    const bytes = new Uint8Array(84)
+    const view = new DataView(bytes.buffer)
+    view.setUint32(76, 1920 * 65536)
+    view.setUint32(80, 1080 * 65536)
+    return bytes
+  })())))
+  const first = isoBox('ftyp', new Uint8Array([0x71, 0x74, 0, 0]))
+  const data = new Uint8Array(16)
+  new DataView(data.buffer).setUint32(0, size - first.byteLength - moov.byteLength)
+  data.set(new TextEncoder().encode('mdat'), 4)
+  const originalGet = gallery.env.IMAGES_BUCKET.get
+  const ranges = []
+  gallery.env.IMAGES_BUCKET.head = async () => ({ size, httpMetadata: { contentType: session.contentType } })
+  gallery.env.IMAGES_BUCKET.get = async (key, options) => {
+    if (key !== session.key) return originalGet(key, options)
+    assert.ok(options?.range, 'the full video must never be read')
+    ranges.push(options.range)
+    const { offset, length } = options.range
+    assert.ok(length <= 8 * 1024 ** 2)
+    const bytes = offset === 0 ? first : offset === first.byteLength ? data : moov
+    return { body: bytes.slice(0, length) }
+  }
+  const response = await worker.fetch(galleryRequest(new URL(upload.completeUrl).pathname), gallery.env)
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).video.width, 1920)
+  assert.ok(ranges.some((range) => range.offset === size - moov.byteLength))
+  assert.ok(ranges.reduce((sum, range) => sum + range.length, 0) < 1024)
+})
+
+test('direct upload rejects unauthorized, expired, foreign, invalid and oversized uploads', async (t) => {
+  const gallery = directVideoEnvironment(t)
+  const upload = await prepareDirectVideo(gallery)
+  const path = new URL(upload.completeUrl).pathname
+  assert.equal((await worker.fetch(galleryRequest(path, { token: null }), gallery.env)).status, 401)
+  assert.equal((await worker.fetch(galleryRequest(upload.path, { body: '{}' }), gallery.env)).status, 415)
+  const second = await prepareDirectVideo(gallery)
+  const foreign = `/internal/gallery/albums/${second.albumId}/video-uploads/${upload.uploadId}/complete`
+  assert.equal((await worker.fetch(galleryRequest(foreign), gallery.env)).status, 404)
+  const sessionKey = `internal/gallery/video-uploads/${upload.uploadId}.json`
+  const session = JSON.parse(gallery.objects.get(sessionKey).body)
+  await gallery.env.IMAGES_BUCKET.put(session.key, new Uint8Array([1, 2, 3, 4]), {
+    httpMetadata: { contentType: session.contentType },
+  })
+  assert.equal((await worker.fetch(galleryRequest(path), gallery.env)).status, 422)
+  gallery.env.IMAGES_BUCKET.head = async () => ({
+    size: 5 * 1024 ** 3 + 1, httpMetadata: { contentType: session.contentType },
+  })
+  assert.equal((await worker.fetch(galleryRequest(path), gallery.env)).status, 413)
+  session.expiresAt = Date.now() - 1
+  await gallery.env.IMAGES_BUCKET.put(sessionKey, JSON.stringify(session))
+  assert.equal((await worker.fetch(galleryRequest(path), gallery.env)).status, 410)
+  delete gallery.env.R2_SECRET_ACCESS_KEY
+  assert.equal((await worker.fetch(galleryRequest(upload.path, {
+    body: JSON.stringify({ contentType: 'video/quicktime' }),
+  }), gallery.env)).status, 503)
+})

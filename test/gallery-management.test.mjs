@@ -29,6 +29,7 @@ test('editable notes publish mixed media in body order and removing embeds never
   await fs.mkdir(path.join(root, 'gallery'))
   const file = path.join(root, 'gallery/family.md')
   const original = model.editableAlbumContent(album)
+  assert.ok(original.includes('上传超过 15 天且无人引用'))
   await fs.writeFile(file, original)
   const read = async () => (await loadObsidianContent({ blogRoot: root, sections: ['gallery'] })).gallery[0]
   let item = await read()
@@ -79,8 +80,12 @@ test('native local video embeds resolve and export only the referenced video att
 
 async function fakePlugin() {
   const source = await fs.readFile(process.env.BLOG_CREATE_TEST_BUNDLE || new URL('../obsidian/blog-create/main.js', import.meta.url), 'utf8')
-  const context = { module: { exports: {} }, console, window: {}, require: (id) => {
-    if (id === 'obsidian') return { Modal: class {}, Plugin: class {}, parseYaml: YAML.parse, normalizePath: (value) => value }
+  const modals = []
+  const context = { module: { exports: {} }, console, URL, window: {}, require: (id) => {
+    if (id === 'obsidian') return { Modal: class {
+      constructor(app) { this.app = app; modals.push(this) }
+      open() {}
+    }, Plugin: class {}, parseYaml: YAML.parse, normalizePath: (value) => value }
     if (id === './gallery-model' && !process.env.BLOG_CREATE_TEST_BUNDLE) return model
     if (id === '../../lib/r2-media.mjs') return { r2Sources }
     throw new Error(`Obsidian cannot load external module ${id}`)
@@ -91,6 +96,7 @@ async function fakePlugin() {
   let settings = { galleryToken: 'persisted-token' }
   const vault = {
     getAbstractFileByPath: (value) => files.get(value),
+    getMarkdownFiles: () => [...files.values()].filter((file) => file.path.endsWith('.md')),
     read: async (file) => file.source,
     create: async (value, content) => {
       const file = { path: value, source: content }
@@ -103,7 +109,7 @@ async function fakePlugin() {
   plugin.app = { vault }
   plugin.loadData = async () => settings
   plugin.saveData = async (value) => { settings = value }
-  return { plugin, files, settings: () => settings, remove: (file) => {
+  return { plugin, files, modals, settings: () => settings, remove: (file) => {
     files.delete(file.path)
     files.get('Blog/gallery').children = files.get('Blog/gallery').children.filter((item) => item !== file)
   } }
@@ -134,4 +140,23 @@ test('Obsidian imports each album once, preserves local edits/deletions and refu
   assert.equal((await f.plugin.managedAlbums()).length, 0)
   f.remove(f.files.get(model.CONTROL_PATH))
   await assert.rejects(() => f.plugin.mirrorOnlineAlbums([album]), /记录已丢失/)
+})
+
+test('plugin cleanup requests use 15 days and protect draft and other note references', async () => {
+  const f = await fakePlugin()
+  const protectedSrc = 'https://img.guanyan.me/webp/blog/obsidian/draft.webp'
+  const templateSrc = 'https://img.guanyan.me/webp/blog/obsidian/template.webp'
+  f.files.set('Blog/posts/draft.md', {
+    path: 'Blog/posts/draft.md',
+    source: `---\npublished: false\n---\n![draft](<${protectedSrc}>)`,
+  })
+  f.files.set('Blog/templates/post.md', {
+    path: 'Blog/templates/post.md', source: `![template](<${templateSrc}>)`,
+  })
+  f.files.set(model.CONTROL_PATH, { path: model.CONTROL_PATH, source: model.controlContent([album.id]) })
+  f.plugin.openGalleryManager()
+  const payload = await f.modals.at(-1).cleanupPayload()
+  assert.equal(payload.graceDays, 15)
+  assert.deepEqual(Array.from(payload.protectedSources), [protectedSrc])
+  assert.deepEqual(Array.from(payload.managedAlbumIds), [album.id])
 })

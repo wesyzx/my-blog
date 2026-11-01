@@ -2,6 +2,7 @@
 const CONTROL_PATH = 'Blog/gallery/相册同步记录.md'
 const CONTROL_TYPE = 'blog-gallery-control'
 const MANAGED_BY = 'blog-create-vault-gallery'
+const R2_CLEANUP_GRACE_DAYS = 15
 const json = (value) => JSON.stringify(value)
 
 function mediaSummary(album) {
@@ -26,7 +27,7 @@ function editableAlbumContent(album) {
     `mediaMetadata: ${json(media)}`,
     '---', '',
     '> 此相册由 Obsidian 管理。删除下方照片或视频的整行引用，博客会在同步构建后移除对应内容。',
-    '> 删除整篇笔记会下线整个相册；R2 原文件不会立即删除。上传超过 30 天且无人引用的文件，会在发布核对成功后自动清理。',
+    `> 删除整篇笔记会下线整个相册；R2 原文件不会立即删除。上传超过 ${R2_CLEANUP_GRACE_DAYS} 天且无人引用的文件，会在发布核对成功后自动清理。`,
     '> mediaMetadata 只保存尺寸和时长；博客内容以下方的媒体引用为准。', '',
     ...media.flatMap((item, index) => [
       item.kind === 'video'
@@ -46,4 +47,4 @@ function controlContent(ids) {
   ].join('\n')
 }
 
-module.exports = { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, mediaSummary, editableAlbumContent, controlContent }
+module.exports = { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, R2_CLEANUP_GRACE_DAYS, mediaSummary, editableAlbumContent, controlContent }

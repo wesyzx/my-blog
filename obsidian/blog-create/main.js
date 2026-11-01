@@ -8,7 +8,7 @@ const {
   requestUrl,
   parseYaml,
 } = require('obsidian')
-const { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, mediaSummary, editableAlbumContent, controlContent } = require('./gallery-model')
+const { CONTROL_PATH, CONTROL_TYPE, MANAGED_BY, R2_CLEANUP_GRACE_DAYS, mediaSummary, editableAlbumContent, controlContent } = require('./gallery-model')
 const { r2Sources } = require('../../lib/r2-media.mjs')
 
 const GALLERY_API_ORIGIN = 'https://img.215320.xyz'
@@ -201,7 +201,7 @@ class DeleteAlbumModal extends Modal {
       text: `${this.album.date || '日期未知'} · ${mediaSummary(this.album)}`,
     })
     contentEl.createEl('p', {
-      text: '相册笔记将移到 Obsidian 回收站，阿里云同步构建后博客将下线此相册。R2 原文件不会立即删除；上传超过 30 天且无人引用时，会在发布核对成功后自动清理。',
+      text: `相册笔记将移到 Obsidian 回收站，阿里云同步构建后博客将下线此相册。R2 原文件不会立即删除；上传超过 ${R2_CLEANUP_GRACE_DAYS} 天且无人引用时，会在发布核对成功后自动清理。`,
     })
 
     const actions = contentEl.createDiv({ cls: 'blog-delete-actions' })
@@ -236,7 +236,7 @@ class R2CleanupModal extends Modal {
     contentEl.addClass('blog-delete-modal')
     contentEl.createEl('h2', { text: 'R2 孤立文件检查' })
     contentEl.createEl('p', {
-      text: `只处理超过 ${this.preview.graceDays || 30} 天、当前没有任何笔记引用的文件。仍被引用或未满宽限期的文件会保留。`,
+      text: `只处理超过 ${this.preview.graceDays || R2_CLEANUP_GRACE_DAYS} 天、当前没有任何笔记引用的文件。仍被引用或未满宽限期的文件会保留。`,
     })
     const summary = contentEl.createDiv({ cls: 'blog-delete-summary' })
     summary.createEl('strong', { text: `${this.preview.candidateCount || 0} 个可删除文件` })
@@ -305,7 +305,7 @@ class GalleryMediaModal extends Modal {
     const source = await this.app.vault.read(file)
     const media = noteMedia(source)
     contentEl.createEl('h2', { text: `${this.album.title} · 照片与视频` })
-    contentEl.createEl('p', { text: '移除后自动同步到博客。R2 原文件不会立即删除；上传超过 30 天且无人引用时自动清理。也可以打开笔记编辑日期、顺序、标题和视频封面。' })
+    contentEl.createEl('p', { text: `移除后自动同步到博客。R2 原文件不会立即删除；上传超过 ${R2_CLEANUP_GRACE_DAYS} 天且无人引用时自动清理。也可以打开笔记编辑日期、顺序、标题和视频封面。` })
     const edit = contentEl.createEl('button', { text: '打开相册笔记' })
     edit.addEventListener('click', async () => {
       await this.app.workspace.getLeaf(false).openFile(file)
@@ -430,7 +430,7 @@ class GalleryManagerModal extends Modal {
     return {
       protectedSources: [...protectedSources].sort(),
       managedAlbumIds: managedAlbumIds.filter((id) => /^[a-f0-9-]{36}$/.test(id)),
-      graceDays: 30,
+      graceDays: R2_CLEANUP_GRACE_DAYS,
     }
   }
 

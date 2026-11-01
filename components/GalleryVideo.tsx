@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent, SyntheticEvent } from 'react'
 import type { GalleryVideo as GalleryVideoMedia } from '@/lib/gallery'
 import { detectVisibleCrop, FULL_FRAME, sameCrop } from '@/lib/video-crop.mjs'
+import { createVideoSeekController } from '@/lib/video-seek.mjs'
 
 type CropRect = {
   left: number
@@ -40,6 +41,8 @@ export default function GalleryVideo({
 }) {
   const shellRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<VideoWithLegacyFullscreen>(null)
+  const seekControllerRef = useRef<ReturnType<typeof createVideoSeekController> | null>(null)
+  const scrubTimeRef = useRef<number | null>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -57,12 +60,24 @@ export default function GalleryVideo({
   const [fullscreen, setFullscreen] = useState(false)
   const [previewReady, setPreviewReady] = useState(Boolean(media.poster))
   const [currentTime, setCurrentTime] = useState(0)
+  const [scrubTime, setScrubTime] = useState<number | null>(null)
   const [duration, setDuration] = useState(media.duration || 0)
   const source = `${media.src}${media.src.includes('?') ? '&' : '?'}auto-crop=1`
 
   useEffect(() => {
     onAspectRatioRef.current = onAspectRatio
   }, [onAspectRatio])
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+    const controller = createVideoSeekController(video)
+    seekControllerRef.current = controller
+    return () => {
+      controller.destroy()
+      seekControllerRef.current = null
+    }
+  }, [])
 
   const reportNaturalRatio = useCallback(() => {
     const video = videoRef.current
@@ -181,7 +196,8 @@ export default function GalleryVideo({
 
   useEffect(() => {
     const video = previewVideoRef.current
-    if (!video || media.poster) return
+    if (!video || media.poster || previewReady) return
+    if (!video.getAttribute('src')) video.src = source
     const syncPreview = () => capturePreview()
     video.addEventListener('loadedmetadata', syncPreview)
     video.addEventListener('loadeddata', syncPreview)
@@ -191,8 +207,13 @@ export default function GalleryVideo({
       video.removeEventListener('loadedmetadata', syncPreview)
       video.removeEventListener('loadeddata', syncPreview)
       video.removeEventListener('seeked', syncPreview)
+      // Stop the preview download after capture, playback, or unmount.
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+      previewRequestedRef.current = false
     }
-  }, [capturePreview, media.poster])
+  }, [capturePreview, media.poster, previewReady, source])
 
   useEffect(() => {
     const video = videoRef.current
@@ -283,6 +304,9 @@ export default function GalleryVideo({
   const togglePlayback = async () => {
     const video = videoRef.current
     if (!video) return
+    seekControllerRef.current?.cancelResume()
+    scrubTimeRef.current = null
+    setScrubTime(null)
     if (video.paused) {
       if (!playbackStartedRef.current) {
         playbackStartedRef.current = true
@@ -292,7 +316,7 @@ export default function GalleryVideo({
       try {
         await video.play()
       } catch {
-        setPlaying(false)
+        setPlaying(!video.paused)
       }
     } else {
       video.pause()
@@ -307,12 +331,55 @@ export default function GalleryVideo({
     setMuted(video.muted)
   }
 
+  const markPlaybackStarted = () => {
+    playbackStartedRef.current = true
+    setPlaybackStarted(true)
+  }
+
+  const beginSeek = () => {
+    const video = videoRef.current
+    const controller = seekControllerRef.current
+    if (!video || !controller || controller.scrubbing) return
+    controller.begin()
+    scrubTimeRef.current = video.currentTime
+    setScrubTime(video.currentTime)
+  }
+
+  const finishSeek = () => {
+    const controller = seekControllerRef.current
+    const target = scrubTimeRef.current
+    if (!controller?.scrubbing || target === null) return
+    const committed = controller.commit(target)
+    if (committed !== undefined) {
+      setCurrentTime(committed)
+      markPlaybackStarted()
+    }
+    scrubTimeRef.current = null
+    setScrubTime(null)
+  }
+
+  const cancelSeek = () => {
+    seekControllerRef.current?.cancel()
+    scrubTimeRef.current = null
+    setScrubTime(null)
+  }
+
   const seek = (event: SyntheticEvent<HTMLInputElement>) => {
     event.stopPropagation()
-    const video = videoRef.current
-    if (!video) return
-    video.currentTime = Number(event.currentTarget.value)
-    setCurrentTime(video.currentTime)
+    const controller = seekControllerRef.current
+    if (!controller) return
+    const target = Number(event.currentTarget.value)
+    if (controller.scrubbing) {
+      // Only move the thumb while dragging; media requests begin on release.
+      scrubTimeRef.current = target
+      setScrubTime(target)
+    } else {
+      const committed = controller.commit(target)
+      if (committed !== undefined) {
+        setCurrentTime(committed)
+        markPlaybackStarted()
+      }
+    }
   }
 
   const toggleFullscreen = async (event: MouseEvent<HTMLButtonElement>) => {
@@ -337,7 +404,7 @@ export default function GalleryVideo({
     height: `${scale}%`,
     clipPath: `inset(${crop.top * 100}% ${(1 - crop.left - crop.width) * 100}% ${(1 - crop.top - crop.height) * 100}% ${crop.left * 100}%)`,
   } as CSSProperties
-  const progress = duration > 0 ? Math.min(currentTime, duration) : 0
+  const progress = duration > 0 ? Math.min(scrubTime ?? currentTime, duration) : 0
 
   return (
     <div
@@ -357,6 +424,7 @@ export default function GalleryVideo({
         onClick={togglePlayback}
         onLoadedMetadata={syncVideoState}
         onPlay={(event) => syncVideoState(event)}
+        onPlaying={(event) => syncVideoState(event)}
         onPause={(event) => syncVideoState(event)}
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
         onVolumeChange={(event) => setMuted(event.currentTarget.muted)}
@@ -378,18 +446,20 @@ export default function GalleryVideo({
           aria-hidden="true"
         />
       )}
-      <video
-        ref={previewVideoRef}
-        className="gallery-video-preview-source"
-        src={source}
-        crossOrigin="anonymous"
-        playsInline
-        muted
-        preload="none"
-        aria-hidden="true"
-      />
+      {!media.poster && !previewReady && (
+        <video
+          ref={previewVideoRef}
+          className="gallery-video-preview-source"
+          src={source}
+          crossOrigin="anonymous"
+          playsInline
+          muted
+          preload="none"
+          aria-hidden="true"
+        />
+      )}
       <canvas ref={canvasRef} className="gallery-video-sample" aria-hidden="true" />
-      {!playing && (
+      {!playing && scrubTime === null && (
         <button className="gallery-video-center" type="button" onClick={togglePlayback} aria-label="播放视频">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5Z"/></svg>
         </button>
@@ -411,6 +481,19 @@ export default function GalleryVideo({
           step="0.05"
           value={progress}
           onChange={seek}
+          onPointerDown={(event) => {
+            beginSeek()
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerUp={finishSeek}
+          onPointerCancel={cancelSeek}
+          onLostPointerCapture={cancelSeek}
+          onKeyDown={(event) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) beginSeek()
+          }}
+          onKeyUp={finishSeek}
+          onBlur={finishSeek}
+          disabled={duration <= 0}
           aria-label="视频进度"
         />
         <button type="button" onClick={toggleMute} aria-label={muted ? '取消静音' : '静音'}>

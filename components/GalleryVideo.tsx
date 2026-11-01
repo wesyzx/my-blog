@@ -5,6 +5,7 @@ import type { CSSProperties, MouseEvent, SyntheticEvent } from 'react'
 import type { GalleryVideo as GalleryVideoMedia } from '@/lib/gallery'
 import { detectVisibleCrop, FULL_FRAME, sameCrop } from '@/lib/video-crop.mjs'
 import { createVideoSeekController } from '@/lib/video-seek.mjs'
+import { createVideoAudioController } from '@/lib/video-audio.mjs'
 
 type CropRect = {
   left: number
@@ -42,6 +43,7 @@ export default function GalleryVideo({
   const shellRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<VideoWithLegacyFullscreen>(null)
   const seekControllerRef = useRef<ReturnType<typeof createVideoSeekController> | null>(null)
+  const audioControllerRef = useRef<ReturnType<typeof createVideoAudioController> | null>(null)
   const scrubTimeRef = useRef<number | null>(null)
   const previewVideoRef = useRef<HTMLVideoElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -71,13 +73,22 @@ export default function GalleryVideo({
   useEffect(() => {
     const video = videoRef.current
     if (!video) return
+    if (!video.getAttribute('src')) video.src = source
     const controller = createVideoSeekController(video)
+    const audio = createVideoAudioController(video, {
+      onMutedChange: setMuted,
+      onDeactivate: () => controller.cancelResume(),
+    })
     seekControllerRef.current = controller
+    audioControllerRef.current = audio
+    audio.sync()
     return () => {
+      audio.destroy()
       controller.destroy()
       seekControllerRef.current = null
+      audioControllerRef.current = null
     }
-  }, [])
+  }, [source])
 
   const reportNaturalRatio = useCallback(() => {
     const video = videoRef.current
@@ -294,7 +305,7 @@ export default function GalleryVideo({
     const video = event.currentTarget
     setPlaying(!video.paused)
     if (!video.paused) setPreviewReady(true)
-    setMuted(video.muted)
+    audioControllerRef.current?.sync()
     setDuration(Number.isFinite(video.duration) ? video.duration : media.duration || 0)
     setCurrentTime(video.currentTime)
     if (video.videoWidth <= 0 || video.videoHeight <= 0) return
@@ -325,10 +336,7 @@ export default function GalleryVideo({
 
   const toggleMute = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
-    const video = videoRef.current
-    if (!video) return
-    video.muted = !video.muted
-    setMuted(video.muted)
+    audioControllerRef.current?.toggleMuted()
   }
 
   const markPlaybackStarted = () => {
@@ -418,6 +426,7 @@ export default function GalleryVideo({
         src={source}
         crossOrigin="anonymous"
         playsInline
+        muted={muted}
         preload="metadata"
         style={videoStyle}
         aria-label={`${title}，第 ${ordinal} 个视频`}
@@ -427,7 +436,6 @@ export default function GalleryVideo({
         onPlaying={(event) => syncVideoState(event)}
         onPause={(event) => syncVideoState(event)}
         onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-        onVolumeChange={(event) => setMuted(event.currentTarget.muted)}
       />
       {media.poster ? (
         // A poster is already a fixed-size R2 asset and must share the video crop transform.
@@ -496,7 +504,13 @@ export default function GalleryVideo({
           disabled={duration <= 0}
           aria-label="视频进度"
         />
-        <button type="button" onClick={toggleMute} aria-label={muted ? '取消静音' : '静音'}>
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={muted ? '取消静音' : '静音'}
+          aria-pressed={muted}
+          title={muted ? '开启声音' : '关闭声音'}
+        >
           {muted ? (
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6h4l5 4V5L9 9H5ZM17 9l4 6M21 9l-4 6"/></svg>
           ) : (

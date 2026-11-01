@@ -216,8 +216,10 @@ test('historical category migration keeps measurements, routes, UUIDs and ambigu
     assert.deepEqual(after.map(({ type, source_type }) => [type, source_type]), [
       ['Hike', 'Walk'], ['Walk', 'Hike'], ['Workout', 'Workout'],
     ])
-    assert.deepEqual(after.map(({ type, source_type, ...metrics }) => metrics),
-      before.map(({ type, ...metrics }) => metrics))
+    const measurements = (row) => Object.fromEntries(
+      Object.entries(row).filter(([key]) => key !== 'type' && key !== 'source_type'),
+    )
+    assert.deepEqual(after.map(measurements), before.map(measurements))
   } finally {
     sqlite.close()
   }

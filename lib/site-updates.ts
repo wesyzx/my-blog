@@ -19,10 +19,10 @@ function dateValue(value: string) {
   return Number.isNaN(parsed) ? 0 : parsed
 }
 
-export async function getAllSiteUpdates(): Promise<SiteUpdate[]> {
+export function getAllSiteUpdates(): SiteUpdate[] {
   const posts = getAllPosts()
   const gallery = getAllGalleryItems()
-  const food = await getAllFoodPosts()
+  const food = getAllFoodPosts()
 
   return [
     ...posts.map((post): SiteUpdate => ({

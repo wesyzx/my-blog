@@ -27,14 +27,14 @@ export interface FoodPost extends FoodMeta {
 /**
  * 获取所有探店记录（按日期倒序）
  */
-export async function getAllFoodPosts(): Promise<FoodMeta[]> {
+export function getAllFoodPosts(): FoodMeta[] {
   return bundleData.food as FoodMeta[];
 }
 
 /**
  * 根据 slug 获取单篇探店详情
  */
-export async function getFoodPostBySlug(slug: string): Promise<FoodPost | null> {
+export function getFoodPostBySlug(slug: string): FoodPost | null {
   const decodedSlug = decodeRouteSlug(slug)
   return (bundleData.food as FoodPost[]).find(p => p.slug === decodedSlug) || null;
 }

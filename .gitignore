@@ -99,5 +99,6 @@ dmypy.json
 .pytest_cache/
 
 # Temporary files
+.tmp/
 *.tmp
 *~

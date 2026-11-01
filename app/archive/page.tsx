@@ -32,8 +32,8 @@ function groupUpdates(updates: SiteUpdate[]) {
   return Array.from(years.entries())
 }
 
-export default async function ArchivePage() {
-  const updates = await getAllSiteUpdates()
+export default function ArchivePage() {
+  const updates = getAllSiteUpdates()
   const groups = groupUpdates(updates)
 
   return (

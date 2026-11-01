@@ -6,8 +6,8 @@ import PageHeader from '@/components/PageHeader'
 
 export const metadata = createPageMetadata({ title: '美食地图', description: '记录探访过的美食，用味蕾丈量这座城市。', path: '/food' })
 
-export default async function FoodPage() {
-  const posts = await getAllFoodPosts()
+export default function FoodPage() {
+  const posts = getAllFoodPosts()
   return (
     <div className="page-shell animate-fade-up">
       <PageHeader title="美食地图" />

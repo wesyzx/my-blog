@@ -20,7 +20,6 @@
   --color-accent: #000000;
   --color-accent-hover: #333333;
   --color-accent-light: rgba(0, 0, 0, .05);
-  --color-warm: #000000;
   --color-bg-page: #ffffff;
   --color-bg-card: #ffffff;
   --color-bg-surface: #f5f5f2;
@@ -56,7 +55,6 @@
   --space-4: 32px;
   --space-5: 48px;
   --space-6: 72px;
-  --space-7: 96px;
 }
 
 [data-theme="dark"] {
@@ -69,7 +67,6 @@
   --color-accent: #b4b4b4;
   --color-accent-hover: #eeeeee;
   --color-accent-light: rgba(255, 255, 255, .07);
-  --color-warm: #6c6e79;
   --color-bg-page: #212328;
   --color-bg-card: #26272d;
   --color-bg-surface: #2d2f2d;
@@ -173,17 +170,12 @@ button { font: inherit; }
 .social-links a { display: inline-flex; align-items: center; justify-content: center; color: var(--color-text-muted); transition: color .15s ease, transform .15s ease; }
 .social-links a:hover { color: var(--color-accent); transform: translateY(-1px); }
 .social-links svg { width: 16px; height: 16px; }
-.safe-markdown p { margin: 0 0 12px; color: var(--color-text-secondary); font-family: var(--font-sans); font-size: 15.5px; line-height: 1.85; }
-.safe-markdown ul { margin: 0 0 14px; padding-left: 18px; }
-.safe-markdown a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
-.safe-markdown code { font-family: var(--font-mono); padding: 2px 5px; border-radius: var(--radius-editorial); background: var(--color-bg-surface); border: 1px solid var(--color-border-hairline); font-size: .88em; }
 [data-lightbox-trigger] { cursor: zoom-in; }
 [data-lightbox-trigger]:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 [data-lightbox-trigger][aria-busy="true"] { cursor: progress; }
 .artalk-container { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--color-border-hairline); }
 .food-cover { position: relative; overflow: hidden; background: var(--color-bg-surface); }
-.food-cover img { object-fit: cover; transition: transform .45s ease, filter .45s ease; }
-.food-card:hover img { filter: saturate(1) contrast(1); }
+.food-cover img { object-fit: cover; }
 .cover-badge { position: absolute; bottom: 8px; right: 8px; padding: 2px 7px; color: rgba(255, 255, 255, .94); backdrop-filter: blur(4px); font-size: 10.5px; letter-spacing: .06em; }
 .image-placeholder { width: 100%; height: 100%; display: grid; place-items: center; color: var(--color-text-hint); }
 .image-placeholder svg { width: 26px; height: 26px; }
@@ -238,7 +230,7 @@ button { font: inherit; }
 .article-footer-nav { margin-top: var(--space-4); }
 
 .post-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.post-nav-item { display: flex; flex-direction: column; gap: 6px; transition: opacity .15s ease; }
+.post-nav-item { display: flex; flex-direction: column; gap: 6px; }
 .post-nav-item.next { text-align: right; align-items: flex-end; }
 
 /* 正文 —— 延续 ueno 的 18px 紧凑阅读比例，针对中文将行高调整为 1.72，
@@ -397,7 +389,7 @@ button { font: inherit; }
   .sidebar-logo { width: 72px; height: 72px; }
   .sidebar-title { margin: 14px 0 6px; font-size: 1.25rem; }
   .sidebar-desc { margin-bottom: 0; font-size: .95rem; }
-  .sidebar-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; margin-top: 20px; }
+  .sidebar-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; }
   .sidebar-foot { width: 100%; margin-top: 22px; padding-top: 0; }
   .sidebar-verse { display: none; }
   .site-content { padding: 40px 0; }
@@ -424,19 +416,19 @@ button { font: inherit; }
 
   .page-header { margin-bottom: 36px; }
   .prose p, .prose li { font-size: 16px; }
-  .food-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
+  .food-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .food-map { height: 360px; }
 
   .site-footer-inner { padding: 28px 20px 26px; }
 }
 
 @media (max-width: 540px) {
-  .post-nav { grid-template-columns: 1fr; gap: var(--space-3); }
+  .post-nav { grid-template-columns: 1fr; }
   .post-nav-item.next { text-align: left; align-items: flex-start; }
 }
 
 @media (max-width: 480px) {
-  .food-grid { grid-template-columns: 1fr; gap: 20px; }
+  .food-grid { grid-template-columns: 1fr; }
   .food-map { height: 300px; }
   .site-header-inner { padding: 0 16px; }
   .site-footer-inner { padding: 26px 16px 24px; }
@@ -449,7 +441,7 @@ button { font: inherit; }
   .workout-pagination-pages { gap: 3px; }
   .workout-pagination button { min-width: 28px; padding: 0 6px; }
   .about-profile { gap: 16px; }
-  .about-avatar-wrap img { width: 72px; height: 72px; aspect-ratio: 1 / 1; border-radius: 50%; object-fit: cover; }
+  .about-avatar-wrap img { width: 72px; height: 72px; aspect-ratio: 1 / 1; object-fit: cover; }
   .about-author-info h2 { font-size: 20px; }
 }
 
@@ -485,8 +477,6 @@ button { font: inherit; }
 .about-avatar-wrap img,
 .flat-panel,
 .workout-map { border: 0; border-radius: 3px; }
-.food-cover img { filter: none; }
-.food-card:hover img { transform: none; }
 .cover-badge { background: rgba(0, 0, 0, .6); border-radius: 3px; font-family: var(--font-mono); }
 
 /* 美食 */
@@ -500,7 +490,6 @@ button { font: inherit; }
 .post-nav { gap: 2rem; margin-top: 1.5rem; padding: 1.5rem 0; border-top: 1px solid var(--gray-a4); border-bottom: 1px solid var(--gray-a4); }
 .post-nav-label { font-size: 11px; font-weight: 600; letter-spacing: .1em; color: var(--color-text-muted); }
 .post-nav-title { font-size: 18px; font-weight: 700; color: var(--color-text-primary); line-height: 1.35; }
-.post-nav-item:hover { opacity: 1; }
 .post-nav-item:hover .post-nav-title { color: var(--color-accent); }
 
 /* 页脚 */
@@ -511,15 +500,14 @@ button { font: inherit; }
 .section-title svg { color: var(--color-text-muted); }
 
 /* 中文强调用点着重号，不用伪斜体；中英混排自动留白 */
-.prose em,
-.safe-markdown em {
+.prose em {
   font-style: normal;
   text-emphasis: filled dot var(--color-text-muted);
   -webkit-text-emphasis: filled dot var(--color-text-muted);
   text-emphasis-position: under;
   -webkit-text-emphasis-position: under;
 }
-.prose p, .prose li, .safe-markdown p, .page-lead {
+.prose p, .prose li, .page-lead {
   text-autospace: ideograph-alpha ideograph-numeric;
 }
 
@@ -533,13 +521,11 @@ button { font: inherit; }
 
 /* ============================================================================
    Ueno 内容流
-   首页不再另设 hero 或“站点说明”，打开后直接阅读最新内容；相册列表采用
-   Moments 式的日期 + 标题 + 照片组。功能性栏目仍沿用同一条 680px 阅读轴。
+   首页轨道动画下方展示最新内容；相册列表采用 Moments 式的日期 + 标题 +
+   照片组。功能性栏目仍沿用同一条 680px 阅读轴。
    ============================================================================ */
 
 .home-shell {
-  width: min(100%, calc(var(--content-width) + var(--content-gutter) * 2));
-  margin: 0 auto;
   padding: 0 var(--content-gutter) var(--space-6);
 }
 

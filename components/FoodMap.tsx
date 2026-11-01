@@ -13,7 +13,7 @@ import {
   type TMapMap,
 } from '@/lib/tmap'
 
-/** 水滴形标记，沿用站点原有的暖色（--color-warm #a96545）与白色描边 */
+/** 水滴形标记，使用暖色填充与白色描边。 */
 const PIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34">'
   + '<path d="M13 33.2C13 33.2 24.6 19.6 24.6 12.6A11.6 11.6 0 1 0 1.4 12.6C1.4 19.6 13 33.2 13 33.2Z" fill="#a96545" stroke="#ffffff" stroke-width="2.4"/>'
   + '<circle cx="13" cy="12.6" r="4" fill="#ffffff"/></svg>'

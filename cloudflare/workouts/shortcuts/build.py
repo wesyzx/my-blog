@@ -113,7 +113,7 @@ def save_workflow(workflow, name, personal_token=None, output_dir=None):
     print(target)
 
 
-def _summary_actions(actions, action, upload, personal_token, latest=True, intro=None):
+def _summary_actions(actions, action, upload, latest=True, intro=None):
     """Append the summary half of the flow.
 
     Returns `(response output id, response output name, token action id)` so a
@@ -264,7 +264,7 @@ def build(upload, latest=True, personal_token=None, output_dir=None):
         return identifier
 
     result_id, result_name, _token_id = _summary_actions(
-        actions, action, upload, personal_token, latest=latest)
+        actions, action, upload, latest=latest)
     # Display the real response/data; completion alone does not imply success.
     action('previewdocument', WFInput=attachment(output(result_id, result_name)))
     workflow['WFWorkflowActions'] = actions
@@ -272,7 +272,7 @@ def build(upload, latest=True, personal_token=None, output_dir=None):
     save_workflow(workflow, name, personal_token, output_dir)
 
 
-def _gpx_export_action(actions, action):
+def _gpx_export_action(actions):
     """Append the WorkoutGPX export action and return its output reference.
 
     The descriptor was exported from the user's iPhone, not inferred from the
@@ -309,7 +309,7 @@ def build_gpx(upload=True, personal_token=None, output_dir=None):
         '不覆盖健康 App 已经测到的时长与热量。'
         + ('令牌仅本次输入，不会写入文件。' if upload else '本指令只在本机预览，不发送数据。')))
 
-    file_id = _gpx_export_action(actions, action)
+    file_id = _gpx_export_action(actions)
 
     token_id = None
     if upload:
@@ -347,9 +347,9 @@ def build_combined(personal_token=None, name='一键同步运动到博客', outp
     intro = ('一步到位：读取最近一次运动，先上传摘要，再尝试上传 GPS 轨迹。'
              '轨迹取最近一次有 GPS 的运动，可能早于本次摘要；导出结果为空时跳过轨迹上传。')
     summary_id, summary_name, summary_token_id = _summary_actions(
-        actions, action, True, personal_token, latest=True, intro=intro)
+        actions, action, True, latest=True, intro=intro)
 
-    file_id = _gpx_export_action(actions, action)
+    file_id = _gpx_export_action(actions)
     # An empty export skips this loop; an export error can still stop the run.
     group = uid()
     action('repeat.each', GroupingIdentifier=group, WFControlFlowMode=0,

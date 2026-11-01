@@ -11,8 +11,8 @@ export const metadata = createPageMetadata({
   path: '/',
 })
 
-export default async function Home() {
-  const updates = await getAllSiteUpdates()
+export default function Home() {
+  const updates = getAllSiteUpdates()
   const latest = updates.slice(0, 16)
 
   return (

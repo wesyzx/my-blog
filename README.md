@@ -33,8 +33,9 @@ npm run check
 npm test
 npm run check --prefix cloudflare/workouts
 npm test --prefix cloudflare/workouts
-pnpm test --prefix cloudflare/images
-pnpm test --prefix cloudflare/gallery
+npm run check --prefix cloudflare/images
+npm test --prefix cloudflare/images
+npm test --prefix cloudflare/gallery
 npm run build
 ```
 

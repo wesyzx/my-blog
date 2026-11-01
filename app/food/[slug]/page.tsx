@@ -11,9 +11,9 @@ import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
 import PageHeader from '@/components/PageHeader'
 
-export async function generateStaticParams() { return (await getAllFoodPosts()).map((post) => ({ slug: post.slug })) }
+export function generateStaticParams() { return getAllFoodPosts().map((post) => ({ slug: post.slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const post = await getFoodPostBySlug((await params).slug)
+  const post = getFoodPostBySlug((await params).slug)
   return post ? createPageMetadata({
     title: `${post.title} - 美食地图`,
     description: post.excerpt || post.address,
@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function FoodPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const post = await getFoodPostBySlug((await params).slug)
+  const post = getFoodPostBySlug((await params).slug)
   if (!post) notFound()
   const locationLabel = (post.address || post.location).trim()
   return (

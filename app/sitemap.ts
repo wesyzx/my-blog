@@ -5,8 +5,9 @@ import { getAllGalleryItems } from '@/lib/gallery'
 
 const base = 'https://guanyan.me'
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [food, gallery] = await Promise.all([getAllFoodPosts(), getAllGalleryItems()])
+export default function sitemap(): MetadataRoute.Sitemap {
+  const food = getAllFoodPosts()
+  const gallery = getAllGalleryItems()
   const staticPages = ['', '/archive', '/posts', '/food', '/gallery', '/workouts', '/message', '/about'].map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const }))
   const posts = getAllPosts().map((post) => ({ url: `${base}/posts/${encodeURIComponent(post.slug)}`, lastModified: post.date }))
   const foodPages = food.map((post) => ({ url: `${base}/food/${encodeURIComponent(post.slug)}`, lastModified: post.date }))

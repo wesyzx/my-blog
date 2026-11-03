@@ -82,8 +82,9 @@ Obsidian 和 iPhone 原图统一放在 `blog-images/blog/obsidian/年/月/`；
 与替换链接的现有设置；不要把目录占位符直接填入不支持模板的上传路径字段。
 
 部署 Worker 后再部署博客。博客构建从
-`https://img.215320.xyz/webp/gallery-manifest` 读取公开清单；清单不可用时停止本次构建，
-避免用旧快照覆盖新相册。仅本地离线预览可设置 `GALLERY_ALLOW_STALE=1`。
+`https://img.215320.xyz/webp/gallery-manifest` 读取公开清单；单次请求超时为 15 秒，
+遇到网络错误或超时会最多尝试 3 次。重试后仍不可用时停止本次构建，避免用旧快照覆盖新相册。
+仅本地离线预览可设置 `GALLERY_ALLOW_STALE=1`。
 
 发布接口返回 `stage: build_requested`，只代表部署请求已接受。
 `url` 和 `statusUrl` 为状态页，`albumUrl` 是正式相册链接。状态页

@@ -210,6 +210,7 @@ function runGalleryBundle(cwd, fetchBody, extraEnv = {}) {
       const parsed = new URL(String(url))
       assert.equal(parsed.origin + parsed.pathname, 'https://img.215320.xyz/webp/gallery-manifest')
       assert.equal(parsed.searchParams.has('_'), true)
+      assert.ok(options.signal)
       assert.equal(options.cache, 'no-store')
       ${fetchBody}
     }
@@ -287,6 +288,24 @@ test('the gallery source builds R2-only and hybrid albums with valid metadata', 
     },
   ] })`)
   assert.deepEqual(r2Only.gallery.map((album) => album.slug), ['only'])
+})
+
+test('the gallery manifest retries a transient timeout before building', (t) => {
+  const cwd = mkdtempSync(path.join(tmpdir(), 'blog-bundle-gallery-retry-'))
+  t.after(() => rmSync(cwd, { recursive: true, force: true }))
+  prepareGalleryBundle(cwd, 'r2')
+  const validImage = 'https://img.215320.xyz/webp/blog/obsidian/gallery/2026/10/album/001-aabbccddeeff.webp'
+  const bundle = runGalleryBundle(cwd, `
+    globalThis.__galleryAttempts = (globalThis.__galleryAttempts || 0) + 1
+    if (globalThis.__galleryAttempts === 1) {
+      throw new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+    }
+    return Response.json({ albums: [{
+      id: 'retry', slug: 'retry', title: 'Retried album', date: '2026-10-30',
+      images: [{ src: ${JSON.stringify(validImage)}, width: 4032, height: 3024 }],
+    }] })
+  `)
+  assert.deepEqual(bundle.gallery.map((album) => album.slug), ['retry'])
 })
 
 test('a hybrid gallery can remove its local albums while R2 remains the published source', (t) => {

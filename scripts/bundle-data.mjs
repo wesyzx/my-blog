@@ -29,6 +29,9 @@ const CONTENT_SOURCES = Object.fromEntries(['posts', 'food', 'gallery'].map((sec
 }))
 const OBSIDIAN_BLOG_DIR = process.env.OBSIDIAN_BLOG_DIR || path.join(process.cwd(), 'content/obsidian')
 const GALLERY_MANIFEST_URL = process.env.GALLERY_MANIFEST_URL || 'https://img.215320.xyz/webp/gallery-manifest'
+const GALLERY_MANIFEST_TIMEOUT_MS = 15_000
+const GALLERY_MANIFEST_ATTEMPTS = 3
+const GALLERY_MANIFEST_RETRY_DELAY_MS = 500
 
 // 「是否发布」勾选列可能用的名字。博文 / 相册 / 美食共用这一份，避免三处写法不一致。
 const PUBLISH_KEYS = ['Published', 'published', '发布', '是否发布', '是否已发布']
@@ -174,17 +177,33 @@ function isGalleryVideo(value) {
   }
 }
 
+async function fetchGalleryManifest() {
+  let lastError
+  for (let attempt = 1; attempt <= GALLERY_MANIFEST_ATTEMPTS; attempt += 1) {
+    try {
+      const manifestUrl = new URL(GALLERY_MANIFEST_URL)
+      manifestUrl.searchParams.set('_', `${Date.now()}-${attempt}`)
+      const response = await fetch(manifestUrl, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(GALLERY_MANIFEST_TIMEOUT_MS),
+        cache: 'no-store',
+      })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      return await response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt === GALLERY_MANIFEST_ATTEMPTS) break
+      const delay = GALLERY_MANIFEST_RETRY_DELAY_MS * attempt
+      console.warn(`  R2 相册清单读取失败（第 ${attempt}/${GALLERY_MANIFEST_ATTEMPTS} 次），${delay}ms 后重试：${error.message}`)
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+  }
+  throw lastError
+}
+
 async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
   try {
-    const manifestUrl = new URL(GALLERY_MANIFEST_URL)
-    manifestUrl.searchParams.set('_', String(Date.now()))
-    const response = await fetch(manifestUrl, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(8000),
-      cache: 'no-store',
-    })
-    if (!response.ok) throw new Error(`HTTP ${response.status}`)
-    const manifest = await response.json()
+    const manifest = await fetchGalleryManifest()
     if (!Array.isArray(manifest?.albums)) throw new Error('相册清单缺少 albums')
     const revisions = new Map(await Promise.all(manifest.albums.filter((album) => album?.id && Array.isArray(album.images))
       .map(async (album) => [album.id, await albumRevision(album)])))

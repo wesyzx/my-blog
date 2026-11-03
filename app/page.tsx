@@ -16,8 +16,10 @@ export default function Home() {
 
   return (
     <div className="home-shell animate-fade-up">
-      <OrbitHero />
-      <ArchiveHeatmap updates={updates} />
+      <div className="home-masthead">
+        <OrbitHero />
+        <ArchiveHeatmap updates={updates} variant="home" />
+      </div>
       {latest.length > 0 ? (
         <ContentStream updates={latest} />
       ) : (

@@ -535,6 +535,8 @@ button { font: inherit; }
   padding: 0 var(--content-gutter) var(--space-6);
 }
 
+.home-masthead { margin-bottom: 32px; padding-bottom: 28px; border-bottom: 1px solid var(--gray-a4); }
+
 .home-stream > * + * { border-top: 1px solid var(--gray-a3); }
 .home-stream .item:first-of-type { padding-top: 0; }
 .home-stream .item + .item { border-top-color: var(--gray-a3); }
@@ -691,6 +693,14 @@ button { font: inherit; }
 .archive-activity-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 8px; color: var(--color-text-muted); font-family: var(--font-mono); font-size: 9px; }
 .archive-activity-legend { display: inline-flex; align-items: center; gap: 4px; }
 .archive-activity-legend .archive-activity-day { display: inline-block; flex: 0 0 9px; }
+.archive-activity--home { margin: 24px 0 0; padding: 0; border-bottom: 0; }
+.archive-activity-heading--home { align-items: flex-end; margin-bottom: 12px; }
+.archive-activity-home-copy .editorial-meta { margin: 0 0 5px; }
+.archive-activity-home-title { display: flex; align-items: baseline; gap: 10px; }
+.archive-activity-heading--home .archive-activity-home-title h2 { margin: 0; color: var(--color-text-primary); font-size: 14px; font-weight: 600; line-height: 1.4; letter-spacing: .02em; }
+.archive-activity-home-title span { color: var(--color-text-muted); font-size: 11px; line-height: 1.4; }
+.archive-activity-heading--home .archive-activity-legend { flex-shrink: 0; padding-bottom: 1px; color: var(--color-text-muted); font-family: var(--font-mono); font-size: 9px; }
+.archive-activity--home .archive-activity-scroll { padding-bottom: 0; }
 .archive-year + .archive-year { margin-top: 72px; }
 .archive-year-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 28px; padding-bottom: 12px; border-bottom: 1px solid var(--gray-a4); }
 .archive-year-heading h2 { margin: 0; color: var(--color-text-primary); font-size: 28px; font-weight: 600; }
@@ -706,6 +716,7 @@ button { font: inherit; }
 
 @media (max-width: 480px) {
   .archive-activity-heading { align-items: flex-start; flex-direction: column; gap: 6px; }
+  .archive-activity-home-title { flex-wrap: wrap; gap: 4px 10px; }
   .archive-activity-scroll { margin-right: -16px; padding-right: 16px; }
 }
 

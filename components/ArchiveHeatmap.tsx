@@ -27,7 +27,8 @@ function levelFor(count: number) {
   return 3
 }
 
-export default function ArchiveHeatmap({ updates }: { updates: SiteUpdate[] }) {
+export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updates: SiteUpdate[]; variant?: 'archive' | 'home' }) {
+  const isHome = variant === 'home'
   const now = new Date()
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   const rangeStart = new Date(today.getTime() - 364 * DAY_MS)
@@ -74,13 +75,32 @@ export default function ArchiveHeatmap({ updates }: { updates: SiteUpdate[] }) {
   const activeDays = new Set(visibleUpdates.map((update) => dateKey(update.date)).filter(Boolean)).size
 
   return (
-    <section className="archive-activity" aria-labelledby="archive-activity-title">
-      <header className="archive-activity-heading">
-        <div>
-          <p className="editorial-meta">PAST 365 DAYS</p>
-          <h2 id="archive-activity-title">这一年</h2>
-        </div>
-        <p>{activeDays} 个记录日 · {visibleUpdates.length} 次更新</p>
+    <section className={`archive-activity${isHome ? ' archive-activity--home' : ''}`} aria-labelledby="archive-activity-title">
+      <header className={`archive-activity-heading${isHome ? ' archive-activity-heading--home' : ''}`}>
+        {isHome ? (
+          <>
+            <div className="archive-activity-home-copy">
+              <p className="editorial-meta">PAST 365 DAYS</p>
+              <div className="archive-activity-home-title">
+                <h2 id="archive-activity-title">年度轨迹</h2>
+                <span>{activeDays} 个记录日 · {visibleUpdates.length} 次更新</span>
+              </div>
+            </div>
+            <span className="archive-activity-legend" aria-label="颜色越深，当天更新越多">
+              少
+              {[0, 1, 2, 3].map((level) => <i key={level} className={`archive-activity-day level-${level}`} />)}
+              多
+            </span>
+          </>
+        ) : (
+          <>
+            <div>
+              <p className="editorial-meta">PAST 365 DAYS</p>
+              <h2 id="archive-activity-title">这一年</h2>
+            </div>
+            <p>{activeDays} 个记录日 · {visibleUpdates.length} 次更新</p>
+          </>
+        )}
       </header>
 
       <div className="archive-activity-scroll">
@@ -114,14 +134,16 @@ export default function ArchiveHeatmap({ updates }: { updates: SiteUpdate[] }) {
         </div>
       </div>
 
-      <footer className="archive-activity-footer">
-        <span>过去 365 天</span>
-        <span className="archive-activity-legend" aria-label="颜色越深，当天更新越多">
-          少
-          {[0, 1, 2, 3].map((level) => <i key={level} className={`archive-activity-day level-${level}`} />)}
-          多
-        </span>
-      </footer>
+      {!isHome && (
+        <footer className="archive-activity-footer">
+          <span>过去 365 天</span>
+          <span className="archive-activity-legend" aria-label="颜色越深，当天更新越多">
+            少
+            {[0, 1, 2, 3].map((level) => <i key={level} className={`archive-activity-day level-${level}`} />)}
+            多
+          </span>
+        </footer>
+      )}
     </section>
   )
 }

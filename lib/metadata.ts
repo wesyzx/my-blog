@@ -8,9 +8,10 @@ interface PageMetadataOptions {
   description: string
   path: string
   images?: string[]
+  noIndex?: boolean
 }
 
-export function createPageMetadata({ title, description, path, images = [] }: PageMetadataOptions): Metadata {
+export function createPageMetadata({ title, description, path, images = [], noIndex = false }: PageMetadataOptions): Metadata {
   const url = new URL(path, SITE_URL).toString()
   const socialImages = images.length > 0 ? images : undefined
 
@@ -33,5 +34,6 @@ export function createPageMetadata({ title, description, path, images = [] }: Pa
       description,
       images: socialImages,
     },
+    robots: noIndex ? { index: false, follow: false } : undefined,
   }
 }

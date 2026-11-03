@@ -3,8 +3,9 @@ import FoodCard from '@/components/FoodCard'
 import FoodMapWrapper from '@/components/FoodMapWrapper'
 import { createPageMetadata } from '@/lib/metadata'
 import PageHeader from '@/components/PageHeader'
+import { isSectionVisible } from '@/lib/site-visibility'
 
-export const metadata = createPageMetadata({ title: '美食地图', description: '记录探访过的美食，用味蕾丈量这座城市。', path: '/food' })
+export const metadata = createPageMetadata({ title: '美食地图', description: '记录探访过的美食，用味蕾丈量这座城市。', path: '/food', noIndex: !isSectionVisible('/food') })
 
 export default function FoodPage() {
   const posts = getAllFoodPosts()

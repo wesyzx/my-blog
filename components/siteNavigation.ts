@@ -1,4 +1,5 @@
 import type { IconName } from './Icon'
+import { isSectionVisible } from '@/lib/site-visibility'
 
 export interface SiteNavItem {
   label: string
@@ -7,7 +8,7 @@ export interface SiteNavItem {
 }
 
 /** 首页侧栏、内页顶栏与移动菜单共用同一套栏目。 */
-export const SITE_NAV_ITEMS: SiteNavItem[] = [
+const ALL_SITE_NAV_ITEMS: SiteNavItem[] = [
   { label: '首页', href: '/', icon: 'orbit' },
   { label: '博文', href: '/posts', icon: 'post' },
   { label: '相册', href: '/gallery', icon: 'gallery' },
@@ -17,3 +18,5 @@ export const SITE_NAV_ITEMS: SiteNavItem[] = [
   { label: '归档', href: '/archive', icon: 'calendar' },
   { label: '关于', href: '/about', icon: 'about' },
 ]
+
+export const SITE_NAV_ITEMS = ALL_SITE_NAV_ITEMS.filter((item) => isSectionVisible(item.href))

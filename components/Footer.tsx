@@ -4,6 +4,7 @@ import VisitorStats from './VisitorStats'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems } from '@/lib/gallery'
+import { isSectionVisible } from '@/lib/site-visibility'
 
 type BrandIconProps = {
   brand: 'next' | 'edgeone' | 'cloudflare'
@@ -40,9 +41,9 @@ function BrandIcon({ brand }: BrandIconProps) {
 export default function Footer() {
   const food = getAllFoodPosts()
   const pageKeys = [
-    '/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/message',
+    ...['/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/message'].filter((path) => isSectionVisible(path)),
     ...getAllPosts().map((post) => `/posts/${encodeURIComponent(post.slug)}`),
-    ...food.map((post) => `/food/${encodeURIComponent(post.slug)}`),
+    ...(isSectionVisible('/food') ? food.map((post) => `/food/${encodeURIComponent(post.slug)}`) : []),
     ...getAllGalleryItems().map((album) => `/gallery/${encodeURIComponent(album.slug)}`),
   ]
 

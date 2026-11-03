@@ -10,6 +10,7 @@ import ImageLightbox from '@/components/ImageLightbox'
 import MarkdownImage from '@/components/MarkdownImage'
 import Icon from '@/components/Icon'
 import PageHeader from '@/components/PageHeader'
+import { isSectionVisible } from '@/lib/site-visibility'
 
 export function generateStaticParams() { return getAllFoodPosts().map((post) => ({ slug: post.slug })) }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -19,6 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     description: post.excerpt || post.address,
     path: `/food/${encodeURIComponent(post.slug)}`,
     images: post.cover ? [post.cover] : [],
+    noIndex: !isSectionVisible('/food'),
   }) : {}
 }
 

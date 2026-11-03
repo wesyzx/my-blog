@@ -2,11 +2,16 @@ import ContentStream from '@/components/ContentStream'
 import ArchiveHeatmap from '@/components/ArchiveHeatmap'
 import PageHeader from '@/components/PageHeader'
 import { createPageMetadata } from '@/lib/metadata'
+import { isSectionVisible } from '@/lib/site-visibility'
 import { getAllSiteUpdates, type SiteUpdate } from '@/lib/site-updates'
+
+const archiveDescription = isSectionVisible('/food')
+  ? '按年月收拢轨道之外留下的文章、相册与美食记录。'
+  : '按年月收拢轨道之外留下的文章与相册记录。'
 
 export const metadata = createPageMetadata({
   title: '归档',
-  description: '按年月收拢轨道之外留下的文章、相册与美食记录。',
+  description: archiveDescription,
   path: '/archive',
 })
 

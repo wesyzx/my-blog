@@ -2,6 +2,7 @@ import 'server-only'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems, type GalleryMeta } from '@/lib/gallery'
+import { isSectionVisible } from '@/lib/site-visibility'
 
 export interface SiteUpdate {
   id: string
@@ -42,7 +43,7 @@ export function getAllSiteUpdates(): SiteUpdate[] {
       href: `/gallery/${encodeURIComponent(album.slug)}`,
       album,
     })),
-    ...food.map((place): SiteUpdate => ({
+    ...(isSectionVisible('/food') ? food.map((place): SiteUpdate => ({
       id: `food-${place.slug}`,
       kind: 'food',
       title: place.title,
@@ -50,6 +51,6 @@ export function getAllSiteUpdates(): SiteUpdate[] {
       cover: place.cover || undefined,
       date: place.date,
       href: `/food/${encodeURIComponent(place.slug)}`,
-    })),
+    })) : []),
   ].sort((a, b) => dateValue(b.date) - dateValue(a.date))
 }

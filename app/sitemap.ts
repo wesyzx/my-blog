@@ -2,15 +2,15 @@ import type { MetadataRoute } from 'next'
 import { getAllPosts } from '@/lib/posts'
 import { getAllFoodPosts } from '@/lib/food'
 import { getAllGalleryItems } from '@/lib/gallery'
+import { isSectionVisible } from '@/lib/site-visibility'
 
 const base = 'https://guanyan.me'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const food = getAllFoodPosts()
   const gallery = getAllGalleryItems()
-  const staticPages = ['', '/archive', '/posts', '/food', '/gallery', '/workouts', '/message', '/about'].map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const }))
+  const staticPages = ['', '/archive', '/posts', '/food', '/gallery', '/workouts', '/message', '/about'].filter((path) => isSectionVisible(path)).map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const }))
   const posts = getAllPosts().map((post) => ({ url: `${base}/posts/${encodeURIComponent(post.slug)}`, lastModified: post.date }))
-  const foodPages = food.map((post) => ({ url: `${base}/food/${encodeURIComponent(post.slug)}`, lastModified: post.date }))
+  const foodPages = isSectionVisible('/food') ? getAllFoodPosts().map((post) => ({ url: `${base}/food/${encodeURIComponent(post.slug)}`, lastModified: post.date })) : []
   const galleryPages = gallery.map((album) => ({ url: `${base}/gallery/${encodeURIComponent(album.slug)}`, lastModified: album.date }))
   return [...staticPages, ...posts, ...foodPages, ...galleryPages]
 }

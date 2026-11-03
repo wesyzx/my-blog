@@ -1,6 +1,5 @@
-import Link from 'next/link'
+import ArchiveHeatmap from '@/components/ArchiveHeatmap'
 import ContentStream from '@/components/ContentStream'
-import Icon from '@/components/Icon'
 import OrbitHero from '@/components/OrbitHero'
 import { createPageMetadata } from '@/lib/metadata'
 import { getAllSiteUpdates } from '@/lib/site-updates'
@@ -18,13 +17,9 @@ export default function Home() {
   return (
     <div className="home-shell animate-fade-up">
       <OrbitHero />
+      <ArchiveHeatmap updates={updates} />
       {latest.length > 0 ? (
-        <>
-          <ContentStream updates={latest} />
-          <div className="stream-more">
-            <Link href="/archive">浏览全部归档 <Icon name="arrow-right" /></Link>
-          </div>
-        </>
+        <ContentStream updates={latest} />
       ) : (
         <div className="empty-state">新的记录正在路上。</div>
       )}

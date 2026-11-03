@@ -77,7 +77,7 @@ export default function GalleryMosaic({ images, title }: { images: GalleryMedia[
               preset="fit"
               alt={`${title}，第 ${imageOrdinal} 张`}
               fill
-              sizes={`(max-width: 560px) ${Math.ceil(100 * ratio / mobileRatios)}vw, (max-width: 1216px) ${Math.ceil(100 * ratio / desktopRatios)}vw, ${Math.ceil(1120 * ratio / desktopRatios)}px`}
+              sizes={`(max-width: 560px) ${Math.ceil(100 * ratio / mobileRatios)}vw, (max-width: 1216px) ${Math.ceil(100 * ratio / desktopRatios)}vw, ${Math.ceil(680 * ratio / desktopRatios)}px`}
               data-lightbox-src={blogImageUrl(media.src, { preset: 'full' })}
               data-lightbox-caption={`${imageOrdinal}/${imageCount}`}
               data-pswp-width={media.width}

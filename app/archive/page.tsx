@@ -13,6 +13,7 @@ export const metadata = createPageMetadata({
   title: '归档',
   description: archiveDescription,
   path: '/archive',
+  noIndex: !isSectionVisible('/archive'),
 })
 
 function dateParts(value: string) {

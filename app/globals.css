@@ -140,7 +140,7 @@ button { font: inherit; }
 .content-image-link:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
 .post-cover { position: relative; display: grid; align-content: end; width: 100%; aspect-ratio: 3 / 1; min-height: 224px; padding: 40px; background: var(--gray-12); }
 .post-cover-media { position: absolute; inset: 0; display: block; overflow: hidden; }
-.post-cover-media img { object-fit: cover; object-position: center; }
+.post-cover-media img { object-fit: cover; object-position: center; transition: transform .4s ease; }
 .post-cover-media::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .16), rgba(0, 0, 0, .32) 45%, rgba(0, 0, 0, .72)); pointer-events: none; content: ""; }
 .post-cover-copy { position: relative; pointer-events: none; color: #fff; }
 .post-cover-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; font-size: 14px; font-weight: 600; text-transform: uppercase; }
@@ -151,6 +151,10 @@ button { font: inherit; }
 .post-cover-expand { position: absolute; z-index: 1; top: 16px; right: 16px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid rgba(255, 255, 255, .4); background: rgba(0, 0, 0, .25); color: #fff; cursor: zoom-in; }
 .post-cover-expand svg { width: 18px; height: 18px; }
 .post-cover-media:focus-visible, .post-cover-title a:focus-visible, .post-cover-expand:focus-visible { outline: 2px solid #fff; outline-offset: -4px; }
+@media (hover: hover) and (pointer: fine) {
+  .post-cover:hover .post-cover-media img { transform: scale(1.02); }
+}
+.post-cover:focus-within .post-cover-media img { transform: scale(1.02); }
 .pagination { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) 0 var(--space-5); margin-top: var(--space-3); color: var(--color-text-hint); font-size: 12px; letter-spacing: .06em; border-top: 1px solid var(--color-border-hairline); }
 .pagination a { display: inline-flex; align-items: center; gap: 6px; color: var(--color-text-secondary); transition: color .15s ease; }
 .pagination a:hover { color: var(--color-accent); }
@@ -452,6 +456,8 @@ button { font: inherit; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .post-cover:hover .post-cover-media img,
+  .post-cover:focus-within .post-cover-media img { transform: none; }
 }
 
 /* ============================================================================

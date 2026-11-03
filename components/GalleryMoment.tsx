@@ -3,8 +3,10 @@ import GalleryMosaic from './GalleryMosaic'
 import type { GalleryMedia, GalleryMeta } from '@/lib/gallery'
 import { formatItemDate } from '@/lib/format'
 
+const PREVIEW_MEDIA_LIMIT = 7
+
 function previewMedia(album: GalleryMeta): GalleryMedia[] {
-  if (album.images.length > 0) return album.images
+  if (album.images.length > 0) return album.images.slice(0, PREVIEW_MEDIA_LIMIT)
   return album.cover ? [{ kind: 'image', src: album.cover, width: 1600, height: 1067 }] : []
 }
 

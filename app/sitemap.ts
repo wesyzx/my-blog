@@ -8,7 +8,7 @@ const base = 'https://guanyan.me'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const gallery = getAllGalleryItems()
-  const staticPages = ['', '/archive', '/posts', '/food', '/gallery', '/workouts', '/message', '/about'].filter((path) => isSectionVisible(path)).map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const }))
+  const staticPages = ['', '/archive', '/posts', '/food', '/gallery', '/workouts', '/shelf', '/message', '/about'].filter((path) => isSectionVisible(path)).map((path) => ({ url: `${base}${path}`, changeFrequency: 'weekly' as const }))
   const posts = getAllPosts().map((post) => ({ url: `${base}/posts/${encodeURIComponent(post.slug)}`, lastModified: post.date }))
   const foodPages = isSectionVisible('/food') ? getAllFoodPosts().map((post) => ({ url: `${base}/food/${encodeURIComponent(post.slug)}`, lastModified: post.date })) : []
   const galleryPages = gallery.map((album) => ({ url: `${base}/gallery/${encodeURIComponent(album.slug)}`, lastModified: album.date }))

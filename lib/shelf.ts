@@ -1,4 +1,4 @@
-import demoData from '@/content/shelf-demo.json'
+import shelfData from '@/content/shelf.json'
 
 export type ShelfKind = 'book' | 'movie'
 export type ShelfStatus = 'done' | 'doing' | 'mark'
@@ -41,8 +41,8 @@ export interface ShelfData {
   items: ShelfItem[]
 }
 
-const demo = demoData as ShelfData
+const shelf = shelfData as ShelfData
 
-export function getShelfDemoData(): ShelfData {
-  return demo
+export function getShelfData(): ShelfData {
+  return shelf
 }

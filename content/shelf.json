@@ -8,7 +8,7 @@
       "title": "百年孤独",
       "creator": "[哥伦比亚] 加西亚·马尔克斯",
       "year": "2011",
-      "cover": "/shelf-demo/6082808.jpg",
+      "cover": "/shelf/6082808.jpg",
       "coverSource": "https://img3.doubanio.com/view/subject/l/public/s27237850.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -37,7 +37,7 @@
       "title": "三体",
       "creator": "刘慈欣",
       "year": "2008",
-      "cover": "/shelf-demo/2567698.jpg",
+      "cover": "/shelf/2567698.jpg",
       "coverSource": "https://img3.doubanio.com/view/subject/l/public/s2768378.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -66,7 +66,7 @@
       "title": "活着",
       "creator": "余华",
       "year": "2012",
-      "cover": "/shelf-demo/4913064.jpg",
+      "cover": "/shelf/4913064.jpg",
       "coverSource": "https://img9.doubanio.com/view/subject/l/public/s29869926.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -95,7 +95,7 @@
       "title": "小王子",
       "creator": "[法] 安东尼·德·圣-埃克苏佩里",
       "year": "2003",
-      "cover": "/shelf-demo/1084336.jpg",
+      "cover": "/shelf/1084336.jpg",
       "coverSource": "https://img3.doubanio.com/view/subject/l/public/s1237549.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -124,7 +124,7 @@
       "title": "人类简史",
       "creator": "[以色列] 尤瓦尔·赫拉利",
       "year": "2014",
-      "cover": "/shelf-demo/25985021.jpg",
+      "cover": "/shelf/25985021.jpg",
       "coverSource": "https://img3.doubanio.com/view/subject/l/public/s27814883.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -153,7 +153,7 @@
       "title": "挪威的森林",
       "creator": "[日] 村上春树",
       "year": "2018",
-      "cover": "/shelf-demo/27200257.jpg",
+      "cover": "/shelf/27200257.jpg",
       "coverSource": "https://img2.doubanio.com/view/subject/l/public/s34412041.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -182,7 +182,7 @@
       "title": "肖申克的救赎",
       "creator": "弗兰克·德拉邦特",
       "year": "1994",
-      "cover": "/shelf-demo/1292052.jpg",
+      "cover": "/shelf/1292052.jpg",
       "coverSource": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2936346968.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -211,7 +211,7 @@
       "title": "霸王别姬",
       "creator": "陈凯歌",
       "year": "1993",
-      "cover": "/shelf-demo/1291546.jpg",
+      "cover": "/shelf/1291546.jpg",
       "coverSource": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2911205318.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -240,7 +240,7 @@
       "title": "阿甘正传",
       "creator": "罗伯特·泽米吉斯",
       "year": "1994",
-      "cover": "/shelf-demo/1292720.jpg",
+      "cover": "/shelf/1292720.jpg",
       "coverSource": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p510876253.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -269,7 +269,7 @@
       "title": "这个杀手不太冷",
       "creator": "吕克·贝松",
       "year": "1994",
-      "cover": "/shelf-demo/1295644.jpg",
+      "cover": "/shelf/1295644.jpg",
       "coverSource": "https://img9.doubanio.com/view/photo/m_ratio_poster/public/p2913554676.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -298,7 +298,7 @@
       "title": "星际穿越",
       "creator": "克里斯托弗·诺兰",
       "year": "2014",
-      "cover": "/shelf-demo/1889243.jpg",
+      "cover": "/shelf/1889243.jpg",
       "coverSource": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2614988097.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -327,7 +327,7 @@
       "title": "盗梦空间",
       "creator": "克里斯托弗·诺兰",
       "year": "2010",
-      "cover": "/shelf-demo/3541415.jpg",
+      "cover": "/shelf/3541415.jpg",
       "coverSource": "https://img9.doubanio.com/view/photo/m_ratio_poster/public/p513344864.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -356,7 +356,7 @@
       "title": "死后的世界",
       "creator": "[美]雷蒙德·穆迪（Raymond A.Moody）",
       "year": "2014",
-      "cover": "/shelf-demo/25830943.jpg",
+      "cover": "/shelf/25830943.jpg",
       "coverSource": "https://img2.doubanio.com/view/subject/l/public/s27222421.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -385,7 +385,7 @@
       "title": "碟中谍6：全面瓦解",
       "creator": "克里斯托弗·麦奎里",
       "year": "2018",
-      "cover": "/shelf-demo/26336252.jpg",
+      "cover": "/shelf/26336252.jpg",
       "coverSource": "https://img9.doubanio.com/view/photo/m_ratio_poster/public/p2529365085.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -414,7 +414,7 @@
       "title": "忠犬八公物语",
       "creator": "神山征二郎",
       "year": "1987",
-      "cover": "/shelf-demo/1959195.jpg",
+      "cover": "/shelf/1959195.jpg",
       "coverSource": "https://img9.doubanio.com/view/photo/m_ratio_poster/public/p2603716224.jpg",
       "aspect": 0.6666666666666666,
       "colors": {
@@ -443,7 +443,7 @@
       "title": "疯狂的麦克斯4：狂暴之路",
       "creator": "乔治·米勒",
       "year": "2015",
-      "cover": "/shelf-demo/3592854.jpg",
+      "cover": "/shelf/3592854.jpg",
       "coverSource": "https://img3.doubanio.com/view/photo/m_ratio_poster/public/p2236181653.jpg",
       "aspect": 0.6666666666666666,
       "colors": {

@@ -3,9 +3,9 @@ import path from 'node:path'
 
 const API_BASE = 'https://m.douban.com/rexxar/api/v2'
 const USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36'
-const DEFAULT_IMAGE_URL = '/shelf-demo'
-const DEFAULT_IMAGE_DIR = 'public/shelf-demo'
-const DEFAULT_OUTPUT = 'content/shelf-demo.json'
+const DEFAULT_IMAGE_URL = '/shelf'
+const DEFAULT_IMAGE_DIR = 'public/shelf'
+const DEFAULT_OUTPUT = 'content/shelf.json'
 
 function arg(name, fallback = '') {
   const prefix = `--${name}=`

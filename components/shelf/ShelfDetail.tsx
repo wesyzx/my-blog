@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import type { ShelfItem } from '@/lib/shelf'
-import styles from './ShelfDemo.module.css'
+import styles from './Shelf.module.css'
 
 interface ShelfDetailProps {
   item: ShelfItem | null

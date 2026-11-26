@@ -12,7 +12,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import type { ShelfItem } from '@/lib/shelf'
-import styles from './ShelfDemo.module.css'
+import styles from './Shelf.module.css'
 
 interface ShelfStageProps {
   items: ShelfItem[]

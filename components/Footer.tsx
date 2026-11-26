@@ -41,7 +41,7 @@ function BrandIcon({ brand }: BrandIconProps) {
 export default function Footer() {
   const food = getAllFoodPosts()
   const pageKeys = [
-    ...['/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/message'].filter((path) => isSectionVisible(path)),
+    ...['/', '/posts', '/about', '/archive', '/food', '/gallery', '/workouts', '/shelf', '/message'].filter((path) => isSectionVisible(path)),
     ...getAllPosts().map((post) => `/posts/${encodeURIComponent(post.slug)}`),
     ...(isSectionVisible('/food') ? food.map((post) => `/food/${encodeURIComponent(post.slug)}`) : []),
     ...getAllGalleryItems().map((album) => `/gallery/${encodeURIComponent(album.slug)}`),

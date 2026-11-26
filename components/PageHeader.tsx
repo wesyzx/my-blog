@@ -7,7 +7,6 @@ import { formatItemDate } from '@/lib/format'
  */
 export default function PageHeader({
   title,
-  eyebrow,
   description,
   className = '',
   actions,
@@ -15,7 +14,6 @@ export default function PageHeader({
   children,
 }: {
   title: string
-  eyebrow?: string
   description?: string
   className?: string
   actions?: ReactNode
@@ -26,7 +24,7 @@ export default function PageHeader({
     <header className={`page-header${className ? ` ${className}` : ''}`}>
       {date ? (
         <time className="page-kicker" dateTime={date}>{formatItemDate(date)}</time>
-      ) : eyebrow ? <p className="page-kicker">{eyebrow}</p> : null}
+      ) : null}
       <div className="page-header-heading">
         <h1 className="page-title">{title}</h1>
         {actions}

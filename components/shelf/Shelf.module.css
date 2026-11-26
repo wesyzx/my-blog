@@ -399,21 +399,6 @@
   transform: rotateY(90deg) translateZ(calc(var(--ws, 36px) / 2));
 }
 
-.coverKind {
-  position: absolute;
-  top: 7%;
-  left: 7%;
-  z-index: 1;
-  padding: 4px 6px;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, .46);
-  color: #fff;
-  font-size: calc(var(--h, 260px) * .022);
-  font-weight: 650;
-  letter-spacing: .12em;
-  line-height: 1;
-}
-
 .srOnly {
   position: absolute;
   width: 1px;

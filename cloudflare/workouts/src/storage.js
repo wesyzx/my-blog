@@ -142,7 +142,7 @@ export async function recordSync(db, source, { cursor = null, status, error = nu
   `).bind(source, cursor, syncedAt, status, error).run()
 }
 
-export async function loadActivities(db) {
+async function loadActivities(db) {
   const result = await db.prepare(`
     SELECT
       id,
@@ -184,9 +184,7 @@ export async function createAndStoreSnapshot(env, now = new Date()) {
     },
     customMetadata: { lastUpdated: snapshot.lastUpdated, schemaVersion: String(snapshot.schemaVersion) },
   }
-  await env.SNAPSHOTS.put(env.SNAPSHOT_KEY || 'v1/workouts.json', body, {
-    ...metadata,
-  })
+  await env.SNAPSHOTS.put(env.SNAPSHOT_KEY || 'v1/workouts.json', body, metadata)
   await env.SNAPSHOTS.put(env.ROUTES_SNAPSHOT_KEY || 'v1/routes.json', routesBody, {
     ...metadata,
     customMetadata: { lastUpdated: routesSnapshot.lastUpdated, schemaVersion: String(routesSnapshot.schemaVersion) },

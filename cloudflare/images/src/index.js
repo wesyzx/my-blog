@@ -144,21 +144,6 @@ function normalizeGalleryMedia(media, index = 0) {
   return normalized
 }
 
-function publicGalleryMedia(media, index = 0) {
-  const normalized = normalizeGalleryMedia(media, index)
-  if (!normalized) return null
-  return {
-    kind: normalized.kind,
-    src: normalized.src,
-    width: normalized.width,
-    height: normalized.height,
-    order: normalized.order,
-    ...(normalized.duration ? { duration: normalized.duration } : {}),
-    ...(normalized.poster ? { poster: normalized.poster } : {}),
-    ...(normalized.mimeType ? { mimeType: normalized.mimeType } : {}),
-  }
-}
-
 function firstImageSource(album) {
   return album.images
     .map((media, index) => normalizeGalleryMedia(media, index))
@@ -227,8 +212,7 @@ async function listGalleryAlbumRecords(env) {
     || left.slug.localeCompare(right.slug))
 }
 
-async function listGalleryAlbumsForAdmin(request, env) {
-  if (request.method !== 'GET') return errorResponse(405, 'Method not allowed', { allow: 'GET' })
+async function listGalleryAlbumsForAdmin(env) {
   const albums = await listGalleryAlbumRecords(env)
   return jsonResponse({
     albums: albums.map((album) => ({
@@ -242,7 +226,7 @@ async function listGalleryAlbumsForAdmin(request, env) {
       mediaCount: album.images.length,
       photoCount: album.images.length,
       cover: firstImageSource(album),
-      images: album.images.map(publicGalleryMedia).filter(Boolean),
+      images: album.images.map(normalizeGalleryMedia).filter(Boolean),
       createdAt: album.createdAt,
       updatedAt: album.updatedAt,
     })),
@@ -313,7 +297,7 @@ async function uploadGalleryPhoto(request, env, id) {
   const hash = await sha256Hex(buffer)
   const duplicate = album.images.find((image) => image.hash === hash)
   if (duplicate) {
-    const publicImage = publicGalleryMedia(duplicate, duplicate.order)
+    const publicImage = normalizeGalleryMedia(duplicate, duplicate.order)
     return jsonResponse({ ok: true, duplicate: true, image: publicImage })
   }
 
@@ -351,7 +335,7 @@ async function uploadGalleryPhoto(request, env, id) {
   }
   album.images.push(image)
   await writeAlbum(env, album)
-  const publicImage = publicGalleryMedia(image, image.order)
+  const publicImage = normalizeGalleryMedia(image, image.order)
   return jsonResponse({ ok: true, duplicate: false, image: publicImage })
 }
 
@@ -467,7 +451,7 @@ async function uploadGalleryVideo(request, env, id) {
     return jsonResponse({
       ok: true,
       duplicate: true,
-      video: publicGalleryMedia(duplicate, duplicate.order),
+      video: normalizeGalleryMedia(duplicate, duplicate.order),
     })
   }
 
@@ -495,7 +479,7 @@ async function uploadGalleryVideo(request, env, id) {
   return jsonResponse({
     ok: true,
     duplicate: false,
-    video: publicGalleryMedia(video, video.order),
+    video: normalizeGalleryMedia(video, video.order),
   })
 }
 
@@ -944,7 +928,7 @@ async function serveGalleryManifest(request, env) {
         cover: firstImageSource(album),
         images: album.images.slice()
           .sort((left, right) => left.order - right.order)
-          .map(publicGalleryMedia)
+          .map(normalizeGalleryMedia)
           .filter(Boolean),
       })
     } catch {
@@ -1403,7 +1387,6 @@ async function serveImage(request, env, url) {
     return serveVariant(request, env, { ...options, key })
   }
 
-  if (!url.pathname.startsWith(PUBLIC_PREFIX)) return errorResponse(404, 'Image not found')
   return serveLegacy(request, env, url)
 }
 
@@ -1435,7 +1418,7 @@ const worker = {
       if (url.pathname === '/internal/gallery/albums') {
         if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
         return request.method === 'GET'
-          ? await listGalleryAlbumsForAdmin(request, env)
+          ? await listGalleryAlbumsForAdmin(env)
           : await createGalleryAlbum(request, env)
       }
 
@@ -1443,7 +1426,7 @@ const worker = {
       if (directVideoRoute) {
         if (!galleryAuthorized(request, env)) return errorResponse(401, 'Unauthorized')
         return await handleDirectVideoUpload(request, env, directVideoRoute[1], directVideoRoute[2], {
-          readAlbum, writeAlbum, publicGalleryMedia, videoTrackDimensions,
+          readAlbum, writeAlbum, normalizeGalleryMedia, videoTrackDimensions,
         })
       }
 

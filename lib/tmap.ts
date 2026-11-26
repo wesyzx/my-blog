@@ -6,7 +6,7 @@
  * 上线前记得在控制台配置 Referer 白名单（填站点域名），否则 Key 会被盗用。
  */
 
-export const TMAP_KEY = process.env.NEXT_PUBLIC_TMAP_KEY || ''
+const TMAP_KEY = process.env.NEXT_PUBLIC_TMAP_KEY || ''
 export const TMAP_KEY_MISSING = TMAP_KEY.length === 0
 /**
  * 运动地图使用的绑定样式 ID；美食保持 SDK 默认底图。
@@ -15,7 +15,7 @@ export const TMAP_KEY_MISSING = TMAP_KEY.length === 0
 export const TMAP_STYLE_ID = (process.env.NEXT_PUBLIC_TMAP_STYLE_ID || '').trim()
 
 export interface TMapLatLng { lat: number; lng: number }
-export interface TMapBounds { __bounds?: never }
+interface TMapBounds { __bounds?: never }
 
 export interface TMapMap {
   setCenter(center: TMapLatLng): void
@@ -28,7 +28,7 @@ export interface TMapMap {
   destroy(): void
 }
 
-export interface TMapLayer {
+interface TMapLayer {
   setMap(map: TMapMap | null): void
   on(event: string, listener: (event: { geometry?: { id?: string } }) => void): void
   off(event: string, listener: (event: { geometry?: { id?: string } }) => void): void
@@ -42,7 +42,7 @@ export interface TMapInfoWindow {
   destroy(): void
 }
 
-export interface TMapNamespace {
+interface TMapNamespace {
   Map: new (container: HTMLElement | string, options: Record<string, unknown>) => TMapMap
   LatLng: new (lat: number, lng: number) => TMapLatLng
   LatLngBounds: new (southWest: TMapLatLng, northEast: TMapLatLng) => TMapBounds

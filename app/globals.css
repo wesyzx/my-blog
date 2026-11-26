@@ -93,7 +93,7 @@ button { font: inherit; }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
 
 .site-header { position: sticky; top: 0; z-index: 50; border-bottom: 1px solid var(--color-border-hairline); background: var(--color-bg-nav); backdrop-filter: blur(10px); }
-.site-header-inner { max-width: 1200px; height: 60px; margin: auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+.site-header-inner { height: 60px; margin: auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
 .site-brand { display: flex; align-items: center; gap: 9px; color: var(--color-text-primary); font-family: var(--font-serif); font-size: 17px; font-weight: 600; letter-spacing: .04em; }
 .brand-avatar { display: block; flex-shrink: 0; width: 28px; height: 28px; border-radius: 3px; object-fit: cover; }
 .mobile-menu-button { width: 32px; height: 32px; border: 1px solid var(--color-border-hairline); border-radius: var(--radius-control); place-items: center; color: var(--color-text-secondary); background: transparent; cursor: pointer; transition: color .2s ease, border-color .2s ease; }
@@ -298,6 +298,9 @@ button { font: inherit; }
 .home-shell, .page-shell, .page-shell.narrow {
   width: min(100%, calc(var(--content-width) + var(--content-gutter) * 2));
   margin: 0 auto;
+}
+
+.page-shell, .page-shell.narrow {
   padding: 0 var(--content-gutter);
 }
 
@@ -397,7 +400,7 @@ button { font: inherit; }
   .sidebar-foot { width: 100%; margin-top: 22px; padding-top: 0; }
   .sidebar-verse { display: none; }
   .site-content { padding: 40px 0; }
-  .home-shell, .page-shell, .page-shell.narrow { padding: 0 24px; }
+  .page-shell, .page-shell.narrow { padding: 0 24px; }
 }
 
 /* 860px 以下：左栏整体隐藏，交给顶栏 + 抽屉（保留原有可访问性实现） */
@@ -410,7 +413,7 @@ button { font: inherit; }
   .mobile-nav { top: 58px; }
 
   .site-content { padding: 32px 0 40px; }
-  .home-shell, .page-shell, .page-shell.narrow { padding: 0 20px; }
+  .page-shell, .page-shell.narrow { padding: 0 20px; }
   .about-avatar-wrap { display: inline-flex; }
   .workout-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
@@ -450,7 +453,7 @@ button { font: inherit; }
 }
 
 @media (max-width: 400px) {
-  .home-shell, .page-shell, .page-shell.narrow { padding-left: 16px; padding-right: 16px; }
+  .page-shell, .page-shell.narrow { padding-left: 16px; padding-right: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -539,7 +542,6 @@ button { font: inherit; }
 
 .home-stream > * + * { border-top: 1px solid var(--gray-a3); }
 .home-stream .item:first-of-type { padding-top: 0; }
-.home-stream .item + .item { border-top-color: var(--gray-a3); }
 .home-stream > .item,
 .home-stream > .moment-item,
 .post-list > .post-item { padding: 20px 0 40px; }
@@ -555,10 +557,6 @@ button { font: inherit; }
 .stream-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
 .stream-meta > span { flex-shrink: 0; color: var(--color-text-muted); font-size: 11px; font-weight: 600; letter-spacing: .08em; }
 .home-stream .gallery-mosaic { margin-top: 18px; }
-.stream-more { display: flex; justify-content: flex-end; padding: 24px 0; border-top: 1px solid var(--gray-a3); }
-.stream-more a { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text-muted); font-size: 13px; font-weight: 600; }
-.stream-more a:hover { color: var(--color-accent); }
-.stream-more svg { width: 14px; height: 14px; }
 
 /* 参考站侧栏是一组连续链接，而不是后台式分组菜单。 */
 .sidebar-nav { margin-top: 30px; }

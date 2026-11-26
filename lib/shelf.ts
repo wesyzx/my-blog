@@ -1,10 +1,10 @@
 import shelfData from '@/content/shelf.json'
 
 export type ShelfKind = 'book' | 'movie' | 'tv' | 'music'
-export type ShelfStatus = 'done' | 'doing' | 'mark'
-export type ShelfSource = 'douban' | 'neodb'
+type ShelfStatus = 'done' | 'doing' | 'mark'
+type ShelfSource = 'douban' | 'neodb'
 
-export interface ShelfColors {
+interface ShelfColors {
   bg: string
   fg: string
   band: string
@@ -38,7 +38,7 @@ export interface ShelfItem {
   date: string
 }
 
-export interface ShelfData {
+interface ShelfData {
   syncedAt: string
   source: string
   items: ShelfItem[]

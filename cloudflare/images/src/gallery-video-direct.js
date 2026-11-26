@@ -85,7 +85,7 @@ export async function handleDirectVideoUpload(request, env, albumId, uploadId, s
   const session = JSON.parse(await new Response(stored.body).text())
   if (session.albumId !== albumId) return fail(404, 'Video upload session not found')
   const previous = album.images.find((media) => media.uploadId === uploadId)
-  if (previous) return respond({ ok: true, duplicate: true, video: services.publicGalleryMedia(previous, previous.order) })
+  if (previous) return respond({ ok: true, duplicate: true, video: services.normalizeGalleryMedia(previous, previous.order) })
   if (session.expiresAt < Date.now()) return fail(410, 'Video upload session expired; please retry')
   if (album.images.length >= 100) return fail(413, 'Album media limit reached')
   const object = await env.IMAGES_BUCKET.head(session.key)
@@ -103,5 +103,5 @@ export async function handleDirectVideoUpload(request, env, albumId, uploadId, s
   }
   album.images.push(video)
   await services.writeAlbum(env, album)
-  return respond({ ok: true, duplicate: false, video: services.publicGalleryMedia(video, video.order) })
+  return respond({ ok: true, duplicate: false, video: services.normalizeGalleryMedia(video, video.order) })
 }

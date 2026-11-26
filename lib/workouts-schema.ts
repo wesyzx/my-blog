@@ -27,7 +27,7 @@ export interface NormalizedRouteActivity extends Omit<NormalizedActivity, 'route
   route: string
 }
 
-export interface YearlySummary {
+interface YearlySummary {
   year: number
   totalActivities: number
   totalDistanceMeters: number
@@ -51,7 +51,7 @@ export interface WorkoutsDataContract {
   activities: NormalizedActivity[]
 }
 
-export interface RoutesDataContract {
+interface RoutesDataContract {
   schemaVersion: 1
   lastUpdated: string
   routes: NormalizedRouteActivity[]

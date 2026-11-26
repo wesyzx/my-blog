@@ -145,7 +145,7 @@ async function fetchImageMeta(imageUrl, lastKnown) {
       headers: { Range: 'bytes=0-65535', Accept: 'image/webp,image/*;q=0.8' },
       signal: AbortSignal.timeout(8000),
     })
-    if (!response.ok && response.status !== 206) throw new Error(`HTTP ${response.status}`)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const size = readImageSize(Buffer.from(await response.arrayBuffer()))
     if (size?.width && size?.height) return size
     throw new Error('无法从文件头解析出尺寸')
@@ -271,9 +271,7 @@ async function fetchR2Gallery(existing, reservedSlugs = new Set()) {
       throw new Error(`R2 相册清单读取失败；为避免旧快照覆盖新相册，本次构建停止：${error.message}`)
     }
     console.warn(`  R2 gallery manifest unavailable; using the previous shortcut albums: ${error.message}`)
-    return (existing.gallery || [])
-      .filter((album) => album.source === 'r2')
-      .map((album) => ({ ...album, source: 'r2' }))
+    return (existing.gallery || []).filter((album) => album.source === 'r2')
   }
 }
 

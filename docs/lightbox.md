@@ -4,7 +4,7 @@
 
 - `ImageLightbox` 保留原来的容器接口，增强容器内的图片，不改变正文或网格结构。
 - 博文、美食正文继续通过服务端 `MDXRemote` 渲染；`MarkdownImage` 为 Markdown 图片提供预览。
-- 相册保留 `react-photo-album` 排版，预览复用 `next/image`，点击后使用共享灯箱。
+- 相册由 `GalleryMosaic` 排版，预览复用 `next/image`，点击后使用共享灯箱。
 - 美食多图继续使用现有组件和图片链接。
 - 已移除 `yet-another-react-lightbox`，使用 `photoswipe@5.4.4`。
 

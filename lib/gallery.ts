@@ -5,7 +5,7 @@
 import { bundleData } from './data-bundle'
 import { decodeRouteSlug } from './slug'
 
-export interface GalleryImage {
+interface GalleryImage {
   kind?: 'image'
   src: string
   width: number

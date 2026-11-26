@@ -38,15 +38,20 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
   const gridEnd = new Date(today)
   gridEnd.setUTCDate(gridEnd.getUTCDate() + (6 - gridEnd.getUTCDay()))
 
+  const visibleStart = formatDate(rangeStart)
+  const visibleEnd = formatDate(today)
+  let visibleUpdateCount = 0
   const counts = new Map<string, { count: number; kinds: Set<SiteUpdate['kind']> }>()
   for (const update of updates) {
     const key = dateKey(update.date)
-    if (!key) continue
+    if (!key || key < visibleStart || key > visibleEnd) continue
     const current = counts.get(key) ?? { count: 0, kinds: new Set<SiteUpdate['kind']>() }
     current.count += 1
     current.kinds.add(update.kind)
     counts.set(key, current)
+    visibleUpdateCount += 1
   }
+  const activeDays = counts.size
 
   const days: Date[] = []
   for (let cursor = new Date(gridStart); cursor <= gridEnd; cursor = new Date(cursor.getTime() + DAY_MS)) {
@@ -57,7 +62,7 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
   const monthLabels = days.reduce<Array<{ label: string; column: number }>>((labels, day, index) => {
     if (day.getUTCDate() !== 1) return labels
     const column = Math.floor(index / 7) + 1
-    if (column <= weekCount - 2 && !labels.some((item) => item.column === column)) {
+    if (column <= weekCount - 2) {
       labels.push({
         label: new Intl.DateTimeFormat('zh-CN', { month: 'short', timeZone: 'UTC' }).format(day),
         column,
@@ -65,14 +70,6 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
     }
     return labels
   }, [])
-
-  const visibleStart = formatDate(rangeStart)
-  const visibleEnd = formatDate(today)
-  const visibleUpdates = updates.filter((update) => {
-    const key = dateKey(update.date)
-    return key >= visibleStart && key <= visibleEnd
-  })
-  const activeDays = new Set(visibleUpdates.map((update) => dateKey(update.date)).filter(Boolean)).size
 
   return (
     <section className={`archive-activity${isHome ? ' archive-activity--home' : ''}`} aria-labelledby="archive-activity-title">
@@ -83,7 +80,7 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
               <p className="editorial-meta">PAST 365 DAYS</p>
               <div className="archive-activity-home-title">
                 <h2 id="archive-activity-title">年度轨迹</h2>
-                <span>{activeDays} 个记录日 · {visibleUpdates.length} 次更新</span>
+                <span>{activeDays} 个记录日 · {visibleUpdateCount} 次更新</span>
               </div>
             </div>
             <span className="archive-activity-legend" aria-label="颜色越深，当天更新越多">
@@ -98,7 +95,7 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
               <p className="editorial-meta">PAST 365 DAYS</p>
               <h2 id="archive-activity-title">这一年</h2>
             </div>
-            <p>{activeDays} 个记录日 · {visibleUpdates.length} 次更新</p>
+            <p>{activeDays} 个记录日 · {visibleUpdateCount} 次更新</p>
           </>
         )}
       </header>
@@ -112,7 +109,7 @@ export default function ArchiveHeatmap({ updates, variant = 'archive' }: { updat
               </span>
             ))}
           </div>
-          <div className="archive-activity-grid" role="img" aria-label={`过去一年共有 ${activeDays} 个记录日，更新 ${visibleUpdates.length} 次`}>
+          <div className="archive-activity-grid" role="img" aria-label={`过去一年共有 ${activeDays} 个记录日，更新 ${visibleUpdateCount} 次`}>
             {days.map((day) => {
               const key = formatDate(day)
               const activity = counts.get(key)

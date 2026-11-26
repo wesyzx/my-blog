@@ -1,7 +1,7 @@
 import type { IconName } from './Icon'
 import { isSectionVisible } from '@/lib/site-visibility'
 
-export interface SiteNavItem {
+interface SiteNavItem {
   label: string
   href: string
   icon: IconName

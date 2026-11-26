@@ -6,7 +6,6 @@ builds may inline it, but are written only below
 """
 
 import argparse
-import copy
 import getpass
 import os
 import pathlib
@@ -19,14 +18,12 @@ MEDIA_CONFIG = {
     'photo': {
         'slug': '相册同步到博客',
         'noun': '照片',
-        'upload_path': 'photos',
         'content_type': 'image/jpeg',
         'converted_output_name': 'Converted Image',
     },
     'video': {
         'slug': '视频同步到博客',
         'noun': '视频',
-        'upload_path': 'videos',
         'content_type': 'video/quicktime',
         'converted_output_name': 'Encoded Media',
     },

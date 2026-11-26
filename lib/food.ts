@@ -20,7 +20,7 @@ export interface FoodMeta {
   published: boolean
 }
 
-export interface FoodPost extends FoodMeta {
+interface FoodPost extends FoodMeta {
   content: string
 }
 

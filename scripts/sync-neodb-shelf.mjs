@@ -68,6 +68,22 @@ const PALETTES = [
 ]
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const CJK = /[\u3400-\u9fff]/
+
+const parentCache = new Map()
+
+async function loadParent(item) {
+  if (item.category !== 'tv' || !item.parent_uuid) return null
+  if (!parentCache.has(item.parent_uuid)) {
+    try {
+      const parent = await requestJson(`${API_BASE}/tv/${item.parent_uuid}`)
+      parentCache.set(item.parent_uuid, parent)
+    } catch {
+      parentCache.set(item.parent_uuid, null)
+    }
+  }
+  return parentCache.get(item.parent_uuid)
+}
 
 async function requestJson(url, attempts = 3) {
   let lastError
@@ -137,15 +153,40 @@ function mapColors(seed) {
   }
 }
 
-function creatorOf(item) {
-  const direct = item.director ?? item.author
-  if (Array.isArray(direct) && direct.length) {
-    return direct.map((name) => cleanText(name)).filter(Boolean).join(' / ')
-  }
+function pickTitle(item, parent) {
+  const localized = (target) =>
+    (target?.localized_title || [])
+      .filter((label) => ['zh-cn', 'zh-hk', 'zh-tw'].includes(String(label.lang).toLowerCase()))
+      .map((label) => cleanText(label.text))
+      .filter(Boolean)
+  const candidates = [
+    item.title,
+    ...localized(item),
+    parent?.title,
+    ...localized(parent),
+    item.display_title,
+    parent?.display_title,
+  ]
+    .map((value) => cleanText(value))
+    .filter(Boolean)
+  return candidates.find((value) => CJK.test(value)) || candidates[0] || ''
+}
+
+function creatorOf(item, parent) {
   const credits = Array.isArray(item.credits) ? item.credits : []
   const role = ['movie', 'tv'].includes(item.category) ? 'director' : 'author'
-  const names = credits.filter((credit) => credit.role === role).map((credit) => cleanText(credit.name)).filter(Boolean)
-  if (names.length) return names.join(' / ')
+  const fromCredits = credits.filter((credit) => credit.role === role).map((credit) => cleanText(credit.name)).filter(Boolean)
+  const direct = (item.director ?? item.author ?? parent?.director ?? [])
+    .map((name) => cleanText(name))
+    .filter(Boolean)
+  const groups = [fromCredits, direct]
+  for (const group of groups) {
+    const chinese = group.filter((name) => CJK.test(name))
+    if (chinese.length) return chinese.join(' / ')
+  }
+  for (const group of groups) {
+    if (group.length) return group.join(' / ')
+  }
   return credits.slice(0, 2).map((credit) => cleanText(credit.name)).filter(Boolean).join(' / ')
 }
 
@@ -156,7 +197,7 @@ function minutesOf(item) {
   return match ? Number.parseInt(match[0], 10) : null
 }
 
-function toItem(item, mark) {
+function toItem(item, mark, parent) {
   const kind = item.category === 'book' ? 'book' : 'movie'
   const url = item.url?.startsWith('http') ? item.url : `${SITE_BASE}${item.url || ''}`
   const summary = cleanText(item.description || item.brief || '')
@@ -165,9 +206,9 @@ function toItem(item, mark) {
     id: String(item.uuid),
     kind,
     source: 'neodb',
-    title: cleanText(item.display_title || item.title),
-    creator: creatorOf(item),
-    year: String(item.pub_year || item.year || '').slice(0, 4),
+    title: pickTitle(item, parent),
+    creator: creatorOf(item, parent),
+    year: String(item.pub_year || item.year || parent?.pub_year || parent?.year || '').slice(0, 4),
     cover: `${options.imageUrl}/${item.uuid}.jpg`,
     coverSource: item.cover_image_url || '',
     aspect: 2 / 3,
@@ -283,7 +324,8 @@ async function main() {
 
   for (let index = 0; index < entries.length; index += 1) {
     const { item: source, mark } = entries[index]
-    const item = toItem(source, mark)
+    const parent = await loadParent(source)
+    const item = toItem(source, mark, parent)
     await downloadCover(item, index, entries.length)
     const known = indexById.get(item.id)
     if (known === undefined) {

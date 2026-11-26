@@ -1,6 +1,6 @@
 {
-  "syncedAt": "2026-11-26T07:24:40.899Z",
-  "source": "douban",
+  "syncedAt": "2026-11-26T10:26:51.489Z",
+  "source": "neodb",
   "items": [
     {
       "id": "6082808",
@@ -465,6 +465,66 @@
       "comment": "",
       "status": "done",
       "date": "2015-07-03"
+    },
+    {
+      "id": "7YdsFoIw3tEOBz8GDrgsJK",
+      "kind": "movie",
+      "source": "neodb",
+      "title": "潜伏",
+      "creator": "姜伟 / 付玮",
+      "year": "2009",
+      "cover": "/shelf/7YdsFoIw3tEOBz8GDrgsJK.jpg",
+      "coverSource": "https://neodb.social/m/movie/2021/09/1608c4508a-9e5e-4ebe-bd9c-a94af7b111d8.jpg",
+      "aspect": 0.6666666666666666,
+      "colors": {
+        "bg": "#474747",
+        "fg": "#f4f1ea",
+        "band": "#666666",
+        "bandFg": "#f4f1ea",
+        "paper": "#f5f2ec",
+        "paperFg": "#1a1814",
+        "isDark": true
+      },
+      "doubanRating": 9,
+      "ratingCount": 510,
+      "summary": "1945年，正是抗日战争接近尾声之际，国、共、日三方的角力日趋激烈，平静的海面下暗流涌动。由于军统特务李海丰投靠南京汪伪政权，军统情报处成员余则成（孙红雷 饰）受命前往南京刺杀叛徒，却意外走上了另一条道路。经中共策反，余则成以地下党的身份重返军统，成为扎入国民党心脏的一颗铆钉。",
+      "url": "https://neodb.social/tv/season/7YdsFoIw3tEOBz8GDrgsJK",
+      "pages": null,
+      "minutes": null,
+      "myRating": 9,
+      "comment": "",
+      "status": "done",
+      "date": "2026-11-26"
+    },
+    {
+      "id": "5KTP6bRLA5hz6aaFjnf1PY",
+      "kind": "book",
+      "source": "neodb",
+      "title": "以交易为生",
+      "creator": "[美] 亚历山大·埃尔德",
+      "year": "",
+      "cover": "/shelf/5KTP6bRLA5hz6aaFjnf1PY.jpg",
+      "coverSource": "https://neodb.social/m/book/2021/12/04cb2980e2-184d-4d27-b81a-0a0724ea6e0e.jpg",
+      "aspect": 0.6666666666666666,
+      "colors": {
+        "bg": "#2e4a5a",
+        "fg": "#f4f1ea",
+        "band": "#3f6274",
+        "bandFg": "#f4f1ea",
+        "paper": "#f5f2ec",
+        "paperFg": "#1a1814",
+        "isDark": true
+      },
+      "doubanRating": 9.2,
+      "ratingCount": 6,
+      "summary": "\"金融投资经典系列最新珍藏版 从普通散户做起，直达成功交易者的经典指南，操作生涯不是梦！ 交易者十分自由，可以在全球任何一个地方生活、工作，可以对日常充耳不闻，可以不搭理任何人。这就是成功交易者的生活写照。\" 与波浪理论、江恩理论等经典技术分析理论不同，本书并不是介绍某一种独特的技术分析方法，而是对之前所有的技术分析方法和指标进行系统的梳理。",
+      "url": "https://neodb.social/book/5KTP6bRLA5hz6aaFjnf1PY",
+      "pages": null,
+      "minutes": null,
+      "myRating": 9,
+      "comment": "",
+      "status": "doing",
+      "date": "2026-11-26"
     }
   ]
 }

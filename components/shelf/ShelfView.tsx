@@ -7,7 +7,7 @@ import ShelfDetail from './ShelfDetail'
 import ShelfStage from './ShelfStage'
 import styles from './Shelf.module.css'
 
-type Filter = 'all' | ShelfKind
+type Filter = ShelfKind
 
 interface ShelfViewProps {
   items: ShelfItem[]
@@ -20,18 +20,11 @@ const KINDS: Array<{ value: ShelfKind; label: string; unit: string }> = [
   { value: 'music', label: '音乐', unit: '张' },
 ]
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: 'all', label: '全部' },
-  ...KINDS.map(({ value, label }) => ({ value, label })),
-]
-
 export default function ShelfView({ items }: ShelfViewProps) {
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>('book')
   const [activeItem, setActiveItem] = useState<ShelfItem | null>(null)
 
-  const filtered = useMemo(() => (
-    filter === 'all' ? items : items.filter((item) => item.kind === filter)
-  ), [filter, items])
+  const filtered = useMemo(() => items.filter((item) => item.kind === filter), [filter, items])
 
   const counts = useMemo(() => {
     const next: Record<ShelfKind, number> = { book: 0, movie: 0, tv: 0, music: 0 }
@@ -39,13 +32,8 @@ export default function ShelfView({ items }: ShelfViewProps) {
     return next
   }, [items])
 
-  const active = KINDS.find((kind) => kind.value === filter)
-  const summary = active
-    ? `${counts[active.value]} ${active.unit}`
-    : KINDS
-      .filter((kind) => counts[kind.value] > 0)
-      .map((kind) => `${kind.label} ${counts[kind.value]} ${kind.unit}`)
-      .join(' · ') || '书架还空着'
+  const active = KINDS.find((kind) => kind.value === filter) ?? KINDS[0]
+  const summary = `${counts[active.value]} ${active.unit}`
 
   const closeDetail = useCallback(() => setActiveItem(null), [])
 
@@ -57,7 +45,7 @@ export default function ShelfView({ items }: ShelfViewProps) {
         actions={(
           <nav className="category-filter" aria-label="筛选书影音">
             <div className="category-links">
-              {FILTERS.map((option) => (
+              {KINDS.map((option) => (
                 <button
                   key={option.value}
                   type="button"

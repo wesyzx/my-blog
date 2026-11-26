@@ -106,9 +106,15 @@
   transform: scale(.95);
 }
 
-.mediaPosters .mediaItem:hover .mediaCover,
 .mediaPosters .mediaItem:focus-visible .mediaCover {
   opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mediaPosters .mediaTrack:not([data-dragging="true"]) .mediaItem:hover .mediaCover {
+    opacity: 1;
+    transform: scale(1.04);
+  }
 }
 
 .mediaTrack:focus-visible,

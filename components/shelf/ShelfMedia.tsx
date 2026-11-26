@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { ShelfItem, ShelfKind } from '@/lib/shelf'
 import styles from './Shelf.module.css'
 
@@ -22,19 +22,68 @@ function cardStep(track: HTMLDivElement) {
   return first && second ? second.getBoundingClientRect().left - first.getBoundingClientRect().left : 0
 }
 
+function centerCard(track: HTMLDivElement, index: number) {
+  const target = Math.max(0, Math.min(index, track.childElementCount - 1))
+  track.scrollTo({
+    left: target * cardStep(track),
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+  })
+}
+
 export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaProps) {
+  const trackRef = useRef<HTMLDivElement>(null)
   const drag = useRef<MouseDrag | null>(null)
   const suppressClick = useRef(false)
   const [centered, setCentered] = useState(0)
   const isAlbum = kind === 'music'
 
-  function centerCard(track: HTMLDivElement, index: number) {
-    const target = Math.max(0, Math.min(index, items.length - 1))
-    track.scrollTo({
-      left: target * cardStep(track),
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-    })
-  }
+  useEffect(() => {
+    const track = trackRef.current
+    if (!track || isAlbum || items.length < 2) return
+
+    let target = 0
+    let accumulatedDelta = 0
+    let lastEventAt = -Infinity
+    let lastMoveAt = -Infinity
+
+    function handleWheel(event: WheelEvent) {
+      if (!track || drag.current?.moved || event.ctrlKey || event.metaKey || event.shiftKey) return
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+
+      const step = cardStep(track)
+      if (!step) return
+      const now = performance.now()
+      if (now - lastEventAt > 200) {
+        target = Math.round(track.scrollLeft / step)
+        accumulatedDelta = 0
+      }
+      lastEventAt = now
+
+      const direction = Math.sign(event.deltaY)
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1
+      const delta = event.deltaY * unit
+      const next = target + direction
+      event.preventDefault()
+      if (next < 0 || next >= track.childElementCount) {
+        if (Math.abs(track.scrollLeft - target * step) <= 2) {
+          window.scrollBy({ top: delta, behavior: 'instant' })
+        }
+        return
+      }
+
+      if (Math.sign(accumulatedDelta) !== direction) accumulatedDelta = 0
+      accumulatedDelta += delta
+      if (Math.abs(accumulatedDelta) < 32 || now - lastMoveAt < 150) return
+
+      target = next
+      accumulatedDelta = 0
+      lastMoveAt = now
+      centerCard(track, target)
+    }
+
+    track.addEventListener('wheel', handleWheel, { passive: false })
+    return () => track.removeEventListener('wheel', handleWheel)
+  }, [isAlbum, items.length])
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (items.length < 2) return
@@ -93,6 +142,7 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
   return (
     <div className={`${styles.mediaStage} ${isAlbum ? styles.mediaAlbums : styles.mediaPosters}`}>
       <div
+        ref={trackRef}
         className={styles.mediaTrack}
         role="region"
         aria-label={`${label}陈列`}

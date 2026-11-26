@@ -1,37 +1,7 @@
 {
-  "syncedAt": "2026-11-26T10:35:19.226Z",
+  "syncedAt": "2026-11-26T11:14:32.756Z",
   "source": "neodb",
   "items": [
-    {
-      "id": "7YdsFoIw3tEOBz8GDrgsJK",
-      "kind": "tv",
-      "source": "neodb",
-      "title": "潜伏",
-      "creator": "姜伟 / 付玮",
-      "year": "2009",
-      "cover": "/shelf/7YdsFoIw3tEOBz8GDrgsJK.jpg",
-      "coverSource": "https://neodb.social/m/movie/2021/09/1608c4508a-9e5e-4ebe-bd9c-a94af7b111d8.jpg",
-      "aspect": 0.6666666666666666,
-      "colors": {
-        "bg": "#474747",
-        "fg": "#f4f1ea",
-        "band": "#666666",
-        "bandFg": "#f4f1ea",
-        "paper": "#f5f2ec",
-        "paperFg": "#1a1814",
-        "isDark": true
-      },
-      "doubanRating": 9,
-      "ratingCount": 510,
-      "summary": "1945年，正是抗日战争接近尾声之际，国、共、日三方的角力日趋激烈，平静的海面下暗流涌动。由于军统特务李海丰投靠南京汪伪政权，军统情报处成员余则成（孙红雷 饰）受命前往南京刺杀叛徒，却意外走上了另一条道路。经中共策反，余则成以地下党的身份重返军统，成为扎入国民党心脏的一颗铆钉。",
-      "url": "https://neodb.social/tv/season/7YdsFoIw3tEOBz8GDrgsJK",
-      "pages": null,
-      "minutes": null,
-      "myRating": 9,
-      "comment": "",
-      "status": "done",
-      "date": "2026-11-26"
-    },
     {
       "id": "5KTP6bRLA5hz6aaFjnf1PY",
       "kind": "book",
@@ -60,6 +30,36 @@
       "myRating": 9,
       "comment": "",
       "status": "doing",
+      "date": "2026-11-26"
+    },
+    {
+      "id": "7YdsFoIw3tEOBz8GDrgsJK",
+      "kind": "tv",
+      "source": "neodb",
+      "title": "潜伏",
+      "creator": "姜伟 / 付玮",
+      "year": "2009",
+      "cover": "/shelf/7YdsFoIw3tEOBz8GDrgsJK.jpg",
+      "coverSource": "https://neodb.social/m/movie/2021/09/1608c4508a-9e5e-4ebe-bd9c-a94af7b111d8.jpg",
+      "aspect": 0.6666666666666666,
+      "colors": {
+        "bg": "#474747",
+        "fg": "#f4f1ea",
+        "band": "#666666",
+        "bandFg": "#f4f1ea",
+        "paper": "#f5f2ec",
+        "paperFg": "#1a1814",
+        "isDark": true
+      },
+      "doubanRating": 9,
+      "ratingCount": 510,
+      "summary": "1945年，正是抗日战争接近尾声之际，国、共、日三方的角力日趋激烈，平静的海面下暗流涌动。由于军统特务李海丰投靠南京汪伪政权，军统情报处成员余则成（孙红雷 饰）受命前往南京刺杀叛徒，却意外走上了另一条道路。经中共策反，余则成以地下党的身份重返军统，成为扎入国民党心脏的一颗铆钉。",
+      "url": "https://neodb.social/tv/season/7YdsFoIw3tEOBz8GDrgsJK",
+      "pages": null,
+      "minutes": null,
+      "myRating": 9,
+      "comment": "",
+      "status": "done",
       "date": "2026-11-26"
     }
   ]

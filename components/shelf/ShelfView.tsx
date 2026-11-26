@@ -32,6 +32,12 @@ export default function ShelfView({ items }: ShelfViewProps) {
     return { books, movies: items.length - books }
   }, [items])
 
+  const summary = filter === 'book'
+    ? `${counts.books} 本`
+    : filter === 'movie'
+      ? `${counts.movies} 部`
+      : `书籍 ${counts.books} 本 · 电影 ${counts.movies} 部`
+
   const closeDetail = useCallback(() => setActiveItem(null), [])
 
   return (
@@ -58,11 +64,7 @@ export default function ShelfView({ items }: ShelfViewProps) {
         )}
       />
 
-      <p className={styles.meta}>
-        <span>书籍 {counts.books} 本</span>
-        <span aria-hidden="true">·</span>
-        <span>电影 {counts.movies} 部</span>
-      </p>
+      <p className={styles.meta}>{summary}</p>
 
       <ShelfStage key={filter} items={filtered} onOpen={setActiveItem} />
 

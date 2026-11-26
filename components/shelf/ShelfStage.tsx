@@ -73,12 +73,13 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
 
     const measure = () => {
       const width = viewport.clientWidth
+      const boxHeight = viewport.clientHeight
       if (!width) return
       const mobile = width < 640
-      const widthCap = width * (mobile ? 0.58 : 0.54)
-      const heightCap = (window.innerHeight - 300) * 0.72
+      const widthCap = width * (mobile ? 0.58 : 0.62)
+      const heightCap = boxHeight > 0 ? boxHeight * 0.68 : Number.POSITIVE_INFINITY
       const height = Math.round(
-        Math.max(mobile ? 170 : 220, Math.min(widthCap, heightCap, mobile ? 320 : 420)),
+        Math.max(mobile ? 170 : 220, Math.min(widthCap, heightCap, mobile ? 340 : 470)),
       )
       const spine = Math.round(height * (mobile ? 0.13 : 0.14))
       const depth = Math.round(height * 0.66)

@@ -63,6 +63,23 @@ NEODB_TOKEN=... npm run shelf:sync:neodb -- --merge --categories=movie
 每天 07:15（Asia/Shanghai）由 `.github/workflows/shelf-sync.yml` 在 GitHub Actions 上运行，
 需要仓库 secret `NEODB_TOKEN`；`--prune` 会顺手删掉已移除条目的封面。ECS 不再参与书架同步。
 
+### 手动触发（iPhone 快捷指令）
+
+工作流带 `workflow_dispatch`，除 GitHub App 里的「Run workflow」，也可以用一个三动作的
+快捷指令随时触发：
+
+1. GitHub → Settings → Developer settings → Fine-grained tokens，新建只授权 `my-blog`、
+   `Actions: Read and write` 的 token。
+2. 快捷指令里依次放：
+   - 「文本」：粘贴上面的 token；
+   - 「获取 URL 内容」：`https://api.github.com/repos/wesyzx/my-blog/actions/workflows/shelf-sync.yml/dispatches`，
+     方法 `POST`，头部 `Authorization: Bearer <文本>`、`Accept: application/vnd.github+json`、
+     `X-GitHub-Api-Version: 2022-11-28`，请求体 JSON 只有一个 `ref: main`；
+   - 「显示结果」：提示已触发。
+3. 返回 204 即成功，Actions 跑完后 EdgeOne 自动构建，约 1～2 分钟。
+
+token 只存在快捷指令里，泄露后在同一页面吊销重建即可。
+
 ## Obsidian 内容发布
 
 发布区只允许是 Obsidian Vault 内的 `Blog/`，不要指向整个私人 Vault：

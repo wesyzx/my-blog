@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react'
 import type { ShelfItem } from '@/lib/shelf'
+import PageHeader from '../PageHeader'
 import ShelfDetail from './ShelfDetail'
 import ShelfStage from './ShelfStage'
 import styles from './Shelf.module.css'
@@ -10,7 +11,6 @@ type Filter = 'all' | 'book' | 'movie'
 
 interface ShelfViewProps {
   items: ShelfItem[]
-  syncedAt: string
 }
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
@@ -19,7 +19,7 @@ const FILTERS: Array<{ value: Filter; label: string }> = [
   { value: 'movie', label: '电影' },
 ]
 
-export default function ShelfView({ items, syncedAt }: ShelfViewProps) {
+export default function ShelfView({ items }: ShelfViewProps) {
   const [filter, setFilter] = useState<Filter>('all')
   const [activeItem, setActiveItem] = useState<ShelfItem | null>(null)
 
@@ -30,46 +30,33 @@ export default function ShelfView({ items, syncedAt }: ShelfViewProps) {
   const closeDetail = useCallback(() => setActiveItem(null), [])
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.eyebrow}>Books &amp; Films</div>
-        <h1 className={styles.title}>书影音</h1>
-        <p className={styles.lede}>
-          把看过的书和电影放上一排书架。拖动、滚轮或方向键换书，
-          中间那本会从书脊转成正封面，点开就能看到评分和简介。
-        </p>
-        <div className={styles.metaLine}>
-          <span>{items.length} 条公开条目</span>
-          <span className={styles.dot} aria-hidden="true" />
-          <span>封面与配色来自豆瓣</span>
-          <span className={styles.dot} aria-hidden="true" />
-          <span>同步于 {syncedAt.slice(0, 10)}</span>
-        </div>
-      </header>
-
-      <div className={styles.toolbar}>
-        <div className={styles.filters} role="group" aria-label="筛选书影音">
-          {FILTERS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={`${styles.filter}${filter === option.value ? ` ${styles.filterActive}` : ''}`}
-              onClick={() => setFilter(option.value)}
-              aria-pressed={filter === option.value}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        <div className={styles.count}>{filtered.length} 件</div>
-      </div>
+    <div className="page-shell shelf-page animate-fade-up">
+      <PageHeader
+        title="书影音"
+        className="shelf-page-header"
+        actions={(
+          <div className={styles.controls}>
+            <nav className="category-filter" aria-label="筛选书影音">
+              <div className="category-links">
+                {FILTERS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={filter === option.value ? 'active' : ''}
+                    onClick={() => setFilter(option.value)}
+                    aria-pressed={filter === option.value}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </nav>
+            <span className={styles.count}>{filtered.length} 件</span>
+          </div>
+        )}
+      />
 
       <ShelfStage key={filter} items={filtered} onOpen={setActiveItem} />
-
-      <p className={styles.sourceNote}>
-        书架数据来自豆瓣公开收藏，每天自动同步。
-        封面版权归原出版方或豆瓣用户所有，仅用于个人展示。
-      </p>
 
       <ShelfDetail item={activeItem} onClose={closeDetail} />
     </div>

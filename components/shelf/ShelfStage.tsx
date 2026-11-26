@@ -470,15 +470,6 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
           ))}
         </div>
       </div>
-      <div className={styles.hintRow}>
-        <div className={styles.hint}>
-          <span>拖拽</span>
-          <span className={styles.kbd}>←</span>
-          <span className={styles.kbd}>→</span>
-          <span>滚轮浏览</span>
-        </div>
-        <div className={styles.hint}>点击书脊居中，再点封面看详情</div>
-      </div>
       <p className={styles.srOnly} aria-live="polite">
         当前居中：{items[centeredIndex]?.title ?? ''}
       </p>

@@ -11,5 +11,5 @@ export const metadata = createPageMetadata({
 export default function ShelfPage() {
   const data = getShelfData()
 
-  return <ShelfView items={data.items} syncedAt={data.syncedAt} />
+  return <ShelfView items={data.items} />
 }

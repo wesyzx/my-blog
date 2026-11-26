@@ -1,7 +1,37 @@
 {
-  "syncedAt": "2026-11-26T11:14:32.756Z",
+  "syncedAt": "2026-11-26T13:07:00.388Z",
   "source": "neodb",
   "items": [
+    {
+      "id": "1BHo31DRTygS4BrlNayCoc",
+      "kind": "book",
+      "source": "neodb",
+      "title": "周期",
+      "creator": "[美]霍华德·马克斯",
+      "year": "",
+      "cover": "/shelf/1BHo31DRTygS4BrlNayCoc.jpg",
+      "coverSource": "https://neodb.social/m/book/2021/09/17d92c2244-01ba-43ec-b828-0ef76a3c3cae.jpg",
+      "aspect": 0.6666666666666666,
+      "colors": {
+        "bg": "#6a4a3a",
+        "fg": "#f4f1ea",
+        "band": "#8a6350",
+        "bandFg": "#f4f1ea",
+        "paper": "#f5f2ec",
+        "paperFg": "#1a1814",
+        "isDark": true
+      },
+      "doubanRating": 7.5,
+      "ratingCount": 17,
+      "summary": "每个投资人都想弄清楚自己现在所处的周期位置。也就是说，人们渴望知道自己下一步应该追加投资，继续留在市场，还是应该果断卖出，离开市场。大家都知道市场周期起伏波动，然而，大部分投资人往往只想到市场周期的首层浅思维。",
+      "url": "https://neodb.social/book/1BHo31DRTygS4BrlNayCoc",
+      "pages": null,
+      "minutes": null,
+      "myRating": 9,
+      "comment": "",
+      "status": "doing",
+      "date": "2026-11-26"
+    },
     {
       "id": "5KTP6bRLA5hz6aaFjnf1PY",
       "kind": "book",

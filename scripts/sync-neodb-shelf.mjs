@@ -90,6 +90,18 @@ async function loadParent(item) {
   return parentCache.get(item.parent_uuid)
 }
 
+async function loadSeasonNumber(item) {
+  if (item.category !== 'tv') return undefined
+  if (Number.isInteger(item.season_number) && item.season_number > 0) return item.season_number
+  if (item.type !== 'TVSeason' && !item.url?.startsWith('/tv/season/')) return undefined
+  try {
+    const season = await requestJson(`${API_BASE}/tv/season/${encodeURIComponent(item.uuid)}`, 1)
+    return Number.isInteger(season.season_number) && season.season_number > 0 ? season.season_number : undefined
+  } catch {
+    return undefined
+  }
+}
+
 async function requestJson(url, attempts = 3) {
   let lastError
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
@@ -213,7 +225,7 @@ const KIND_OF_CATEGORY = {
   music: 'music',
 }
 
-function toItem(item, mark, parent) {
+function toItem(item, mark, parent, seasonNumber) {
   const kind = KIND_OF_CATEGORY[item.category] || 'movie'
   const url = item.url?.startsWith('http') ? item.url : `${SITE_BASE}${item.url || ''}`
   const summary = cleanText(item.description || item.brief || '')
@@ -226,6 +238,7 @@ function toItem(item, mark, parent) {
     title: pickTitle(item, parent),
     creator: creatorOf(item, parent),
     year: /^\d{4}$/.test(year) ? year : '',
+    ...(seasonNumber ? { seasonNumber } : {}),
     cover: `${options.imageUrl}/${item.uuid}.jpg`,
     coverSource: item.cover_image_url || '',
     aspect: kind === 'music' ? 1 : 2 / 3,
@@ -345,8 +358,8 @@ async function main() {
 
   for (let index = 0; index < entries.length; index += 1) {
     const { item: source, mark } = entries[index]
-    const parent = await loadParent(source)
-    const item = toItem(source, mark, parent)
+    const [parent, seasonNumber] = await Promise.all([loadParent(source), loadSeasonNumber(source)])
+    const item = toItem(source, mark, parent, seasonNumber)
     await downloadCover(item, index, entries.length)
     const known = indexById.get(item.id)
     if (known === undefined) {

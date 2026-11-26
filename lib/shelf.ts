@@ -21,6 +21,7 @@ export interface ShelfItem {
   title: string
   creator: string
   year: string
+  seasonNumber?: number
   cover: string
   coverSource?: string
   aspect: number

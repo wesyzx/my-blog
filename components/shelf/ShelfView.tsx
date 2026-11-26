@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react'
 import type { ShelfItem, ShelfKind } from '@/lib/shelf'
 import PageHeader from '../PageHeader'
 import ShelfDetail from './ShelfDetail'
+import ShelfMedia from './ShelfMedia'
 import ShelfStage from './ShelfStage'
 import styles from './Shelf.module.css'
 
@@ -38,7 +39,7 @@ export default function ShelfView({ items }: ShelfViewProps) {
   const closeDetail = useCallback(() => setActiveItem(null), [])
 
   return (
-    <div className={`page-shell ${styles.page} animate-fade-up`}>
+    <div className={`page-shell ${styles.page}${filter === 'music' ? ` ${styles.albumPage}` : ''} animate-fade-up`}>
       <PageHeader
         title="书影音"
         className="shelf-page-header"
@@ -63,7 +64,11 @@ export default function ShelfView({ items }: ShelfViewProps) {
 
       <p className={styles.meta}>{summary}</p>
 
-      <ShelfStage key={filter} items={filtered} onOpen={setActiveItem} />
+      {filter === 'book' ? (
+        <ShelfStage items={filtered} onOpen={setActiveItem} />
+      ) : (
+        <ShelfMedia key={filter} kind={filter} label={active.label} items={filtered} onOpen={setActiveItem} />
+      )}
 
       <ShelfDetail item={activeItem} onClose={closeDetail} />
     </div>

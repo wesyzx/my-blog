@@ -16,6 +16,131 @@
   white-space: nowrap;
 }
 
+.mediaStage {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  container-type: inline-size;
+}
+
+.mediaTrack {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(14px, 3.5cqw, 32px);
+  padding: clamp(28px, 5dvh, 54px) calc((100% - var(--card-width)) / 2);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.mediaPosters .mediaTrack {
+  --card-width: min(68cqw, 310px, 49dvh);
+  --cover-aspect: 2 / 3;
+}
+
+.mediaAlbums .mediaTrack {
+  --card-width: min(56cqw, 246px, 58dvh);
+  --cover-aspect: 1;
+}
+
+.mediaTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.mediaTrack[data-scrollable="true"] {
+  cursor: grab;
+}
+
+.mediaTrack[data-dragging="true"] {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.mediaItem {
+  display: grid;
+  min-width: 0;
+  flex: 0 0 var(--card-width);
+  gap: 4px;
+  align-content: start;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  scroll-snap-align: center;
+}
+
+.mediaTrack[data-dragging="true"] .mediaItem {
+  cursor: inherit;
+}
+
+.mediaCover {
+  position: relative;
+  display: block;
+  aspect-ratio: var(--cover-aspect);
+  margin-bottom: 8px;
+  border-radius: inherit;
+  overflow: hidden;
+  background: var(--color-bg-surface);
+  box-shadow: 0 12px 25px rgb(0 0 0 / .17);
+}
+
+.mediaCover img {
+  object-fit: cover;
+  user-select: none;
+}
+
+.mediaPosters .mediaCover {
+  transition: transform .25s ease, opacity .25s ease;
+}
+
+.mediaPosters .mediaItem:not([aria-current="true"]) .mediaCover {
+  opacity: .75;
+  transform: scale(.95);
+}
+
+.mediaPosters .mediaItem:hover .mediaCover,
+.mediaPosters .mediaItem:focus-visible .mediaCover {
+  opacity: 1;
+}
+
+.mediaTrack:focus-visible,
+.mediaItem:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: -2px;
+}
+
+.mediaTitle,
+.mediaSubtitle {
+  padding-inline: 4px;
+  overflow-wrap: anywhere;
+}
+
+.mediaTitle {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.mediaSubtitle {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediaPosters .mediaCover {
+    transition: none;
+  }
+}
+
 .stageCard {
   position: relative;
   display: flex;
@@ -430,6 +555,15 @@
 @media (max-width: 720px) {
   .page {
     min-height: clamp(360px, calc(100dvh - 180px), 820px);
+  }
+
+  .page.albumPage {
+    min-height: 0;
+  }
+
+  .mediaAlbums .mediaTrack {
+    --card-width: min(68cqw, 280px, 58dvh);
+    padding-block: 28px 36px;
   }
 
   .detail {

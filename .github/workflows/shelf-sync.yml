@@ -1,0 +1,43 @@
+name: shelf-sync
+
+on:
+  schedule:
+    # 07:15 Asia/Shanghai
+    - cron: '15 23 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shelf-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sync NeoDB shelf
+        env:
+          NEODB_TOKEN: ${{ secrets.NEODB_TOKEN }}
+        run: |
+          if [ -z "$NEODB_TOKEN" ]; then
+            echo "NEODB_TOKEN secret is not set; skipping."
+            exit 0
+          fi
+          node scripts/sync-neodb-shelf.mjs --replace --prune
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- content/shelf.json public/shelf; then
+            echo "shelf: no changes"
+            exit 0
+          fi
+          git config user.name "wesyzx"
+          git config user.email "wesyzx@users.noreply.github.com"
+          git add -A -- content/shelf.json public/shelf
+          git commit -m "chore(shelf): sync neodb $(date -u +%F)"
+          git push

@@ -1,8 +1,12 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import dotenv from 'dotenv'
 
-dotenv.config({ path: '.env.local', quiet: true })
+try {
+  const { default: dotenv } = await import('dotenv')
+  dotenv.config({ path: '.env.local', quiet: true })
+} catch {
+  // dotenv is optional; CI passes NEODB_TOKEN through the environment.
+}
 
 const API_BASE = 'https://neodb.social/api'
 const SITE_BASE = 'https://neodb.social'
@@ -43,6 +47,7 @@ const options = {
   merge: flag('merge'),
   replace: flag('replace'),
   includeHidden: flag('include-hidden'),
+  prune: flag('prune'),
 }
 
 const SHELF_STATUS = {
@@ -358,6 +363,17 @@ async function main() {
   }
   await fs.mkdir(path.dirname(options.output), { recursive: true })
   await fs.writeFile(options.output, `${JSON.stringify(payload, null, 2)}\n`)
+
+  if (options.prune && !options.noImages) {
+    const used = new Set(items.map((item) => `${item.id}.jpg`))
+    let pruned = 0
+    for (const file of await fs.readdir(options.imageDir)) {
+      if (!file.endsWith('.jpg') || used.has(file)) continue
+      await fs.rm(path.join(options.imageDir, file))
+      pruned += 1
+    }
+    if (pruned) console.log(`清理未引用封面 ${pruned} 个`)
+  }
 
   const count = (kind) => items.filter((item) => item.kind === kind).length
   console.log(

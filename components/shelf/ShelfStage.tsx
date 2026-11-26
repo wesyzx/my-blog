@@ -445,7 +445,7 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
                 className={`${styles.face} ${styles.spine}`}
                 style={{
                   '--ws': `${size.spine}px`,
-                  '--dd': `${size.depth}px`,
+                  '--dd': `${Math.round(size.depth * (item.aspect / (2 / 3)))}px`,
                   '--h': `${bookHeight(size.height, index)}px`,
                 } as CSSProperties}
                 onPointerEnter={(event) => {
@@ -462,7 +462,7 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
                 className={`${styles.face} ${styles.cover}`}
                 style={{
                   '--ws': `${size.spine}px`,
-                  '--dd': `${size.depth}px`,
+                  '--dd': `${Math.round(size.depth * (item.aspect / (2 / 3)))}px`,
                   '--h': `${bookHeight(size.height, index)}px`,
                   backgroundImage: `url("${item.cover}")`,
                 } as CSSProperties}

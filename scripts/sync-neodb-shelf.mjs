@@ -30,7 +30,7 @@ function list(value) {
 
 const options = {
   token: arg('token') || process.env.NEODB_TOKEN || '',
-  categories: list(arg('categories', 'book,movie,tv')),
+  categories: list(arg('categories', 'book,movie,tv,music')),
   shelves: list(arg('shelf', 'complete,progress')),
   subjects: list(arg('subjects')),
   limit: Number.parseInt(arg('limit', '0'), 10) || 0,
@@ -174,9 +174,13 @@ function pickTitle(item, parent) {
 
 function creatorOf(item, parent) {
   const credits = Array.isArray(item.credits) ? item.credits : []
-  const role = ['movie', 'tv'].includes(item.category) ? 'director' : 'author'
+  const role = item.category === 'music'
+    ? 'artist'
+    : ['movie', 'tv'].includes(item.category)
+      ? 'director'
+      : 'author'
   const fromCredits = credits.filter((credit) => credit.role === role).map((credit) => cleanText(credit.name)).filter(Boolean)
-  const direct = (item.director ?? item.author ?? parent?.director ?? [])
+  const direct = (item.artist ?? item.director ?? item.author ?? parent?.director ?? [])
     .map((name) => cleanText(name))
     .filter(Boolean)
   const groups = [fromCredits, direct]
@@ -197,10 +201,18 @@ function minutesOf(item) {
   return match ? Number.parseInt(match[0], 10) : null
 }
 
+const KIND_OF_CATEGORY = {
+  book: 'book',
+  movie: 'movie',
+  tv: 'tv',
+  music: 'music',
+}
+
 function toItem(item, mark, parent) {
-  const kind = item.category === 'book' ? 'book' : 'movie'
+  const kind = KIND_OF_CATEGORY[item.category] || 'movie'
   const url = item.url?.startsWith('http') ? item.url : `${SITE_BASE}${item.url || ''}`
   const summary = cleanText(item.description || item.brief || '')
+  const year = String(item.pub_year || item.year || item.release_date || parent?.pub_year || parent?.year || '').slice(0, 4)
 
   return {
     id: String(item.uuid),
@@ -208,17 +220,17 @@ function toItem(item, mark, parent) {
     source: 'neodb',
     title: pickTitle(item, parent),
     creator: creatorOf(item, parent),
-    year: String(item.pub_year || item.year || parent?.pub_year || parent?.year || '').slice(0, 4),
+    year: /^\d{4}$/.test(year) ? year : '',
     cover: `${options.imageUrl}/${item.uuid}.jpg`,
     coverSource: item.cover_image_url || '',
-    aspect: 2 / 3,
+    aspect: kind === 'music' ? 1 : 2 / 3,
     colors: mapColors(item.uuid),
     doubanRating: typeof item.rating === 'number' ? item.rating : null,
     ratingCount: item.rating_count ?? 0,
     summary: trimSummary(summary),
     url,
     pages: Number.isInteger(item.pages) ? item.pages : null,
-    minutes: kind === 'movie' ? minutesOf(item) : null,
+    minutes: kind === 'movie' || kind === 'music' ? minutesOf(item) : null,
     myRating: mark?.rating_grade ?? null,
     comment: cleanText(mark?.comment_text),
     status: mark?.shelf_type ? SHELF_STATUS[mark.shelf_type] || 'done' : 'done',
@@ -261,6 +273,7 @@ async function collectShelf() {
     }
   }
 
+  entries.sort((a, b) => String(b.mark?.created_time || '').localeCompare(String(a.mark?.created_time || '')))
   return { entries, hidden }
 }
 
@@ -346,9 +359,11 @@ async function main() {
   await fs.mkdir(path.dirname(options.output), { recursive: true })
   await fs.writeFile(options.output, `${JSON.stringify(payload, null, 2)}\n`)
 
-  const books = items.filter((item) => item.kind === 'book').length
-  const movies = items.length - books
-  console.log(`NeoDB 同步完成：新增 ${added}，更新 ${updated}，共 ${items.length} 条（${books} 本 / ${movies} 部）-> ${options.output}`)
+  const count = (kind) => items.filter((item) => item.kind === kind).length
+  console.log(
+    `NeoDB 同步完成：新增 ${added}，更新 ${updated}，共 ${items.length} 条` +
+      `（书 ${count('book')} / 影 ${count('movie')} / 剧 ${count('tv')} / 乐 ${count('music')}）-> ${options.output}`,
+  )
 }
 
 main().catch((error) => {

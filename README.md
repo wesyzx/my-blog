@@ -56,8 +56,8 @@ NEODB_TOKEN=... npm run shelf:sync:neodb
 NEODB_TOKEN=... npm run shelf:sync:neodb -- --merge --categories=movie
 ```
 
-默认只收 `book,movie,tv` 三个类别的公开标记（`visibility = 0`），电视剧按电影展示；
-音乐、播客、游戏暂不进书架。`--include-hidden` 可收非公开标记；首次迁移建议先用
+默认只收 `book,movie,tv,music` 四个类别的公开标记（`visibility = 0`），分别对应书架上的
+书籍、电影、剧集、音乐；播客、游戏暂不进书架。`--include-hidden` 可收非公开标记；首次迁移建议先用
 `--out=/tmp/shelf.json --images=/tmp/covers` 试跑。旧的豆瓣同步脚本 `shelf:sync` 保留在仓库，
 迁移稳定后再删除。
 

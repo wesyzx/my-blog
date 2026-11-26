@@ -1,6 +1,6 @@
 import shelfData from '@/content/shelf.json'
 
-export type ShelfKind = 'book' | 'movie'
+export type ShelfKind = 'book' | 'movie' | 'tv' | 'music'
 export type ShelfStatus = 'done' | 'doing' | 'mark'
 export type ShelfSource = 'douban' | 'neodb'
 

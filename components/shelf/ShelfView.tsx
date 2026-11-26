@@ -1,22 +1,28 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import type { ShelfItem } from '@/lib/shelf'
+import type { ShelfItem, ShelfKind } from '@/lib/shelf'
 import PageHeader from '../PageHeader'
 import ShelfDetail from './ShelfDetail'
 import ShelfStage from './ShelfStage'
 import styles from './Shelf.module.css'
 
-type Filter = 'all' | 'book' | 'movie'
+type Filter = 'all' | ShelfKind
 
 interface ShelfViewProps {
   items: ShelfItem[]
 }
 
+const KINDS: Array<{ value: ShelfKind; label: string; unit: string }> = [
+  { value: 'book', label: '书籍', unit: '本' },
+  { value: 'movie', label: '电影', unit: '部' },
+  { value: 'tv', label: '剧集', unit: '部' },
+  { value: 'music', label: '音乐', unit: '张' },
+]
+
 const FILTERS: Array<{ value: Filter; label: string }> = [
   { value: 'all', label: '全部' },
-  { value: 'book', label: '书籍' },
-  { value: 'movie', label: '电影' },
+  ...KINDS.map(({ value, label }) => ({ value, label })),
 ]
 
 export default function ShelfView({ items }: ShelfViewProps) {
@@ -28,15 +34,18 @@ export default function ShelfView({ items }: ShelfViewProps) {
   ), [filter, items])
 
   const counts = useMemo(() => {
-    const books = items.filter((item) => item.kind === 'book').length
-    return { books, movies: items.length - books }
+    const next: Record<ShelfKind, number> = { book: 0, movie: 0, tv: 0, music: 0 }
+    for (const item of items) next[item.kind] += 1
+    return next
   }, [items])
 
-  const summary = filter === 'book'
-    ? `${counts.books} 本`
-    : filter === 'movie'
-      ? `${counts.movies} 部`
-      : `书籍 ${counts.books} 本 · 电影 ${counts.movies} 部`
+  const active = KINDS.find((kind) => kind.value === filter)
+  const summary = active
+    ? `${counts[active.value]} ${active.unit}`
+    : KINDS
+      .filter((kind) => counts[kind.value] > 0)
+      .map((kind) => `${kind.label} ${counts[kind.value]} ${kind.unit}`)
+      .join(' · ') || '书架还空着'
 
   const closeDetail = useCallback(() => setActiveItem(null), [])
 

@@ -11,10 +11,23 @@ interface ShelfDetailProps {
   onClose: () => void
 }
 
-const STATUS_LABEL: Record<ShelfItem['status'], string> = {
-  done: '已看完',
-  doing: '进行中',
-  mark: '想看的',
+const KIND_LABEL: Record<ShelfItem['kind'], string> = {
+  book: '书籍',
+  movie: '电影',
+  tv: '剧集',
+  music: '音乐',
+}
+
+const DONE_LABEL: Record<ShelfItem['kind'], string> = {
+  book: '已读完',
+  movie: '已看完',
+  tv: '已看完',
+  music: '已听完',
+}
+
+function statusLabel(item: ShelfItem) {
+  if (item.status === 'done') return DONE_LABEL[item.kind]
+  return item.status === 'doing' ? '进行中' : '想看的'
 }
 
 const SOURCE_LABEL = {
@@ -88,13 +101,14 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
           src={item.cover}
           alt={`${item.title} 封面`}
           width={600}
-          height={900}
+          height={Math.round(600 / item.aspect)}
           sizes="220px"
           priority
+          style={{ aspectRatio: item.aspect }}
         />
         <div className={styles.detailBody}>
           <div className={styles.detailEyebrow}>
-            {item.kind === 'book' ? '书籍' : '电影'} · {source.item}
+            {KIND_LABEL[item.kind]} · {source.item}
           </div>
           <h2 id="shelf-detail-title" className={styles.detailTitle}>{item.title}</h2>
           <p className={styles.detailCreator}>{item.creator}</p>
@@ -126,7 +140,7 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
             <a className={styles.detailLink} href={item.url} target="_blank" rel="noreferrer">
               {source.link} <span aria-hidden="true">↗</span>
             </a>
-            <span className={styles.statusPill}>{STATUS_LABEL[item.status]}</span>
+            <span className={styles.statusPill}>{statusLabel(item)}</span>
           </div>
         </div>
       </div>

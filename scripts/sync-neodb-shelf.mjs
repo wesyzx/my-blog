@@ -278,7 +278,10 @@ async function collectShelf() {
     }
   }
 
-  entries.sort((a, b) => String(b.mark?.created_time || '').localeCompare(String(a.mark?.created_time || '')))
+  entries.sort((a, b) => (
+    String(b.mark?.created_time || '').localeCompare(String(a.mark?.created_time || '')) ||
+    String(a.item?.uuid || '').localeCompare(String(b.item?.uuid || ''))
+  ))
   return { entries, hidden }
 }
 
@@ -324,19 +327,19 @@ async function main() {
   if (!entries.length) throw new Error('没有取到任何 NeoDB 条目（书架为空，或全部标记为非公开；可加 --include-hidden 试试）')
   if (hidden) console.log(`已跳过 ${hidden} 条非公开标记（需要的话加 --include-hidden）`)
 
-  let existing = null
-  if (options.merge && !options.replace) {
-    try {
-      const parsed = JSON.parse(await fs.readFile(options.output, 'utf8'))
-      if (Array.isArray(parsed.items)) existing = parsed
-    } catch {
-      existing = null
-    }
+  let current = null
+  try {
+    const parsed = JSON.parse(await fs.readFile(options.output, 'utf8'))
+    if (Array.isArray(parsed.items)) current = parsed
+  } catch {
+    current = null
   }
+  const existing = options.merge && !options.replace ? current : null
 
   await fs.mkdir(options.imageDir, { recursive: true })
   const items = options.replace ? [] : existing ? [...existing.items] : []
   const indexById = new Map(items.map((item, index) => [item.id, index]))
+  const previousIds = new Set((current?.items || []).map((item) => item.id))
   let added = 0
   let updated = 0
 
@@ -349,15 +352,17 @@ async function main() {
     if (known === undefined) {
       indexById.set(item.id, items.length)
       items.push(item)
-      added += 1
+      if (previousIds.has(item.id)) updated += 1
+      else added += 1
     } else {
       items[known] = { ...items[known], ...item }
       updated += 1
     }
   }
 
+  const unchanged = current ? JSON.stringify(current.items) === JSON.stringify(items) : false
   const payload = {
-    syncedAt: new Date().toISOString(),
+    syncedAt: unchanged && current ? current.syncedAt : new Date().toISOString(),
     source: 'neodb',
     items,
   }

@@ -61,6 +61,9 @@ NEODB_TOKEN=... npm run shelf:sync:neodb -- --merge --categories=movie
 `--out=/tmp/shelf.json --images=/tmp/covers` 试跑。旧的豆瓣同步脚本 `shelf:sync` 保留在仓库，
 迁移稳定后再删除。
 
+每天 07:15（Asia/Shanghai）由 `.github/workflows/shelf-sync.yml` 在 GitHub Actions 上运行，
+需要仓库 secret `NEODB_TOKEN`；`--prune` 会顺手删掉已移除条目的封面。ECS 不再参与书架同步。
+
 ## Obsidian 内容发布
 
 发布区只允许是 Obsidian Vault 内的 `Blog/`，不要指向整个私人 Vault：

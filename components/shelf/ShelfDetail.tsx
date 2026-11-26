@@ -17,6 +17,11 @@ const STATUS_LABEL: Record<ShelfItem['status'], string> = {
   mark: '想看的',
 }
 
+const SOURCE_LABEL = {
+  douban: { item: '豆瓣条目', rating: '豆瓣评分', link: '在豆瓣查看' },
+  neodb: { item: 'NeoDB 条目', rating: 'NeoDB 评分', link: '在 NeoDB 查看' },
+} as const
+
 export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
   const detailRef = useRef<HTMLDivElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -58,6 +63,8 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
 
   if (!item) return null
 
+  const source = SOURCE_LABEL[item.source ?? 'douban']
+
   return createPortal(
     <div
       className={styles.detailBackdrop}
@@ -87,7 +94,7 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
         />
         <div className={styles.detailBody}>
           <div className={styles.detailEyebrow}>
-            {item.kind === 'book' ? '书籍' : '电影'} · 豆瓣条目
+            {item.kind === 'book' ? '书籍' : '电影'} · {source.item}
           </div>
           <h2 id="shelf-detail-title" className={styles.detailTitle}>{item.title}</h2>
           <p className={styles.detailCreator}>{item.creator}</p>
@@ -99,7 +106,7 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
           </div>
           <div className={styles.ratingRow}>
             <div className={styles.rating}>
-              <span className={styles.ratingLabel}>豆瓣评分</span>
+              <span className={styles.ratingLabel}>{source.rating}</span>
               <span className={styles.ratingValue}>{item.doubanRating ?? '—'}</span>
             </div>
             {item.myRating ? (
@@ -117,7 +124,7 @@ export default function ShelfDetail({ item, onClose }: ShelfDetailProps) {
           {item.comment ? <p className={styles.comment}>“{item.comment}”</p> : null}
           <div className={styles.detailFooter}>
             <a className={styles.detailLink} href={item.url} target="_blank" rel="noreferrer">
-              在豆瓣查看 <span aria-hidden="true">↗</span>
+              {source.link} <span aria-hidden="true">↗</span>
             </a>
             <span className={styles.statusPill}>{STATUS_LABEL[item.status]}</span>
           </div>

@@ -43,6 +43,24 @@ npm run build
 
 运动服务部署、接口与导入说明见 `cloudflare/workouts/README.md`；图片放大交互见 `docs/lightbox.md`。
 
+## 书影音（NeoDB）
+
+书架数据来自 NeoDB（`https://neodb.social`），由 `scripts/sync-neodb-shelf.mjs` 读“读过 / 在读”
+书架的公开标记，写入 `content/shelf.json`，封面下载到 `public/shelf/`。NeoDB 提供条目评分、
+简介和封面，颜色由中文书名哈希生成，没有条目配色字段。
+
+```bash
+# 先在 https://neodb.social/developer/ 生成 Test Access Token（只显示一次）
+NEODB_TOKEN=... npm run shelf:sync:neodb
+# 合并而不是覆盖，只同步电影
+NEODB_TOKEN=... npm run shelf:sync:neodb -- --merge --categories=movie
+```
+
+默认只收 `book,movie,tv` 三个类别的公开标记（`visibility = 0`），电视剧按电影展示；
+音乐、播客、游戏暂不进书架。`--include-hidden` 可收非公开标记；首次迁移建议先用
+`--out=/tmp/shelf.json --images=/tmp/covers` 试跑。旧的豆瓣同步脚本 `shelf:sync` 保留在仓库，
+迁移稳定后再删除。
+
 ## Obsidian 内容发布
 
 发布区只允许是 Obsidian Vault 内的 `Blog/`，不要指向整个私人 Vault：

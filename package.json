@@ -26,6 +26,7 @@
     "obsidian:publish": "node scripts/obsidian-publish.mjs",
     "obsidian:plugin-build": "node obsidian/blog-create/build.mjs",
     "shelf:sync": "node scripts/sync-douban-shelf.mjs",
+    "shelf:sync:neodb": "node scripts/sync-neodb-shelf.mjs",
     "deploy": "node scripts/trigger-deploy.mjs"
   },
   "dependencies": {

@@ -27,34 +27,42 @@ export default function ShelfView({ items }: ShelfViewProps) {
     filter === 'all' ? items : items.filter((item) => item.kind === filter)
   ), [filter, items])
 
+  const counts = useMemo(() => {
+    const books = items.filter((item) => item.kind === 'book').length
+    return { books, movies: items.length - books }
+  }, [items])
+
   const closeDetail = useCallback(() => setActiveItem(null), [])
 
   return (
-    <div className="page-shell shelf-page animate-fade-up">
+    <div className={`page-shell ${styles.page} animate-fade-up`}>
       <PageHeader
         title="书影音"
         className="shelf-page-header"
         actions={(
-          <div className={styles.controls}>
-            <nav className="category-filter" aria-label="筛选书影音">
-              <div className="category-links">
-                {FILTERS.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={filter === option.value ? 'active' : ''}
-                    onClick={() => setFilter(option.value)}
-                    aria-pressed={filter === option.value}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </nav>
-            <span className={styles.count}>{filtered.length} 件</span>
-          </div>
+          <nav className="category-filter" aria-label="筛选书影音">
+            <div className="category-links">
+              {FILTERS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={filter === option.value ? 'active' : ''}
+                  onClick={() => setFilter(option.value)}
+                  aria-pressed={filter === option.value}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </nav>
         )}
       />
+
+      <p className={styles.meta}>
+        <span>书籍 {counts.books} 本</span>
+        <span aria-hidden="true">·</span>
+        <span>电影 {counts.movies} 部</span>
+      </p>
 
       <ShelfStage key={filter} items={filtered} onOpen={setActiveItem} />
 

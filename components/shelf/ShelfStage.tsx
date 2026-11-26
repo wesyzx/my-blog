@@ -75,9 +75,11 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
       const width = viewport.clientWidth
       if (!width) return
       const mobile = width < 640
-      const height = mobile
-        ? Math.round(Math.max(158, Math.min(width * 0.56, 230)))
-        : Math.round(Math.max(210, Math.min(width * 0.42, 300)))
+      const widthCap = width * (mobile ? 0.58 : 0.54)
+      const heightCap = (window.innerHeight - 300) * 0.72
+      const height = Math.round(
+        Math.max(mobile ? 170 : 220, Math.min(widthCap, heightCap, mobile ? 320 : 420)),
+      )
       const spine = Math.round(height * (mobile ? 0.13 : 0.14))
       const depth = Math.round(height * 0.66)
       const gap = Math.round(height * 0.028)
@@ -89,10 +91,13 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
     }
 
     measure()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(measure)
-    observer.observe(viewport)
-    return () => observer.disconnect()
+    window.addEventListener('resize', measure)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(viewport)
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
   }, [])
 
   useEffect(() => {
@@ -394,11 +399,10 @@ export default function ShelfStage({ items, onOpen }: ShelfStageProps) {
   }
 
   return (
-    <div className={styles.stageCard}>
+    <div className={styles.stageCard} style={{ '--shelf-h': `${size.height}px` } as CSSProperties}>
       <div
         ref={viewportRef}
         className={styles.viewport}
-        style={{ '--shelf-h': `${size.height}px` } as CSSProperties}
         role="region"
         aria-label="书影音书架：拖拽、滚轮或方向键浏览，点击封面查看详情"
         tabIndex={0}

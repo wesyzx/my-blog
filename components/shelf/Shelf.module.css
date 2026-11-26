@@ -1,26 +1,37 @@
-.controls {
+.page {
   display: flex;
-  align-items: center;
-  gap: 28px;
-  max-width: 100%;
+  flex-direction: column;
+  min-height: clamp(420px, calc(100dvh - 210px), 1000px);
 }
 
-.count {
+.meta {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 14px 0 0;
   color: var(--color-text-hint);
   font-size: 13px;
+  line-height: 1.5;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .stageCard {
   position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: center;
+  min-height: calc(var(--shelf-h, 260px) * 1.45 + 16px);
   overflow: hidden;
   background: radial-gradient(68% 58% at 50% 54%, var(--color-bg-surface), transparent 76%);
 }
 
 .viewport {
   position: relative;
-  height: calc(var(--shelf-h, 260px) * 1.5);
+  flex: 1 1 auto;
+  height: 100%;
+  min-height: 0;
   overflow: hidden;
   cursor: grab;
   outline: none;
@@ -417,10 +428,8 @@
 }
 
 @media (max-width: 720px) {
-  .controls {
-    width: 100%;
-    justify-content: space-between;
-    gap: 16px;
+  .page {
+    min-height: clamp(360px, calc(100dvh - 180px), 820px);
   }
 
   .detail {

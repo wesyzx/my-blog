@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import type { ShelfItem, ShelfKind } from '@/lib/shelf'
 import styles from './Shelf.module.css'
 
@@ -31,11 +31,22 @@ function centerCard(track: HTMLDivElement, index: number) {
 }
 
 export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaProps) {
+  const trackId = useId()
   const trackRef = useRef<HTMLDivElement>(null)
   const drag = useRef<MouseDrag | null>(null)
+  const hover = useRef<{ index: number; timer: number } | null>(null)
+  const hoverPointer = useRef<{ clientX: number; clientY: number } | null>(null)
   const suppressClick = useRef(false)
   const [centered, setCentered] = useState(0)
   const isAlbum = kind === 'music'
+  const hasPosterNavigation = !isAlbum && items.length > 1
+
+  const cancelHover = useCallback(() => {
+    if (hover.current) window.clearTimeout(hover.current.timer)
+    hover.current = null
+  }, [])
+
+  useEffect(() => cancelHover, [cancelHover])
 
   useEffect(() => {
     const track = trackRef.current
@@ -48,6 +59,7 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
 
     function handleWheel(event: WheelEvent) {
       if (!track || drag.current?.moved || event.ctrlKey || event.metaKey || event.shiftKey) return
+      cancelHover()
       if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
 
       const step = cardStep(track)
@@ -83,7 +95,35 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
 
     track.addEventListener('wheel', handleWheel, { passive: false })
     return () => track.removeEventListener('wheel', handleWheel)
-  }, [isAlbum, items.length])
+  }, [cancelHover, isAlbum, items.length])
+
+  function previewPoster(event: PointerEvent<HTMLSpanElement>, index: number) {
+    if (event.pointerType !== 'mouse' || event.buttons || drag.current) return
+    const { clientX, clientY } = event
+    if (hoverPointer.current?.clientX === clientX && hoverPointer.current.clientY === clientY) return
+    hoverPointer.current = { clientX, clientY }
+    if (hover.current?.index === index) return
+
+    cancelHover()
+    if (Math.abs(centered - index) !== 1) return
+
+    hover.current = {
+      index,
+      timer: window.setTimeout(() => {
+        hover.current = null
+        const track = trackRef.current
+        if (track) centerCard(track, index)
+      }, 450),
+    }
+  }
+
+  function movePoster(direction: -1 | 1) {
+    const track = trackRef.current
+    const target = centered + direction
+    if (!track || target < 0 || target >= items.length) return
+    cancelHover()
+    centerCard(track, target)
+  }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (items.length < 2) return
@@ -97,10 +137,12 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
     }[event.key]
     if (target === undefined) return
     event.preventDefault()
+    cancelHover()
     centerCard(track, target)
   }
 
   function startDrag(event: PointerEvent<HTMLDivElement>) {
+    cancelHover()
     suppressClick.current = false
     if (event.pointerType !== 'mouse' || event.button !== 0 || items.length < 2) return
     drag.current = {
@@ -141,14 +183,36 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
 
   return (
     <div className={`${styles.mediaStage} ${isAlbum ? styles.mediaAlbums : styles.mediaPosters}`}>
+      {hasPosterNavigation && (
+        <div className={styles.mediaNavigation}>
+          <button
+            className={`${styles.mediaArrow} ${styles.mediaPrevious}`}
+            type="button"
+            aria-label="上一张海报"
+            aria-controls={trackId}
+            aria-disabled={centered <= 0}
+            onClick={() => movePoster(-1)}
+          />
+          <button
+            className={styles.mediaArrow}
+            type="button"
+            aria-label="下一张海报"
+            aria-controls={trackId}
+            aria-disabled={centered >= items.length - 1}
+            onClick={() => movePoster(1)}
+          />
+        </div>
+      )}
       <div
         ref={trackRef}
+        id={trackId}
         className={styles.mediaTrack}
         role="region"
         aria-label={`${label}陈列`}
         tabIndex={items.length > 1 ? 0 : undefined}
         data-scrollable={items.length > 1}
         onScroll={(event) => {
+          cancelHover()
           const track = event.currentTarget
           const step = cardStep(track)
           if (step) setCentered(Math.round(track.scrollLeft / step))
@@ -176,9 +240,16 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
               key={item.id}
               type="button"
               aria-current={index === centered || undefined}
-              onClick={() => onOpen(item)}
+              onClick={() => {
+                cancelHover()
+                onOpen(item)
+              }}
             >
-              <span className={styles.mediaCover}>
+              <span
+                className={styles.mediaCover}
+                onPointerMove={hasPosterNavigation ? (event) => previewPoster(event, index) : undefined}
+                onPointerLeave={hasPosterNavigation ? cancelHover : undefined}
+              >
                 {item.cover && (
                   <Image
                     src={item.cover}

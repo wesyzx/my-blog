@@ -155,7 +155,7 @@
   overflow: hidden;
   background: var(--color-bg-surface);
   box-shadow: 0 12px 25px rgb(0 0 0 / .17);
-  transition: translate .25s ease, transform .25s ease, opacity .25s ease;
+  transition: translate .16s ease-out, transform .25s ease, opacity .25s ease;
 }
 
 .mediaArtwork img {
@@ -173,15 +173,14 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .mediaPosters .mediaTrack:not([data-dragging="true"]) .mediaItem:hover .mediaArtwork {
+  .mediaPosters .mediaTrack:not([data-dragging="true"]) .mediaCover:hover .mediaArtwork {
     opacity: 1;
-    transform: scale(1.04);
   }
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .mediaTrack:not([data-dragging="true"]) .mediaCover:hover .mediaArtwork {
-    translate: 0 -8px;
+    translate: 0 var(--cover-offset-y, 0px);
   }
 }
 

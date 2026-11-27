@@ -97,9 +97,14 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
     return () => track.removeEventListener('wheel', handleWheel)
   }, [cancelHover, isAlbum, items.length])
 
-  function previewPoster(event: PointerEvent<HTMLSpanElement>, index: number) {
+  function moveOverCover(event: PointerEvent<HTMLSpanElement>, index: number) {
     if (event.pointerType !== 'mouse' || event.buttons || drag.current) return
-    const { clientX, clientY } = event
+    const { clientX, clientY, currentTarget: cover } = event
+    const { bottom, height } = cover.getBoundingClientRect()
+    const distanceFromBottom = Math.max(0, Math.min(bottom - clientY, height))
+    cover.style.setProperty('--cover-offset-y', `${-distanceFromBottom * 0.05}px`)
+
+    if (!hasPosterNavigation) return
     if (hoverPointer.current?.clientX === clientX && hoverPointer.current.clientY === clientY) return
     hoverPointer.current = { clientX, clientY }
     if (hover.current?.index === index) return
@@ -247,8 +252,11 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
             >
               <span
                 className={styles.mediaCover}
-                onPointerMove={hasPosterNavigation ? (event) => previewPoster(event, index) : undefined}
-                onPointerLeave={hasPosterNavigation ? cancelHover : undefined}
+                onPointerMove={(event) => moveOverCover(event, index)}
+                onPointerLeave={(event) => {
+                  event.currentTarget.style.removeProperty('--cover-offset-y')
+                  cancelHover()
+                }}
               >
                 <span className={styles.mediaArtwork}>
                   {item.cover && (

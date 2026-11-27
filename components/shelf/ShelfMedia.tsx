@@ -250,16 +250,18 @@ export default function ShelfMedia({ items, kind, label, onOpen }: ShelfMediaPro
                 onPointerMove={hasPosterNavigation ? (event) => previewPoster(event, index) : undefined}
                 onPointerLeave={hasPosterNavigation ? cancelHover : undefined}
               >
-                {item.cover && (
-                  <Image
-                    src={item.cover}
-                    alt=""
-                    fill
-                    sizes={isAlbum ? '(max-width: 720px) min(68vw, 280px), 246px' : '(max-width: 520px) 68vw, 310px'}
-                    draggable={false}
-                    onError={(event) => { event.currentTarget.hidden = true }}
-                  />
-                )}
+                <span className={styles.mediaArtwork}>
+                  {item.cover && (
+                    <Image
+                      src={item.cover}
+                      alt=""
+                      fill
+                      sizes={isAlbum ? '(max-width: 720px) min(68vw, 280px), 246px' : '(max-width: 520px) 68vw, 310px'}
+                      draggable={false}
+                      onError={(event) => { event.currentTarget.hidden = true }}
+                    />
+                  )}
+                </span>
               </span>
               <span className={styles.mediaTitle}>{item.title}</span>
               {subtitle && <span className={styles.mediaSubtitle}>{subtitle}</span>}

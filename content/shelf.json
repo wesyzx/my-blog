@@ -1,7 +1,38 @@
 {
-  "syncedAt": "2026-11-26T13:36:55.758Z",
+  "syncedAt": "2026-11-27T05:04:09.360Z",
   "source": "neodb",
   "items": [
+    {
+      "id": "2wSSm7bkybuHFL58V2Y0Sr",
+      "kind": "tv",
+      "source": "neodb",
+      "title": "低智商犯罪",
+      "creator": "刘海波 / 刘海波 / 刘海波",
+      "year": "2026",
+      "seasonNumber": 1,
+      "cover": "/shelf/2wSSm7bkybuHFL58V2Y0Sr.jpg",
+      "coverSource": "https://neodb.social/m/item/doubanmovie/2024/08/24/4ce64149-6b3f-4774-9ed6-2dc61f9a2ede.jpg",
+      "aspect": 0.6666666666666666,
+      "colors": {
+        "bg": "#7a5a2e",
+        "fg": "#f4f1ea",
+        "band": "#9a7439",
+        "bandFg": "#f4f1ea",
+        "paper": "#f5f2ec",
+        "paperFg": "#1a1814",
+        "isDark": true
+      },
+      "doubanRating": 7.2,
+      "ratingCount": 72,
+      "summary": "谜团待解，奇兵制胜；巧合不断，戏码翻番。",
+      "url": "https://neodb.social/tv/season/2wSSm7bkybuHFL58V2Y0Sr",
+      "pages": null,
+      "minutes": null,
+      "myRating": null,
+      "comment": "",
+      "status": "done",
+      "date": "2026-11-26"
+    },
     {
       "id": "6SAqdyMEu3kGepBN0mHZAr",
       "kind": "movie",
@@ -22,7 +53,7 @@
         "isDark": true
       },
       "doubanRating": 9.4,
-      "ratingCount": 3024,
+      "ratingCount": 3025,
       "summary": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting sk…",
       "url": "https://neodb.social/movie/6SAqdyMEu3kGepBN0mHZAr",
       "pages": null,
